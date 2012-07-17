@@ -1,12 +1,21 @@
 #!/usr/bin/python
 
 import argparse
+import csv
 import glob
 import os
 
 import numpy as np
-import xlrd
-import xlwt
+
+try:
+    import xlrd
+except ImportError:
+    xlrd = None
+
+try:
+    import openpyxl
+except ImportError:
+    openpyxl = None
 
 import rvt
 
@@ -19,33 +28,59 @@ parameter_names = [
     ('duration', 'Duration (sec)'),
         ]
 
-
 def load_events(filename, response_key='sa'):
-    '''Load an Excel work book'''
+    '''Read data from the file an Excel work book'''
 
-    start_rowx = len(parameter_names) + 1
+    ext = os.path.splitext(filename)[1].lower()
 
-    wb = xlrd.open_workbook(filename)
-    ws = wb.sheet_by_index(0)
+    # Load the file depending on the format
+    if ext == '.csv':
+        def parse(s):
+            try:
+                return float(s)
+            except ValueError:
+                return s
 
-    parameters = {key: ws.row_values(i, start_colx=1)
+        with open(filename) as fp:
+            reader = csv.reader(fp)
+            rows = [[parse(r) for r in row] for row in reader]
+    elif ext == '.xls':
+        if xlrd is None:
+            raise RuntimeError, 'xlrd is required to open an xls file'
+
+        wb = xlrd.open_workbook(filename)
+        ws = wb.sheet_by_index(0)
+        rows = [ws.row_values(i) for i in range(ws.nrows)]
+
+    elif ext == '.xlsx':
+        if openpyxl is None:
+            raise RuntimeError, 'openpyxel is required to open an xlsx file'
+
+        wb = openpyxl.load_workbook(filename)
+        ws = wb.worksheets[0]
+        rows = [[r.value for r in row] for row in ws.rows]
+    else:
+        raise NotImplementedError
+
+    parameters = {key: rows[i][1:]
             for i, (key, label) in enumerate(parameter_names)}
 
-    reference = np.array(ws.col_values(0, start_rowx))
+    event_row = len(parameters) + 1
+    event_count = len(rows[0]) - 1
+
+    reference = np.array([row[0] for row in rows[event_row:]])
 
     events = []
-    for i in range(ws.ncols - 1):
-        sa = np.array(ws.col_values(i + 1, start_rowx))
-
+    for i in range(event_count):
+        sa = np.array([row[i + 1] for row in rows[event_row:]])
         # Extract the appropriate attributes
-        e = {k: v[i] for k, v in parameters.iteritems() if not k == 'duration'}
+        e = {k: v[i] for k, v in parameters.iteritems()}
         e[response_key] = sa
 
-        if parameters['duration'][i] in ['wus', 'ceus']:
-            e['region'] = parameters['duration'][i]
+        if e['duration'] in ['wus', 'ceus']:
+            e['region'] = e['duration']
             e['duration'] = None
         else:
-            e['duration'] = float(parameters['duration'][i])
             e['region'] = None
 
         events.append(e)
@@ -55,32 +90,28 @@ def load_events(filename, response_key='sa'):
 
 def export_events(filename, reference, reference_label, response_key,
         response_label, events):
-    wb = xlwt.Workbook()
-    ws = wb.add_sheet('Sheet 1')
-    row = 0
 
-    for key, label in parameter_names:
-        ws.write(row, 0, label)
+    print filename
 
-        for column, e in enumerate(events):
-            ws.write(row, column + 1, e[key])
+    dirname = os.path.dirname(filename)
 
-        row += 1
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
 
-    ws.write(row, 0, reference_label)
+    with open(filename, 'wb') as fp:
+        writer = csv.writer(fp)
 
-    for column in range(len(events)):
-        ws.write(row, column + 1, response_label)
+        # Output the parameters
+        for key, label in parameter_names:
+            row = [label] + [e[key] for e in events]
+            writer.writerow(row)
 
-    row += 1
-    for i in range(len(reference)):
-        ws.write(row + i, 0, reference[i])
+        writer.writerow([reference_label] + len(events) * [response_label])
 
-        for column, e in enumerate(events):
-            ws.write(row + i, 1 + column, e[response_key][i])
-
-    wb.save(filename)
-
+        # Output the response spectra
+        for i in range(len(reference)):
+            writer.writerow(
+                [reference[i]] + [e[response_key][i] for e in events])
 
 def compute_compatible_spectra(period, events, damping=0.05):
     ''' Compute the response spectrum compatible motions. '''
@@ -108,9 +139,6 @@ def operation_sa2fa(src, dest, damping, fixed_spacing):
     spectrum.'''
 
     for filename_src in glob.iglob(src):
-        if filename_src[-3:] != 'xls':
-            continue
-
         period, events = load_events(filename_src, 'sa_target')
 
         if fixed_spacing:
@@ -147,9 +175,6 @@ def operation_fa2sa(src, dest, damping, fixed_spacing):
         osc_freq = 1. / period
 
     for filename_src in glob.iglob(src):
-        if filename_src[-3:] != 'xls':
-            continue
-
         freq, events = load_events(filename_src, 'fa')
 
         if not fixed_spacing:
@@ -175,25 +200,29 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Compute reponse or Fourier amplitude spectra using RVT.')
     parser.add_argument('operation',
-            help='Operation to be performed. '
-            '[sa2fa] converts from (psuedo)-spectral acceleration to Fourier amplitude. '
-            '[fa2sa] converts from Fourier amplitude to (psuedo)-spectral acceleration.',
+            help='''Operation to be performed. [sa2fa] converts from
+            (psuedo)-spectral acceleration to Fourier amplitude.  [fa2sa]
+            converts from Fourier amplitude to (psuedo)-spectral acceleration.
+            ''',
             choices=['sa2fa', 'fa2sa'])
     parser.add_argument('-i', '--input', dest='src',
-                    help='Path containing the input files. Single file or glob'
-                    'can be specified. An example of a glob would be'
-                    '"input/*_sa.xls" for all files within directory "input"'
-                    'ending in "_sa.xls".', required=True)
+            help='''Path containing the input file(s). Supported file types
+            are csv, xls, and xlsx -- provided the required packages have been
+            installed. A single file or glob can be specified. An example of a
+            glob would be "input/*_sa.xls" for all files within directory
+            "input" ending in "_sa.xls".''',
+            required=True)
     parser.add_argument('-o', '--output', dest='dest',
-                    help='Path where the output files should be created. If this'
-                    'directory does not exist it will be created. Default: ./output',
-                    default='./output')
+            help='''Path where the output files should be created. If this
+            directory does not exist it will be created. Default: ./output''',
+            default='./output')
     parser.add_argument('-d', '--damping', dest='damping', default=0.05,
-            help='Oscillator damping in decimal.  Default: 0.05.')
-    parser.add_argument('-f', '--fixed-spacing', dest='fixed_spacing', action='store_true',
-            help='Fixed spacing of the oscillator period '
-            ' of 0.01 to 10 sec log-spaced with 100 points. Target SA values'
-            ' will be interpolated if needed')
+            help='''Oscillator damping in decimal.  Default: 0.05.''')
+    parser.add_argument('-f', '--fixed-spacing', dest='fixed_spacing',
+            action='store_true',
+            help='''Fixed spacing of the oscillator period of 0.01 to 10 sec
+            log-spaced with 100 points. Target SA values will be interpolated
+            if needed''')
 
     args = parser.parse_args()
 
@@ -201,3 +230,5 @@ if __name__ == '__main__':
         operation_sa2fa(args.src, args.dest, args.damping, args.fixed_spacing)
     elif args.operation == 'fa2sa':
         operation_fa2sa(args.src, args.dest, args.damping, args.fixed_spacing)
+    else:
+        raise NotImplementedError
