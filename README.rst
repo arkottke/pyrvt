@@ -33,7 +33,7 @@ In addition to Python, the following packages need to be installed:
 For a computer running Windows, I would recommend the 32-bit installation of
 Python (python-2.7.3.msi_) and installing the required packages provided by
 `Christoph Gohlke`_ (e.g., numpy_ and scipy_). The optional ``xlrd`` and
-openpyxl packages are provides by `base package`_ and provide support for
+``openpyxl`` packages are provides by `base package`_ and provide support for
 reading xls and xlsx files, respectively. Again, make sure that you are
 downloading the proper version. For example, the appropriate file name for
 scipy for a 32-bit installation is ``scipy-0.10.1.win32-py2.7.exe``.
