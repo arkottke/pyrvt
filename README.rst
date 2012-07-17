@@ -16,17 +16,19 @@ important points:
 
 In addition to Python, the following packages need to be installed:
 
-Required:
-  numpy -- fast vector operations
+*Required:*
 
-  scipy -- indefinite integration
+- numpy -- fast vector operations
 
-Optional:
-  matplotlib -- used for plotting
+- scipy -- indefinite integration
 
-  xlrd -- reading xls files
+*Optional:*
 
-  openpyxl -- reading xlsx files
+-  matplotlib -- used for plotting
+
+-  xlrd -- reading xls files
+
+-  openpyxl -- reading xlsx files
 
 For a computer running Windows, I would recommend the 32-bit installation of
 Python (python-2.7.3.msi_) and installing the required packages provided by
