@@ -35,6 +35,11 @@ except ImportError:
     xlrd = None
 
 try:
+    import xlwt
+except ImportError:
+    xlrd = None
+
+try:
     import openpyxl
 except ImportError:
     openpyxl = None
@@ -54,7 +59,6 @@ def load_events(filename, response_key='sa'):
     '''Read data from the file an Excel work book'''
 
     ext = os.path.splitext(filename)[1].lower()
-
     # Load the file depending on the format
     if ext == '.csv':
         def parse(s):
@@ -76,8 +80,9 @@ def load_events(filename, response_key='sa'):
 
     elif ext == '.xlsx':
         if openpyxl is None:
-            raise RuntimeError, 'openpyxel is required to open an xlsx file'
+            raise RuntimeError, 'openpyxl is required to open an xlsx file'
 
+        # FIXME Not found?
         wb = openpyxl.load_workbook(filename)
         ws = wb.worksheets[0]
         rows = [[r.value for r in row] for row in ws.rows]
@@ -107,33 +112,63 @@ def load_events(filename, response_key='sa'):
 
         events.append(e)
 
-    return reference, events
+    return ext, reference, events
 
 
 def export_events(filename, reference, reference_label, response_key,
         response_label, events):
 
-    print filename
+    # Create the rows of output
+    rows = []
+    # Output the parameters
+    for key, label in parameter_names:
+        rows.append([label] + [e[key] for e in events])
 
+    rows.append(
+            [reference_label] + len(events) * [response_label])
+
+    # Output the response spectra
+    for i in range(len(reference)):
+        rows.append(
+            [reference[i]] + [e[response_key][i] for e in events])
+
+    # Create the directory
     dirname = os.path.dirname(filename)
 
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-    with open(filename, 'wb') as fp:
-        writer = csv.writer(fp)
+    # Write the file
+    ext = os.path.splitext(filename)[1].lower()
 
-        # Output the parameters
-        for key, label in parameter_names:
-            row = [label] + [e[key] for e in events]
-            writer.writerow(row)
+    if ext == '.csv':
+        with open(filename, 'wb') as fp:
+            writer = csv.writer(fp)
+            writer.writerows(rows)
+    elif ext == '.xls':
+        if xlwt is None:
+            raise RuntimeError, 'xlwt is required to open an xls file'
 
-        writer.writerow([reference_label] + len(events) * [response_label])
+        wb = xlwt.Workbook()
+        ws = wb.add_sheet('Sheet 1')
 
-        # Output the response spectra
-        for i in range(len(reference)):
-            writer.writerow(
-                [reference[i]] + [e[response_key][i] for e in events])
+        for i, row in enumerate(rows):
+            for j, cell in enumerate(row):
+                ws.write(i, j, cell)
+
+        wb.save(filename)
+    elif ext == '.xlsx':
+        if openpyxl is None:
+            raise RuntimeError, 'openpyxl is required to open an xlsx file'
+
+        wb = openpyxl.Workbook()
+        ws = wb.add_sheet('Sheet 1')
+
+        map(ws.append, rows)
+
+        wb.save(filename)
+    else:
+        raise NotImplementedError
 
 def compute_compatible_spectra(period, events, damping=0.05):
     ''' Compute the response spectrum compatible motions. '''
@@ -161,7 +196,7 @@ def operation_sa2fa(src, dest, damping, fixed_spacing):
     spectrum.'''
 
     for filename_src in glob.iglob(src):
-        period, events = load_events(filename_src, 'sa_target')
+        ext, period, events = load_events(filename_src, 'sa_target')
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
@@ -182,9 +217,9 @@ def operation_sa2fa(src, dest, damping, fixed_spacing):
         basename = os.path.basename(filename_src)
         pathname_dest = os.path.join(dest, basename.rsplit('_', 1)[0])
 
-        export_events(pathname_dest + '_sa.xls', period, 'Period (s)',
+        export_events(pathname_dest + '_sa' + ext, period, 'Period (s)',
                 'sa_calc', 'Sa (g)', events)
-        export_events(pathname_dest + '_fa.xls', freq, 'Frequency (Hz)', 'fa',
+        export_events(pathname_dest + '_fa' + ext, freq, 'Frequency (Hz)', 'fa',
                 'FA (g-s)', events)
 
 
@@ -197,7 +232,7 @@ def operation_fa2sa(src, dest, damping, fixed_spacing):
         osc_freq = 1. / period
 
     for filename_src in glob.iglob(src):
-        freq, events = load_events(filename_src, 'fa')
+        ext, freq, events = load_events(filename_src, 'fa')
 
         if not fixed_spacing:
             osc_freq = freq
@@ -215,7 +250,7 @@ def operation_fa2sa(src, dest, damping, fixed_spacing):
 
         pathname_dest = os.path.join(dest, basename.rsplit('_', 1)[0])
 
-        export_events(pathname_dest + '_sa.xls', period, 'Period (s)', 'sa',
+        export_events(pathname_dest + '_sa' + ext, period, 'Period (s)', 'sa',
                 'Sa (g)', events)
 
 if __name__ == '__main__':
