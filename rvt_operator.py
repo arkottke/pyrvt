@@ -162,7 +162,7 @@ def export_events(filename, reference, reference_label, response_key,
             raise RuntimeError, 'openpyxl is required to open an xlsx file'
 
         wb = openpyxl.Workbook()
-        ws = wb.add_sheet('Sheet 1')
+        ws = wb.create_sheet()
 
         map(ws.append, rows)
 
