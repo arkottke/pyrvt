@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# encoding: utf-8
 
 # This file is part of IRVT.
 #
@@ -53,7 +54,8 @@ parameter_names = [
     ('vs30', 'Vs30 (m/s)'),
     ('kappa', 'Kappa0 (sec)'),
     ('duration', 'Duration (sec)'),
-        ]
+]
+
 
 def load_events(filename, response_key='sa'):
     '''Read data from the file an Excel work book'''
@@ -72,7 +74,7 @@ def load_events(filename, response_key='sa'):
             rows = [[parse(r) for r in row] for row in reader]
     elif ext == '.xls':
         if xlrd is None:
-            raise RuntimeError, 'xlrd is required to open an xls file'
+            raise RuntimeError('xlrd is required to open an xls file')
 
         wb = xlrd.open_workbook(filename)
         ws = wb.sheet_by_index(0)
@@ -80,7 +82,7 @@ def load_events(filename, response_key='sa'):
 
     elif ext == '.xlsx':
         if openpyxl is None:
-            raise RuntimeError, 'openpyxl is required to open an xlsx file'
+            raise RuntimeError('openpyxl is required to open an xlsx file')
 
         # FIXME Not found?
         wb = openpyxl.load_workbook(filename)
@@ -90,7 +92,7 @@ def load_events(filename, response_key='sa'):
         raise NotImplementedError
 
     parameters = {key: rows[i][1:]
-            for i, (key, label) in enumerate(parameter_names)}
+                  for i, (key, label) in enumerate(parameter_names)}
 
     event_row = len(parameters) + 1
     event_count = len(rows[0]) - 1
@@ -116,7 +118,7 @@ def load_events(filename, response_key='sa'):
 
 
 def export_events(filename, reference, reference_label, response_key,
-        response_label, events):
+                  response_label, events):
 
     # Create the rows of output
     rows = []
@@ -125,7 +127,7 @@ def export_events(filename, reference, reference_label, response_key,
         rows.append([label] + [e[key] for e in events])
 
     rows.append(
-            [reference_label] + len(events) * [response_label])
+        [reference_label] + len(events) * [response_label])
 
     # Output the response spectra
     for i in range(len(reference)):
@@ -147,7 +149,7 @@ def export_events(filename, reference, reference_label, response_key,
             writer.writerows(rows)
     elif ext == '.xls':
         if xlwt is None:
-            raise RuntimeError, 'xlwt is required to open an xls file'
+            raise RuntimeError('xlwt is required to open an xls file')
 
         wb = xlwt.Workbook()
         ws = wb.add_sheet('Sheet 1')
@@ -159,7 +161,7 @@ def export_events(filename, reference, reference_label, response_key,
         wb.save(filename)
     elif ext == '.xlsx':
         if openpyxl is None:
-            raise RuntimeError, 'openpyxl is required to open an xlsx file'
+            raise RuntimeError('openpyxl is required to open an xlsx file')
 
         wb = openpyxl.Workbook()
         ws = wb.create_sheet()
@@ -170,15 +172,17 @@ def export_events(filename, reference, reference_label, response_key,
     else:
         raise NotImplementedError
 
+
 def compute_compatible_spectra(period, events, damping=0.05):
     ''' Compute the response spectrum compatible motions. '''
     target_freq = 1. / period
 
     for e in events:
-        crm = rvt.CompatibleRvtMotion(target_freq, e['sa_target'],
-                damping=damping, magnitude=e['magnitude'],
-                distance=e['distance'], duration=e['duration'],
-                region=e['region'])
+        crm = rvt.CompatibleRvtMotion(
+            target_freq, e['sa_target'],
+            damping=damping, magnitude=e['magnitude'],
+            distance=e['distance'], duration=e['duration'],
+            region=e['region'])
 
         freq = crm.freq
 
@@ -218,9 +222,9 @@ def operation_sa2fa(src, dest, damping, fixed_spacing):
         pathname_dest = os.path.join(dest, basename.rsplit('_', 1)[0])
 
         export_events(pathname_dest + '_sa' + ext, period, 'Period (s)',
-                'sa_calc', 'Sa (g)', events)
-        export_events(pathname_dest + '_fa' + ext, freq, 'Frequency (Hz)', 'fa',
-                'FA (g-s)', events)
+                      'sa_calc', 'Sa (g)', events)
+        export_events(pathname_dest + '_fa' + ext, freq, 'Frequency (Hz)',
+                      'fa', 'FA (g-s)', events)
 
 
 def operation_fa2sa(src, dest, damping, fixed_spacing):
@@ -240,7 +244,7 @@ def operation_fa2sa(src, dest, damping, fixed_spacing):
 
         for e in events:
             m = rvt.RvtMotion(freq=freq, fourier_amp=e['fa'],
-                    duration=e['duration'])
+                              duration=e['duration'])
             e['sa'] = m.compute_osc_resp(osc_freq, damping)
 
         if not os.path.exists(dest):
@@ -251,35 +255,38 @@ def operation_fa2sa(src, dest, damping, fixed_spacing):
         pathname_dest = os.path.join(dest, basename.rsplit('_', 1)[0])
 
         export_events(pathname_dest + '_sa' + ext, period, 'Period (s)', 'sa',
-                'Sa (g)', events)
+                      'Sa (g)', events)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Compute reponse or Fourier amplitude spectra using RVT.')
-    parser.add_argument('operation',
-            help='''Operation to be performed. [sa2fa] converts from
-            (psuedo)-spectral acceleration to Fourier amplitude.  [fa2sa]
-            converts from Fourier amplitude to (psuedo)-spectral acceleration.
-            ''',
-            choices=['sa2fa', 'fa2sa'])
-    parser.add_argument('-i', '--input', dest='src',
-            help='''Path containing the input file(s). Supported file types
-            are csv, xls, and xlsx -- provided the required packages have been
-            installed. A single file or glob can be specified. An example of a
-            glob would be "input/*_sa.xls" for all files within directory
-            "input" ending in "_sa.xls".''',
-            required=True)
-    parser.add_argument('-o', '--output', dest='dest',
-            help='''Path where the output files should be created. If this
-            directory does not exist it will be created. Default: ./output''',
-            default='./output')
-    parser.add_argument('-d', '--damping', dest='damping', default=0.05,
-            help='''Oscillator damping in decimal.  Default: 0.05.''')
-    parser.add_argument('-f', '--fixed-spacing', dest='fixed_spacing',
-            action='store_true',
-            help='''Fixed spacing of the oscillator period of 0.01 to 10 sec
-            log-spaced with 100 points. Target SA values will be interpolated
-            if needed''')
+    parser.add_argument(
+        'operation',
+        help='''Operation to be performed. [sa2fa] converts from
+        (psuedo)-spectral acceleration to Fourier amplitude.  [fa2sa] converts
+        from Fourier amplitude to (psuedo)-spectral acceleration.''',
+        choices=['sa2fa', 'fa2sa'])
+    parser.add_argument(
+        '-i', '--input', dest='src',
+        help='''Path containing the input file(s). Supported file types are
+        csv, xls, and xlsx -- provided the required packages have been
+        installed. A single file or glob can be specified. An example of a
+        glob would be "input/*_sa.xls" for all files within directory "input"
+        ending in "_sa.xls".''',
+        required=True)
+    parser.add_argument(
+        '-o', '--output', dest='dest',
+        help='''Path where the output files should be created. If this
+        directory does not exist it will be created. Default: ./output''',
+        default='./output')
+    parser.add_argument(
+        '-d', '--damping', dest='damping', default=0.05,
+        help='''Oscillator damping in decimal.  Default: 0.05.''')
+    parser.add_argument(
+        '-f', '--fixed-spacing', dest='fixed_spacing',
+        action='store_true', help='''Fixed spacing of the oscillator period of
+        0.01 to 10 sec log-spaced with 100 points. Target SA values will be
+        interpolated if needed''')
 
     args = parser.parse_args()
 
