@@ -1,5 +1,11 @@
 # python binaries
 *.pyc
 
-# /build directory created by setup.py
+# Created by setup.py
 /build
+
+# Ignore sphinix working directories
+/docs/_build
+
+# Ignore vim swap files
+*.swp
