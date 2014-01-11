@@ -39,7 +39,8 @@ class RvtMotion(object):
         damping : float (optional)
             damping of the oscillator in decimal
 
-        Returns:
+        Returns
+        -------
         psa : float
             peak psuedo spectral acceleration of the oscillator
         '''
@@ -65,8 +66,8 @@ class RvtMotion(object):
             root-mean-squared duration. If no value is given, the ground motion
             duration is used.
 
-        Returns:
-        --------
+        Returns
+        -------
         peak : float
             peak response in the time domain
         '''
@@ -108,7 +109,8 @@ class RvtMotion(object):
         '''
         return 2. * np.trapz(np.power(2 * np.pi * self.freq, order) * fa_sqr, self.freq)
 
-    def _compute_duration_rms(self, osc_freq, damping=0.05, method='boore_joyner'):
+    def _compute_duration_rms(self, osc_freq, damping=0.05,
+                              method='boore_joyner', method_kwds={}):
         '''Compute the oscillator duration correction using the Liu and Pezeshk correction.
 
         The duration
@@ -122,6 +124,7 @@ class RvtMotion(object):
 
         Returns
         -------
+        duration_rms : float
             The root-mean-squared duration of the ground motion.
         '''
         if method == 'liu_pezeshk':
@@ -168,8 +171,8 @@ class SourceTheoryMotion(RvtMotion):
         shear_velocity : float
             shear-wave velocity of the crustal in km/sec
 
-        Returns:
-        --------
+        Returns
+        -------
         duration : float
             ground motion duration
         '''
@@ -362,11 +365,7 @@ class CompatibleRvtMotion(RvtMotion):
         def extrapolate():
             # Extrapolate the first and last value of Fourier amplitude spectrum.
             def _extrap(freq_i, freq, fourier_amp, max_slope=None):
-                # Extrapolation is performed in log-space
-                # p = np.poly1d(
-                #         np.polyfit(np.log(freq), np.log(fourier_amp), 1))
-
-                # return np.exp(p(np.log(freq_i)))
+                # Extrapolation is performed in log-space using the first and last two points
                 xi = np.log(freq_i)
                 x = np.log(freq)
                 y = np.log(fourier_amp)

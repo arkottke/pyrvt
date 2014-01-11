@@ -19,7 +19,7 @@ import os
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 
-def load_bt12_data(region):
+def _load_bt12_data(region):
     """Load data from the Boore and Thompson (2012) parameter files.
 
     Input
@@ -43,13 +43,13 @@ def load_bt12_data(region):
         names='mag,dist,c1,c2,c3,c4,c5,c6,c7')
 
 # Create interpolators for each of the regions
-INTERPS = {}
+_INTERPS = {}
 for region in ['wna', 'ena']:
-    d = load_bt12_data(region)
+    d = _load_bt12_data(region)
     i = LinearNDInterpolator(
         np.c_[d.mag, np.log(d.dist)],
         np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
-    INTERPS[region] = i
+    _INTERPS[region] = i
 
 def duration_osc(region, mag, dist, osc_freq, osc_damping, duration_gm):
     """Compute the duration ratio.
@@ -92,7 +92,7 @@ def duration_osc(region, mag, dist, osc_freq, osc_damping, duration_gm):
     """
     assert region in ['wna', 'ena']
 
-    c1, c2, c3, c4, c5, c6, c7 = INTERPS[region](mag, np.log(dist))
+    c1, c2, c3, c4, c5, c6, c7 = _INTERPS[region](mag, np.log(dist))
 
     # Ratio of the oscillator period and the ground motion duration.
     foo = 1 / (osc_freq * duration_gm)
