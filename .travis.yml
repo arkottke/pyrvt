@@ -33,9 +33,8 @@ install:
     #- $PIP_WHEEL_COMMAND "matplotlib==1.3.0"
     
     # Install pyrvt
-    # - python setup.py install
+    - python setup.py install
 script:  
-    #- nosetests
-    - python setup.py nosetests
+    - nosetests3 --with-coverage --cover-package=pyrvt --verbosity=2
 after_success:
     - coveralls
