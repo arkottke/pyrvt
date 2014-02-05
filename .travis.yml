@@ -26,10 +26,13 @@ before_install:
     # CORE DEPENDENCIES
     - sudo apt-get install python-numpy cython libatlas-dev liblapack-dev gfortran python-scipy
 install:
+    # Install dependencies
     - $PIP_WHEEL_COMMAND --upgrade "numpy==$NUMPY_VERSION"
     - $PIP_WHEEL_COMMAND "scipy==0.13.1"
     - $PIP_WHEEL_COMMAND "coveralls"
     #- $PIP_WHEEL_COMMAND "matplotlib==1.3.0"
+    
+    # Install pyrvt
     - python setup.py install
 script:  
     - nosetests
