@@ -1,0 +1,83 @@
+ 
+   ***************** SMSIM, Version  3.800 ************************
+ 
+                                                                                
+ output file: fas_drvr.test-bj84.sum
+ *** Results computed using FAS_DRVR ***
+ 
+ Date: 2014/02/04
+ Time Start: 09:25:36.534
+ 
+ Title:
+     Sample data file **** NOT FOR A PARTICULAR APPLICATION **            
+ rho, beta, prtitn, rtp, fs:
+   2.80  3.60 0.710 0.55 2.00
+ spectral shape: source number, pf_a, pd_a, pf_b, pd_b
+(1=Single Corner;2=Joyner;3=A93;...;8=Jena;9=AS00;10=A05;11=Generalized multiplicative 2-corner; 12=Generalized additive 2-corner)
+ pf, pd (1-corner spectrum = 1/(1+(f/fc)**pf)**pd; 0.0 otherwise)
+ (usual model: pf=2.0,pd=1.0; Butterworth: pf=4.0,pd=0.5)
+ (Note: power of high freq decay --> pf*pd)
+ NOTE: see a params file for more complete description of parameters
+   1 2.00 1.00 0.00 0.00
+ spectral scaling: stressc, dlsdm, fbdfa, amagc c1_fa, c2_fa, amagc4fa, c1_eps, c2_eps, amagc4eps, mag4eps1
+ (stress=stressc*10.0**(dlsdm*(amag-amagc))
+ (fbdfa, amagc for Joyner model, usually 4.0, 7.0)
+ (not used for srce 3, but placeholders still needed)
+ NOTE: see ofr.params for more complete description of parameters
+    80.00  0.000E+00  4.00 7.00  0.000E+00  0.000E+00  0.00  0.000E+00  0.000E+00  0.00 0.00
+ !iflag_f_ff, c1, c2, c3 (0 0.0 0.0 if not used)
+ !  If iflag_f_ff = 1:
+ !    modified distance: rmod = sqrt(r^2 + f_ff^2))
+ !  If iflag_f_ff = 2:
+ !    modified distance: rmod =  r + f_ff
+ !  where log10(f_ff) = c1 + c2*amag
+ !  Use rmod in the calculations
+ !  Published finite-fault factors
+ !  Author                    meaning of r  iflag_f_ff    c1     c2
+ !  Atkinson and Silva (2000)     r_rup           1     -0.05    0.15
+ !  Toro (2002)                   r_rup           2     -1.0506  0.2606
+ !  Atkinson and Boore (2003)     r_rup           1     -2.1403  0.507
+ 0 0.00000000E+00 0.00000000E+00
+ i_gsprd_option =  0
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  10.00  0.00  0.00  0.00  0.00  0.00
+ gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
+    1.00
+    3
+     1.00 -1.000E+00  0.000E+00 6.50
+    70.00  0.000E+00  0.000E+00 6.50
+   130.00 -5.000E-01  0.000E+00 6.50
+ q: fr1, Qr1, s1, ft1, ft2, fr2, qr2, s2, c_q
+    0.100  275.00 -2.000   0.200   0.600   1.000   88.00  0.900 3.60
+ source duration: weights of 1/fa, 1/fb
+  0.50 0.50
+ path duration: nknots, (rdur(i), dur(i), slope of last segment
+    4
+     0.0   0.00
+    10.0   0.00
+    70.0   9.60
+   130.0   7.80
+   4.000E-02
+ site amplification: namps, (famp(i), amp(i))
+    5
+    0.100  1.000
+    1.000  1.500
+    2.000  2.000
+    5.000  2.500
+   10.000  3.000
+ site diminution parameters: fm, akappa, dkappadmag, amagkref
+   25.000  3.000E-02  0.000E+00 6.00
+ low-cut filter parameters: fcut, nslope
+    0.000  8
+ parameters for rv calcs: zup, eps_int, amp_cutoff, osc_crrctn
+   10.00  1.000E-05  1.000E-03  1
+ 
+ *********** NEW R AND M ***********
+ r, f_ff, rmod, amag, kappa =   2.000E+01  0.000E+00  2.000E+01  6.000E+00  3.000E-02
+   const=   4.757E-24
+   amag, stress, fa, fb=   6.000E+00  8.000E+01  3.399E-01  3.399E-01
+   am0, am0b_m0fa=   1.122E+25  0.000E+00
+ 
+ 
+ Time Stop: 09:26:05.002
+ Elapsed time (sec):   4.000E-03

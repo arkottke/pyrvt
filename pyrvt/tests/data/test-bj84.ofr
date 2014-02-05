@@ -1,0 +1,173 @@
+!Revision of program involving a change in the parameter file on this date:
+   01/05/14
+!Title
+ Sample data file **** NOT FOR A PARTICULAR APPLICATION **
+!rho (gm/cc), beta (km/s), prtitn, radpat, fs:
+    2.8 3.6 0.71 0.55 2.0
+!spectral shape: source number, pf_a, pd_a, pf_b, pd_b
+! where source number means:
+!  1 = 1-corner (S = 1/(1+(f/fc)**pf_a)**pd_a)
+!  2 = Joyner (BSSA 74, 1167--1188)
+!  3 = Atkinson (BSSA 83, 1778--1798; see also Atkinson & Boore, BSSA 85, 
+!      17--30)
+!  4 = Atkinson & Silva (BSSA 87, 97--113)
+!  5 = Haddon 1996 (approximate spectra in Fig. 10 of
+!          Haddon's paper in BSSA 86, 1300--1313; 
+!          see also Atkinson & Boore, BSSA 88, 917--934)
+!  6 = AB98-California (Atkinson & Boore BSSA 88, 917--934)
+!  7 = Boatwright & Choy (this is the functional form used by 
+!                         Boore & Atkinson, BSSA 79, 1736--1761, p. 1761)
+!  8 = Joyner (his ENA two-corner model, done for the SSHAC elicitation 
+!      workshop)
+!  9 = Atkinson & Silva (BSSA 90, 255--274)
+! 10 = Atkinson (2005 model),
+! 11 = Generalized multiplicative two-corner model 
+!      (S = [1/(1+(f/fa)**pf_a)**pd_a]*[1/(1+(f/fb)**pf_b)**pd_b])
+! 12 = Generalized additive two-corner model 
+!      (S = (1-eps)/(1+(f/fa)**pf_a)**pd_a] + eps/(1+(f/fb)**pf_b)**pd_b)
+!          NOTE: if M<M for eps = 1.0, the program uses eps = 1, and the source spectrum only depends
+!          on fb, which is equal to the corner frequency of the single-corner source model.
+!          One warning: the source duration is given by a weighted average of 1/fa and 1/fb, as 
+!          specified below.   For eps = 1.0 fa will be set equal to fc (the corner frequency for the
+!          single-corner frequency with the specified stress parameter).   This will probably result in a
+!          a discontinuity in fa for eps = 1.0 and for eps slightly larger than 1.0.  This may affect the 
+!          computation of duration.  Note that if the weights of 0.5 and 0.0 for 1/fa and 1/fb used by Atkinson and Boore (1995)
+!          and Atkinson and Silva (2000) are specified, then the source duration for M smaller than the M for eps = 1.0 
+!          will be 0.5/fa, whereas it more logically should be 1/fc = 1/fa.  This is a general problem with
+!          the source duration of the two-corner model if the AB95 and AS00 weights are used.  Because
+!          M for eps =1.0 is usually small, the inconsistency will probably only arise for small magnitudes,
+!          for which the source duration will be small compared to the path duration.  But the 
+!          way to avoid an inconsistency in the source duration is to use weights of 0.5 and 0.5 for 1/fa and 1/fb, respectively.
+!          For large M, fb will usually be much larger than fa, and the  
+!          source duration will be dominated by 0.5/fa.   For this reason, I am revising my recommendations
+!          for the source duration weights below.
+! pf_a, pd_a, pf_b, pd_a are used for source numbers 1, 11, and 12, usually
+! subject to these constraints for an omega-squared spectrum:
+! source 1: pf_a*pd_a = 2
+! source 11: pf_a*pd_a + pf_b*pd_b = 2
+! source 12: pf_a*pd_a = pf_b*pd_b = 2 
+! The usual single-corner frequency model uses
+! pf_a=2.0,pd_a=1.0; the Butterworth filter shape is given by 
+! pf_a=4.0,pd_a=0.5.  pf_b and pd_b are only used by sources 11 and 12, but dummy
+! values must be included for all sources.
+     1 2.0 1.0 0.0 0.0
+!spectral scaling: 
+! stressc (bars), dlsdm, fbdfa, amagc, c1_fa, c2_fa, amagc4fa,  c1_eps, c2_eps, amagc4eps
+!   stress=stressc*10.0**(dlsdm*(amag-amagc))
+!   fbdfa, amagc for Joyner model, usually 4.0, 7.0)
+!   c1_fa, c2_fa, amagc4fa:  the coefficients relating log fa to M in 
+!     sources 11 and 12, as given by the equation log fa = c1_fa + c2_fa*(M-amagc4fa).
+!   c1_eps, c2_eps, amagc4eps:  the coefficients relating log eps to M in 
+!     source 12, as given by the equation log eps = c1_eps + c2_eps*(M-amagc4eps).
+!   fb for sources 11 and 12 are given such that the high-frequency spectral level
+!   equals that for a single corner frequency model with a stress parameter
+!   given by stress=stressc*10.0**(dlsdm*(amag-amagc).
+!   See Tables 2 and 3 in Boore (2003) for various source descriptions
+!   (Note: the parameters in the line below are not used for most of the 
+!   sources, for which the spectrum is determined by fixed relations between
+!   corner frequency and seismic moment, but placeholders are still needed) 
+! For convenience for those using source 12, here are some of the coefficients for 
+! fa and eps from Table 3 in Boore (2003):
+!                      Model        c1_fa  c2_fa amagc4fa c1_eps  c2_eps amagc4eps
+!  Atkinson and Boore (1995) M>=4.0 2.410 -0.533      0.0   2.520 -0.637       0.0
+!                            M< 4.0 2.678 -0.500      0.0   0.000  0.000       0.0
+!  Atkinson and Silva (2000) M>=2.4 2.181 -0.496      0.0   0.605 -0.255       0.0
+!                            M< 2.4 1.431 -0.500     -2.4   0.000  0.000       0.0
+    80.0 0.0 4.0 7.0  0.0 0.0 0.0  0.0 0.0 0.0
+!iflag_f_ff, c1, c2, c3 (0 0.0 0.0 if not used)
+!  If iflag_f_ff = 1:
+!    modified distance: rmod = sqrt(r^2 + f_ff^2))
+!  If iflag_f_ff = 2:
+!    modified distance: rmod =  r + f_ff
+!  where log10(f_ff) = c1 + c2*amag  
+!  Use rmod in the calculations
+!  Published finite-fault factors
+!  Author                    meaning of r  iflag_f_ff    c1     c2
+!  Atkinson and Silva (2000)     r_rup           1     -0.05    0.15
+!  Toro (2002)                   r_rup           2     -1.0506  0.2606
+!  Atkinson and Boore (2003)     r_rup           1     -2.1403  0.507
+!  1 -0.05 0.15
+   0  0.0 0.0
+!Geometrical spreading option:
+!  0 = use standard hinged line segments
+! >0 = frequency-dependent spreading (numbers 1 through 3 were for development purposes; 
+!      they were not intended for general use):
+!  1 = Gail Atkinson's November 2011 proposed spreading for eastern North America (ENA), 
+!      with Q=500f^0.5, which must be specified below).
+!  2 = Dave Boore's trial spreading #1 for ENA).
+!  3 = Gail Atkinson's Sept, 2012 report "nga-e-r12_AttenShape.pdf". For this
+!      model, Q = 680f^0.33, and this must be specified below.
+!  4 = Atkinson, G.M. and D.M. Boore (2014). The attenuation of Fourier amplitudes for rock sites in eastern North America,
+!      Bull. Seismol. Soc. Am. 104, (in press). 
+   0
+!Parameters for the frequency dependent gsprd:
+!  option 2:
+!     r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, 
+!     ft1_dmb_gsprd, ft2_dmb_gsprd
+!  option 4:
+!     h4gspread (a nominal value of focal depth; in a later version I will put this into the control files for the SMSIN driver programs):
+! (Placeholders are needed, but not used, even if the geometrical spreading option is not 2 or 4)
+!  60.0 -1.1 -1.3 -0.5 1.0 3.2   ! for option 2 this corresponds to 1/r^1.1 for f<=1 Hz and 1/r^1.3 for f>=3.2 Hz, 
+!                                ! for r< 60 km and 1/r^0.5 for all f beyond 60 km.
+  10.0 0.0 0.0 0.0 0.0 0.0
+!gsprd: r_ref, nsegs, (rlow(i), p0, p1, m_s(i)) (Usually set 
+! r_ref = 1.0 km)  (distance units are km)
+! *** NOTE: these lines are needed even if option 1 is chosen above---and
+! there must be nsegs lines following the "nseg" specification, even if the 
+! geometrical spreading is not used because option 1 has been chosen.
+    1.0
+    3
+      1.0 -1.0 0.0 6.5
+     70.0  0.0 0.0 6.5
+    130.0 -0.5 0.0 6.5
+!q: fr1, Qr1, s1, ft1, ft2, fr2, qr2, s2, c_q (km/s)
+    0.1 275 -2.0 0.2 0.6 1.0 88.0 0.9 3.6
+!source duration: weights of 1/fa, 1/fb
+! Previous to 03/25/13, I recommended that the weights for source 1 be 1.0 0.0, and
+! for the Atkinson and colleagues 2-corner sources be 0.5 0.0.  But since dursource is always computed as w_fa/fa + w_fb/fb, and because
+! fb is set equal to fa for source 1, even though fb is not used in spect_shape, using weights of 0.5 and 0.5
+! for source 1 will give the same answer as the previously recommended 1.0 0.0 weights.  The advantage
+! to using weights of 0.5 0.5 is that they are the same as I am now recommending for the Atkinson and colleagues (and perhaps
+! all) 2-corner models, for reasons discussed in the spectral shape, source 12 
+! section above.  This is not what is used by Atkinson and colleagues; they use 0.5 0.0 for the weights
+! (Atkinson and Boore (1995, p. 20) and Atkinson and Silva (2000, p. 259)).
+    0.5 0.5
+!path duration: nknots, (rdur(i), dur(i)), slope of last segment 
+    4
+    0.0 0.0
+   10.0 0.0
+   70.0 9.6
+  130.0 7.8
+    0.04
+!crustal amplification, from the source to the site (note that this can include
+! local site amplification): namps, (famp(i), amp(i))
+    5
+    0.1   1.0
+    1.0   1.5
+    2.0   2.0
+    5.0   2.5
+    10.0  3.0
+!site diminution parameters: fmax, kappa, dkappadmag, amagkref
+! (NOTE: fmax=0.0 or kappa=0.0 => fmax or kappa are not used.  I included this
+!  to prevent the inadvertent use of both fmax and kappa to control the diminution
+!  of high-frequency motion (it would be very unusual to use both parameters
+!  together.  Also note that if do not want to use kappa, dkappadmag must also
+!  be set to 0.0).
+    25.0 0.03 0.0 6.0
+!low-cut filter parameters: fcut, nslope (=4, 8, 12, etc)
+    0.0 8
+!rv params: zup, eps_int (int acc), amp_cutoff (for fup), osc_crrctn(0=no correction;
+!  1=bj84;2=lp99; 3=bt12 wna; 4=bt12 ena; 5=average of bt12 ena & wna)
+    10.0 0.00001  0.001 1
+!Name of pars file for Boore-Thompson oscillator correction for WNA:
+!  NOTE: If no folder is specified, the program will look for the files in 
+!  the folder from which the driver is called)
+         \wna_bt12_trms4osc.pars
+!Name of pars file for Boore-Thompson oscillator correction for ENA:
+!  NOTE: If no folder is specified, the program will look for the files in 
+!  the folder from which the driver is called)
+         \ena_bt12_trms4osc.pars
+!window params: idxwnd(0=box,1=exp), tapr(<1), eps_w, eta_w, f_tb2te, f_te_xtnd
+    1 0.05 0.2 0.05 2.0 1.0
+!timing stuff: dur_fctr, dt, tshift, seed, nsims, iran_type (0=normal;1=uniform)
+    1.3  0.005 20.0 640.0 800 0
