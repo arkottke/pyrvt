@@ -7,5 +7,6 @@
 # Ignore sphinix working directories
 /docs/_build
 
-# Ignore vim swap files
+# Ignore vim swap and undo files
 *.swp
+*.un~
