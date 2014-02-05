@@ -1,6 +1,9 @@
 IRVT
 ++++
 
+.. image:: https://travis-ci.org/arkottke/pyrvt.png?branch=master   :target: https://travis-ci.org/arkottke/pyrvt
+
+
 Use random vibration theory to transform between Fourier amplitude spectrum and
 response spectrum.
 
