@@ -3,6 +3,8 @@ python:
   - "3.3"
 # Use binary installs for numpy and scipy
 before_install:
+    # Force virtualenv to accept system_site_packages
+    - rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt
     - sudo apt-get update -qq
     - sudo apt-get install -qq python3-scipy python3-numpy
 virtualenv:
