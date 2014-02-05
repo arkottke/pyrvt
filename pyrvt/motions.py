@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
+"""Random vibration theory motions."""
 
 import numpy as np
 
-from scipy import Inf
-from scipy.integrate import quad
 from scipy.interpolate import interp1d
+
+import pyrvt.peak_calculators as peak_calculators
 
 
 def compute_stress_drop(magnitude):
@@ -61,10 +62,12 @@ def compute_geometric_spreading(dist, coefs):
 
 
 class RvtMotion(object):
-    def __init__(self, freq=None, fourier_amp=None, duration=None):
+    def __init__(self, freq=None, fourier_amp=None, duration=None,
+                 peak_calculator=peak_calculators.LiuPezeshk1999()):
         self.freq = freq
         self.fourier_amp = fourier_amp
         self.duration = duration
+        self.peak_calculator = peak_calculator
 
     def compute_osc_resp(self, osc_freq, damping=0.05):
         """Compute the response of an oscillator with a specific frequency and
@@ -72,125 +75,37 @@ class RvtMotion(object):
 
         Parameters
         ----------
-        osc_freq : array_like
-            natural frequency of the oscillator
+        osc_freq : numpy.array
+            Natural frequency of the oscillator [Hz]
         damping : float (optional)
-            damping of the oscillator in decimal
+            Fractional damping of the oscillator.
 
         Returns
         -------
-        psa : float
+        psa : numpy.array
             peak psuedo spectral acceleration of the oscillator
         """
 
         def compute_spec_accel(fn):
-            duration_rms = self._compute_duration_rms(fn, damping)
             # Compute the transfer function
             h = np.abs(-fn ** 2. / (np.square(self.freq) - np.square(fn)
                                     - 2.j * damping * fn * self.freq))
 
-            return self.compute_peak(self.fourier_amp * h, duration_rms)
+            return self.compute_peak(h, osc_freq=fn, osc_damping=damping)
 
-        return np.array(map(compute_spec_accel, osc_freq))
+        return np.array([compute_spec_accel(f) for f in osc_freq])
 
-    def compute_peak(self, fourier_amp=None, duration=None):
-        """Compute the expected peak response in the time domain.
+    def compute_peak(self, transfer_func=None, osc_freq=None, osc_damping=None):
+        """Compute the peak response.
 
-        Parameters
-        ----------
-        fourier_amp : array_like, optional
-            Fourier amplitude spectra at frequencies of self.freq
-
-        duration : float, optional
-            root-mean-squared duration. If no value is given, the ground motion
-            duration is used.
-
-        Returns
-        -------
-        peak : float
-            peak response in the time domain
         """
-        if fourier_amp is None:
+        if transfer_func is None:
             fourier_amp = self.fourier_amp
-
-        if duration is None:
-            duration = self.duration
-
-        fa_sqr = np.square(fourier_amp)
-        m0 = self._compute_moment(fa_sqr, 0)
-        m2 = self._compute_moment(fa_sqr, 2)
-        m4 = self._compute_moment(fa_sqr, 4)
-
-        bandWidth = np.sqrt((m2 * m2) / (m0 * m4))
-        numExtrema = max(2., np.sqrt(m4 / m2) * self.duration / np.pi)
-
-        # Compute the peak factor by the indefinite integral
-        peakFactor = np.sqrt(2.) * quad(
-            lambda z: 1. - (1. - bandWidth * np.exp(-z * z)) ** numExtrema,
-            0, Inf)[0]
-
-        return np.sqrt(m0 / duration) * peakFactor
-
-    def _compute_moment(self, fa_sqr, order=0):
-        """Compute the n-th moment.
-
-        Parameters
-        ----------
-            fa_sqr : array_like
-                Squared Fourier amplitude spectrum according to frequencies of
-                self.freq
-            order : int, optional
-                the order of the moment. Default is 0
-
-        Returns
-        -------
-        out : float
-            the moment of the Fourier amplitude spectrum
-        """
-        return 2. * np.trapz(np.power(2 * np.pi * self.freq, order) * fa_sqr,
-                             self.freq)
-
-    def _compute_duration_rms(self, osc_freq, damping=0.05,
-                              method='boore_joyner', method_kwds={}):
-        """Compute the oscillator duration correction using the Liu and Pezeshk
-        correction.
-
-        The duration
-
-        Parameters
-        ----------
-            osc_freq : float
-                Frequency of the oscillator in Hz
-            damping : float
-                Damping of the oscillator in decimal.
-
-        Returns
-        -------
-        duration_rms : float
-            The root-mean-squared duration of the ground motion.
-        """
-        if method == 'liu_pezeshk':
-            fa_sqr = np.square(self.fourier_amp)
-            m0 = self._compute_moment(fa_sqr, 0)
-            m1 = self._compute_moment(fa_sqr, 1)
-            m2 = self._compute_moment(fa_sqr, 2)
-
-            power = 2.
-            bar = np.sqrt(2. * np.pi * (1. - m1 ** 2. / (m0 * m2)))
-        elif method == 'boore_joyner':
-            power = 3.
-            bar = 1./3.
         else:
-            raise NotImplementedError
+            fourier_amp = transfer_func * self.fourier_amp
 
-        osc_freq = np.asarray(osc_freq)
-
-        foo = np.power(self.duration * osc_freq, power)
-
-        duration_osc = 1. / (2. * np.pi * damping * osc_freq)
-        duration_rms = self.duration + duration_osc * (foo / (foo + bar))
-
-        return duration_rms
+        return self.peak_calculator(self.duration, self.freq, fourier_amp,
+                                    osc_freq, osc_damping)
 
 
 class SourceTheoryMotion(RvtMotion):
