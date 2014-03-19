@@ -2,7 +2,10 @@
 *.pyc
 
 # Created by setup.py
+/.coverage
+/dist
 /build
+/pyRVT.egg-info
 
 # Ignore sphinix working directories
 /docs/_build

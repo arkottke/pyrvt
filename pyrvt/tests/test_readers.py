@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import os
-import nose
 
 from numpy.testing import assert_almost_equal, assert_allclose
 
@@ -24,7 +23,7 @@ class TestLoadFourierSpectrum:
 
     def test_freq(self):
         assert_allclose(
-            self.d['freq'],
+            self.d['freqs'],
             [5.000E-02, 5.213E-02, 5.435E-02, 5.666E-02, 5.907E-02, 6.158E-02,
              6.421E-02, 6.694E-02, 6.979E-02, 7.276E-02, 7.585E-02, 7.908E-02,
              8.245E-02, 8.596E-02, 8.962E-02, 9.343E-02, 9.741E-02, 1.016E-01,
@@ -62,7 +61,7 @@ class TestLoadFourierSpectrum:
 
     def test_fourier_amp(self):
         assert_allclose(
-            self.d['fourier_amp'],
+            self.d['fourier_amps'],
             [2.56424E-01, 2.78117E-01, 3.01592E-01, 3.26985E-01, 3.54442E-01,
              3.84116E-01, 4.16172E-01, 4.50783E-01, 4.88130E-01, 5.28404E-01,
              5.71807E-01, 6.18545E-01, 6.68836E-01, 7.22902E-01, 7.80972E-01,
@@ -126,7 +125,7 @@ class TestLoadRvtResponseSpectrum:
 
     def test_freq(self):
         assert_allclose(
-            self.d['freq'],
+            self.d['freqs'],
             [25.000, 23.810, 22.727, 21.739, 20.833, 20.000, 18.182, 16.667,
              15.385, 14.286, 13.333, 12.500, 11.765, 11.111, 10.526, 10.000,
              9.091, 8.333, 7.692, 7.143, 6.667, 6.250, 5.882, 5.556, 5.263,
@@ -141,7 +140,7 @@ class TestLoadRvtResponseSpectrum:
 
     def test_fourier_amp(self):
         assert_allclose(
-            self.d['spec_accel'],
+            self.d['spec_accels'],
             [1.487E+02, 1.578E+02, 1.670E+02, 1.760E+02, 1.848E+02, 1.931E+02,
              2.117E+02, 2.274E+02, 2.405E+02, 2.514E+02, 2.606E+02, 2.683E+02,
              2.745E+02, 2.795E+02, 2.833E+02, 2.856E+02, 2.858E+02, 2.833E+02,

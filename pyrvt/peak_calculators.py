@@ -12,8 +12,7 @@ from scipy import Inf
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 
-
-def compute_moments(freq, fourier_amp, orders):
+def compute_moments(freqs, fourier_amps, orders):
     """Compute the spectral moments.
 
     The spectral moment is computed using the squared Fourier amplitude
@@ -21,23 +20,23 @@ def compute_moments(freq, fourier_amp, orders):
 
     Parameters
     ----------
-    freq : numpy.array
+    freqs : numpy.array
         Frequency of the Fouier amplitude spectrum [Hz]
 
-    fourier_amp : numpy.array
+    fourier_amps : numpy.array
         Amplitude of the Fourier amplitude spectrum [g-s]
 
     Returns
     -------
     moments : list
         Spectral moments.
-    """
 
-    squared_fa = np.square(fourier_amp)
+    """
+    squared_fa = np.square(fourier_amps)
 
     # Use trapzoid integration to compute the requested moments.
     moments = [2. * np.trapz(
-        np.power(2 * np.pi * freq, o) * squared_fa, freq)
+        np.power(2 * np.pi * freqs, o) * squared_fa, freqs)
         for o in orders]
 
     return moments
@@ -52,12 +51,13 @@ class Davenport1964(object):
     .. [1] Kiureghian, A. D., & Neuenhofer, A. (1992). Response spectrum method
     for multi‐support seismic excitations. Earthquake Engineering & Structural
     Dynamics, 21(8), 713-740.
+
     """
     def __init__(self, **kwds):
         # No class variables are required
         pass
 
-    def __call__(self, gm_duration, freq, fourier_amp, **kwds):
+    def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
         """Compute the peak factor.
 
         Parameters
@@ -66,9 +66,9 @@ class Davenport1964(object):
             Duration of the strong-motion phase of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Aris
             intensity [sec]
-        freq : numpy.array
+        freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
-        fourier_amp: numpy.array
+        fourier_amps: numpy.array
             Amplitude of the Fourie amplitude spectrum with a single
             degree of freedom oscillator already applied if being used. Units
             are not important.
@@ -83,7 +83,7 @@ class Davenport1964(object):
             Expected maximum response
         """
 
-        m0, m2 = compute_moments(freq, fourier_amp, [0, 2])
+        m0, m2 = compute_moments(freqs, fourier_amps, [0, 2])
 
         # Compute the peak factor
         foo = gm_duration * np.sqrt(m2 / m0) / np.pi
@@ -121,13 +121,9 @@ class BooreJoyner1984(object):
     of the Seismological Society of America, 74(5), 2035-2039.
     .. [3] Boore, D. M. (2003). Simulation of ground motion using the
     stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
+
     """
-
-    def __init__(self, **kwds):
-        # No class variables are required
-        pass
-
-    def __call__(self, gm_duration, freq, fourier_amp, osc_freq=None,
+    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwds):
         """Compute the peak factor.
 
@@ -137,9 +133,9 @@ class BooreJoyner1984(object):
             Duration of the strong-motion phase of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Aris
             intensity [sec]
-        freq : numpy.array
+        freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
-        fourier_amp: numpy.array
+        fourier_amps: numpy.array
             Amplitude of the Fourie amplitude spectrum with a single
             degree of freedom oscillator already applied if being used. Units
             are not important.
@@ -153,9 +149,10 @@ class BooreJoyner1984(object):
         -------
         max_resp : float
             Expected maximum response
+
         """
 
-        m0, m1, m2, m4 = compute_moments(freq, fourier_amp, [0, 1, 2, 4])
+        m0, m1, m2, m4 = compute_moments(freqs, fourier_amps, [0, 1, 2, 4])
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
         num_extrema = max(2., np.sqrt(m4 / m2) * gm_duration / np.pi)
@@ -198,6 +195,7 @@ class BooreJoyner1984(object):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response [sec]
+
         """
         power = 3.
         coef = 1. / 3.
@@ -227,6 +225,7 @@ class LiuPezeshk1999(BooreJoyner1984):
     .. [2] Liu, L., & Pezeshk, S. (1999). An improvement on the estimation of
         pseudoresponse spectral velocity using RVT method. Bulletin of the
         Seismological Society of America, 89(5), 1384-1389.
+
     """
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
@@ -258,6 +257,7 @@ class LiuPezeshk1999(BooreJoyner1984):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response [sec]
+
         """
 
         power = 2.
@@ -288,6 +288,7 @@ def _load_bt12_data(region):
     -------
     np.recarray
         Parameters for the region
+
     """
     fname = os.path.join(
         os.path.dirname(__file__), 'data',
@@ -299,7 +300,7 @@ def _load_bt12_data(region):
 
 # Load coefficient interpolators for Boore and Thompson (2012)
 _BT12_INTERPS = {}
-for region in ['wna', 'ena']:
+for region in ['wna', 'cena']:
     d = _load_bt12_data(region)
     i = LinearNDInterpolator(
         np.c_[d.mag, np.log(d.dist)],
@@ -321,6 +322,7 @@ class BooreThompson2012(BooreJoyner1984):
      .. [2] Boore, D. M., & Thompson, E. M. (2012). Empirical Improvements for
         Estimating Earthquake Response Spectra with Random‐Vibration Theory.
         Bulletin of the Seismological Society of America, 102(2), 761-772.
+
     """
 
     def __init__(self, region, mag, dist, **kwds):
@@ -335,7 +337,7 @@ class BooreThompson2012(BooreJoyner1984):
             Region for which the parameters were developed. Possible options
             are:
                 'wna' - Western North America (active tectonic)
-                'ena' - Eastern North America (stable tectonic)
+                'cena' - Central and Eastern North America (stable tectonic)
         mag : float
             Magnitude of the event
         dist : float
@@ -350,9 +352,11 @@ class BooreThompson2012(BooreJoyner1984):
         References
         ----------
         .. [1] http://www.qhull.org/
-        """
 
-        self.coefs = _BT12_INTERPS[region](mag, np.log(dist))
+        """
+        super(BooreThompson2012, self).__init__(**kwds)
+        region = get_region(region)
+        self._CEOFS = _BT12_INTERPS[region](mag, np.log(dist))
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args, **kwds):
         """Compute the oscillator duration used in the calculation of the
@@ -376,8 +380,9 @@ class BooreThompson2012(BooreJoyner1984):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response [sec]
+
         """
-        c1, c2, c3, c4, c5, c6, c7 = self.coefs
+        c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
         foo = 1 / (osc_freq * gm_duration)
         dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3))
@@ -385,3 +390,40 @@ class BooreThompson2012(BooreJoyner1984):
                         (foo / (1 + c5 * foo ** c6)) ** c7))
 
         return gm_duration * dur_ratio
+
+
+def get_peak_calculator(method):
+    """Select a peak calculator based on a string.
+
+    """
+    if method in ['D64', 'Davenport1964']:
+        return Davenport1964
+    elif method in ['BJ84', 'BooreJoyner1984']:
+        return BooreJoyner1984
+    elif method in ['LP99', 'LiuPezeshk1999']:
+        return LiuPezeshk1999
+    elif method in ['BT12', 'BooreThompson2012']:
+        return BooreThompson2012
+    else:
+        raise NotImplementedError
+
+def get_region(region):
+    """Return the region naming used in this package.
+
+    Parameters
+    ----------
+    region : str
+        Name for region
+
+    Returns
+    -------
+    region : str
+
+    """
+    region = region.lower()
+    if region in ['cena', 'ena', 'ceus', 'eus']:
+        return 'cena'
+    elif region in ['wna', 'wus']:
+        return 'wna'
+    else:
+        raise NotImplementedError

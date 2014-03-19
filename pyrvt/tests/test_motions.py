@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import os
-import nose
 
 from numpy.testing import assert_almost_equal, assert_allclose, assert_array_max_ulp
 
@@ -18,16 +17,16 @@ def check_osc_resp(peak_calculator, fname_fs, fname_rs):
             os.path.join(path, fname_rs))
 
     rvt_motion = motions.RvtMotion(
-        freq = fs['freq'],
-        fourier_amp = fs['fourier_amp'],
+        freqs = fs['freqs'],
+        fourier_amps = fs['fourier_amps'],
         duration = rs['duration'],
         peak_calculator = peak_calculator)
 
     spec_accel = rvt_motion.compute_osc_resp(
-        rs['freq'], rs['damping'])
+        rs['freqs'], rs['damping'])
 
     # The SMSIM output file only provides 4 significant digits
-    assert_allclose(spec_accel, rs['spec_accel'], rtol = 0.001, atol=0.05)
+    assert_allclose(spec_accel, rs['spec_accels'], rtol = 0.001, atol=0.05)
 
 def test_boore_joyner_1984():
     check_osc_resp(

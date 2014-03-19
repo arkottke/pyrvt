@@ -7,8 +7,28 @@ import numpy as np
 
 from scipy.interpolate import interp1d
 
-import pyrvt.peak_calculators as peak_calculators
+from pyrvt import peak_calculators
 
+def compute_sdof_tf(freqs, osc_freq, osc_damping):
+    """Compute the absolute value single-degree-of-freedom transfer function.
+
+    Parameters
+    ----------
+    freqs : numpy.array
+        Frequencies [Hz] at which the transfer function should be calculated.
+    osc_freq : float
+        Frequency of the oscillator [Hz]
+    osc_damping : float
+        Damping of the oscillator [decimal].
+
+    Returns
+    -------
+    numpy.array
+        Transfer function
+
+    """
+    return np.abs(-osc_freq ** 2. / (np.square(freqs) - np.square(osc_freq)
+                                    - 2.j * osc_damping * osc_freq * freqs))
 
 def compute_stress_drop(magnitude):
     """Compute the stress drop using Atkinson and Boore (2011) model.
@@ -20,10 +40,10 @@ def compute_stress_drop(magnitude):
 
     Returns
     -------
-    stress_drop : float
+    stress_drop :
         stress drop in bars.
-    """
 
+    """
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
 
 
@@ -38,14 +58,14 @@ def compute_geometric_spreading(dist, coefs):
     coefs : list
         list of (slope, limit) tuples that define the attenuation. For an
         inifinite distance use None. For example, [(1, None)] would provide for
-        1/R geometric spreading to an inifinite distance.
+        1/R geometric spreading to an infinite distance.
 
     Returns
     -------
     geometric_spreading : float
         geometric spreading function, Z(R)
-    """
 
+    """
     initial = 1
     gs = 1
     for slope, limit in coefs:
@@ -62,14 +82,14 @@ def compute_geometric_spreading(dist, coefs):
 
 
 class RvtMotion(object):
-    def __init__(self, freq=None, fourier_amp=None, duration=None,
+    def __init__(self, freqs=None, fourier_amps=None, duration=None,
                  peak_calculator=peak_calculators.LiuPezeshk1999()):
-        self.freq = freq
-        self.fourier_amp = fourier_amp
+        self.freqs = freqs
+        self.fourier_amps = fourier_amps
         self.duration = duration
         self.peak_calculator = peak_calculator
 
-    def compute_osc_resp(self, osc_freq, damping=0.05):
+    def compute_osc_resp(self, osc_freqs, damping=0.05):
         """Compute the response of an oscillator with a specific frequency and
         damping.
 
@@ -84,48 +104,45 @@ class RvtMotion(object):
         -------
         psa : numpy.array
             peak psuedo spectral acceleration of the oscillator
+
         """
 
         def compute_spec_accel(fn):
             # Compute the transfer function
-            h = np.abs(-fn ** 2. / (np.square(self.freq) - np.square(fn)
-                                    - 2.j * damping * fn * self.freq))
-
+            h = compute_sdof_tf(self.freqs, fn, damping)
             return self.compute_peak(h, osc_freq=fn, osc_damping=damping)
 
-        return np.array([compute_spec_accel(f) for f in osc_freq])
+        return np.array([compute_spec_accel(f) for f in osc_freqs])
 
     def compute_peak(self, transfer_func=None, osc_freq=None, osc_damping=None):
         """Compute the peak response.
 
         """
         if transfer_func is None:
-            fourier_amp = self.fourier_amp
+            fourier_amps = self.fourier_amps
         else:
-            fourier_amp = transfer_func * self.fourier_amp
+            fourier_amps = transfer_func * self.fourier_amps
 
-        return self.peak_calculator(self.duration, self.freq, fourier_amp,
-                                    osc_freq, osc_damping)
+        return self.peak_calculator(self.duration, self.freqs, fourier_amps,
+                                    osc_freq=osc_freq, osc_damping=osc_damping)
 
 
 class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model."""
-    def __init__(self, magnitude, distance, region, stress_drop=None):
-        super(SourceTheoryMotion, self).__init__(None, None, None)
+    def __init__(self, magnitude, distance, region,
+                 peak_calculator=peak_calculators.LiuPezeshk1999,
+                 stress_drop=None):
         """Compute the duration using the Atkinson and Boore (1995) model.
 
         Parameters
         ----------
         magnitude : float
             moment magnitude of the event
-
         distance : float
             distance in km
-
         stress_drop : float or None
             stress drop of the event in bar. If stress_drop is None, then it
             will be computed using the Atkinson and Boore (2011) model.
-
         shear_velocity : float
             shear-wave velocity of the crustal in km/sec
 
@@ -133,13 +150,15 @@ class SourceTheoryMotion(RvtMotion):
         -------
         duration : float
             ground motion duration
+
         """
+        super(SourceTheoryMotion, self).__init__(peak_calculator=peak_calculator)
 
         self.magnitude = magnitude
         self.distance = distance
-        self.region = region.lower()
+        self.region = peak_calculators.get_region(region)
 
-        if self.region == 'wus':
+        if self.region == 'wna':
             # Default parameters for the WUS from Campbell (2003)
             self.shear_velocity = 3.5
             self.path_atten_coeff = 180.
@@ -162,7 +181,7 @@ class SourceTheoryMotion(RvtMotion):
                         16.60, 61.20, 100.00]),
                 [1.00, 1.10, 1.18, 1.42, 1.58, 1.74, 2.06, 2.25, 2.58, 3.13,
                  4.00, 4.40])
-        elif self.region == 'ceus':
+        elif self.region == 'cena':
             # Default parameters for the CEUS from Campbell (2003)
             self.shear_velocity = 3.6
             self.density = 2.8
@@ -204,9 +223,9 @@ class SourceTheoryMotion(RvtMotion):
         duration_source = 1. / self.corner_freq
 
         # Path component
-        if self.region == 'wus':
+        if self.region == 'wna':
             duration_path = 0.05 * self.hypo_distance
-        elif self.region == 'ceus':
+        elif self.region == 'cena':
             duration_path = 0.
 
             if 10 < self.hypo_distance:
@@ -225,28 +244,28 @@ class SourceTheoryMotion(RvtMotion):
 
         return duration_source + duration_path
 
-    def compute_fourier_amp(self, freq):
-        self.freq = np.asarray(freq)
+    def compute_fourier_amp(self, freqs):
+        self.freqs = np.asarray(freqs)
         self.duration = self.compute_duration()
 
         # Model component
         const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density
                                * self.shear_velocity ** 3.)
         source_comp = (const * self.seismic_moment
-                       / (1. + (self.freq / self.corner_freq) ** 2.))
+                       / (1. + (self.freqs / self.corner_freq) ** 2.))
 
         # Path component
-        path_atten = self.path_atten_coeff * self.freq ** self.path_atten_power
+        path_atten = self.path_atten_coeff * self.freqs ** self.path_atten_power
         geo_atten = compute_geometric_spreading(self.hypo_distance,
                                                 self.geometric_spreading)
 
         path_comp = geo_atten * np.exp(
-            (-np.pi * self.freq * self.hypo_distance)
+            (-np.pi * self.freqs * self.hypo_distance)
             / (path_atten * self.shear_velocity))
 
         # Site component
-        site_dim = np.exp(-np.pi * self.site_atten * self.freq)
-        site_comp = self.site_amp(np.log(self.freq)) * site_dim
+        site_dim = np.exp(-np.pi * self.site_atten * self.freqs)
+        site_comp = self.site_amp(np.log(self.freqs)) * site_dim
 
         # Conversion factor to convert from dyne-cm into gravity-sec
         conv = 1.e-20 / 981.
@@ -257,19 +276,19 @@ class SourceTheoryMotion(RvtMotion):
 
 
 class CompatibleRvtMotion(RvtMotion):
-    def __init__(self, osc_freq, osc_resp_target, duration=None, damping=0.05,
+    def __init__(self, osc_freqs, osc_resp_target, duration=None, damping=0.05,
                  magnitude=None, distance=None, stress_drop=None, region=None,
-                 window_len=None):
+                 window_len=None, peak_calculator=peak_calculators.LiuPezeshk1999):
         """Compute a Fourier amplitude spectrum that is compatible with a
         target response spectrum."""
-        super(CompatibleRvtMotion, self).__init__(None, None, None)
+        super(CompatibleRvtMotion, self).__init__(peak_calculator=peak_calculator)
 
-        osc_freq = np.asarray(osc_freq)
+        osc_freqs = np.asarray(osc_freqs)
         osc_resp_target = np.asarray(osc_resp_target)
 
         # Order by increasing frequency
-        ind = osc_freq.argsort()
-        osc_freq = osc_freq[ind]
+        ind = osc_freqs.argsort()
+        osc_freqs = osc_freqs[ind]
         osc_resp_target = osc_resp_target[ind]
 
         if duration:
@@ -289,61 +308,61 @@ class CompatibleRvtMotion(RvtMotion):
 
         sdof_factor = np.pi / (4. * damping) - 1.
 
-        fourier_amp = np.empty_like(osc_freq)
+        fourier_amps = np.empty_like(osc_freqs)
 
-        for i, (_osc_freq, _osc_resp) in enumerate(
-                zip(osc_freq, osc_resp_target)):
+        for i, (osc_freq, osc_resp) in enumerate(
+                zip(osc_freqs, osc_resp_target)):
             duration_rms = self._compute_duration_rms(
-                _osc_freq, damping=damping, method='boore_joyner')
+                osc_freq, damping=damping, method='boore_joyner')
 
             fa_sqr_cur = (
-                ((duration_rms * _osc_resp ** 2) / (2 * peak_factor ** 2) -
-                 total) / (_osc_freq * sdof_factor))
+                ((duration_rms * osc_resp ** 2) / (2 * peak_factor ** 2) -
+                 total) / (osc_freq * sdof_factor))
 
             if fa_sqr_cur < 0:
-                fourier_amp[i] = fourier_amp[i-1]
-                fa_sqr_cur = fourier_amp[i] ** 2
+                fourier_amps[i] = fourier_amps[i-1]
+                fa_sqr_cur = fourier_amps[i] ** 2
             else:
-                fourier_amp[i] = np.sqrt(fa_sqr_cur)
+                fourier_amps[i] = np.sqrt(fa_sqr_cur)
 
             if i == 0:
-                total = fa_sqr_cur * _osc_freq / 2.
+                total = fa_sqr_cur * osc_freq / 2.
             else:
                 total += ((fa_sqr_cur - fa_sqr_prev)
-                          / 2 * (_osc_freq - osc_freq[i-1]))
+                          / 2 * (osc_freq - osc_freqs[i-1]))
 
         # The frequency needs to be extended to account for the fact that the
         # osciallator transfer function has a width.
-        self.freq = np.logspace(
-            np.log10(osc_freq[0] / 2.),
-            np.log10(2 * osc_freq[-1]), 512)
+        self.freqs = np.logspace(
+            np.log10(osc_freqs[0] / 2.),
+            np.log10(2 * osc_freqs[-1]), 512)
         #self.freq = np.r_[osc_freq[0] / 2., osc_freq, 2. * osc_freq[-1]]
-        self.fourier_amp = np.empty_like(self.freq)
+        self.fourier_amps = np.empty_like(self.freqs)
 
         # Indices of the first and last point with the range of the provided
         # response spectra
         indices = np.argwhere(
-            (osc_freq[0] < self.freq) & (self.freq < osc_freq[-1]))
+            (osc_freqs[0] < self.freqs) & (self.freqs < osc_freqs[-1]))
         first = indices[0, 0]
         # last is extend one past the usable range to allow use of first:last
         # notation
         last = indices[-1, 0] + 1
 
-        log_freq = np.log(self.freq)
-        log_osc_freq = np.log(osc_freq)
+        log_freqs = np.log(self.freqs)
+        log_osc_freqs = np.log(osc_freqs)
 
-        self.fourier_amp[first:last] = np.exp(np.interp(
-            log_freq[first:last], log_osc_freq, np.log(fourier_amp)))
+        self.fourier_amps[first:last] = np.exp(np.interp(
+            log_freqs[first:last], log_osc_freqs, np.log(fourier_amps)))
 
         def extrapolate():
             # Extrapolate the first and last value of Fourier amplitude
             # spectrum.
-            def _extrap(freq_i, freq, fourier_amp, max_slope=None):
+            def _extrap(freq, freqs, fourier_amps, max_slope=None):
                 # Extrapolation is performed in log-space using the first and
                 # last two points
-                xi = np.log(freq_i)
-                x = np.log(freq)
-                y = np.log(fourier_amp)
+                xi = np.log(freq)
+                x = np.log(freqs)
+                y = np.log(fourier_amps)
 
                 slope = (y[1] - y[0]) / (x[1] - x[0])
 
@@ -353,15 +372,15 @@ class CompatibleRvtMotion(RvtMotion):
                 return np.exp(slope * (xi - x[0]) + y[0])
 
             # Update the first point using the second and third points
-            self.fourier_amp[0:first] = _extrap(
-                self.freq[0:first],
-                self.freq[first:first+2],
-                self.fourier_amp[first:first+2], None)
+            self.fourier_amps[0:first] = _extrap(
+                self.freqs[0:first],
+                self.freqs[first:first+2],
+                self.fourier_amps[first:first+2], None)
             # Update the last point using the third- and second-to-last points
-            self.fourier_amp[last:] = _extrap(
-                self.freq[last:],
-                self.freq[last-2:last],
-                self.fourier_amp[last-2:last], None)
+            self.fourier_amps[last:] = _extrap(
+                self.freqs[last:],
+                self.freqs[last-2:last],
+                self.fourier_amps[last-2:last], None)
 
         extrapolate()
 
@@ -373,7 +392,7 @@ class CompatibleRvtMotion(RvtMotion):
         max_iterations = 30
         tolerance = 5e-6
 
-        osc_resp = self.compute_osc_resp(osc_freq, damping)
+        osc_resps = self.compute_osc_resp(osc_freqs, damping)
 
         if window_len:
             window = np.ones(window_len, 'd')
@@ -385,24 +404,24 @@ class CompatibleRvtMotion(RvtMotion):
             # frequency range. The first and last points in the FAS are
             # determined through extrapolation.
 
-            self.fourier_amp[first:last] *= np.exp(np.interp(
-                log_freq[first:last], log_osc_freq,
-                np.log((osc_resp_target / osc_resp))))
+            self.fourier_amps[first:last] *= np.exp(np.interp(
+                log_freqs[first:last], log_osc_freqs,
+                np.log((osc_resp_target / osc_resps))))
 
             extrapolate()
 
             # Apply a running average to smooth the signal
             if window_len:
-                self.fourier_amp = np.convolve(
-                    window, self.fourier_amp, 'same')
+                self.fourier_amps = np.convolve(
+                    window, self.fourier_amps, 'same')
 
             # Compute the fit between the target and computed oscillator
             # response
             self.rmse = np.sqrt(np.mean(
                 (osc_resp_target
-                 - self.compute_osc_resp(osc_freq, damping)) ** 2))
+                 - self.compute_osc_resp(osc_freqs, damping)) ** 2))
 
             self.iterations += 1
 
             # Recompute the response spectrum
-            osc_resp = self.compute_osc_resp(osc_freq, damping)
+            osc_resps = self.compute_osc_resp(osc_freqs, damping)

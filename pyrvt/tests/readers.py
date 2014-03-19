@@ -24,8 +24,8 @@ def load_fourier_spectrum(fname):
     d = dict(
         mag = rows[0, 0],
         dist = rows[0, 1],
-        freq = rows[:, 4],
-        fourier_amp = rows[:, 8],
+        freqs = rows[:, 4],
+        fourier_amps = rows[:, 8],
     )
 
     return d
@@ -51,7 +51,7 @@ def load_rvt_response_spectrum(fname):
         mag = rows[0, 3],
         dist = rows[0, 4],
         duration = rows[0, 16],
-        freq = rows[:, 2],
-        spec_accel = rows[:, 11])
+        freqs = rows[:, 2],
+        spec_accels = rows[:, 11])
 
     return d
