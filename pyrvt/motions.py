@@ -244,7 +244,7 @@ class SourceTheoryMotion(RvtMotion):
 
         return duration_source + duration_path
 
-    def compute_fourier_amp(self, freqs):
+    def compute_fourier_amps(self, freqs):
         self.freqs = np.asarray(freqs)
         self.duration = self.compute_duration()
 
@@ -271,7 +271,7 @@ class SourceTheoryMotion(RvtMotion):
         conv = 1.e-20 / 981.
         # Combine the three components and convert from displacement to
         # acceleleration
-        self.fourier_amp = (conv * (2. * np.pi * self.freq) ** 2.
+        self.fourier_amps = (conv * (2. * np.pi * self.freq) ** 2.
                             * source_comp * path_comp * site_comp)
 
 
