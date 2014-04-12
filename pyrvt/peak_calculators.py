@@ -43,7 +43,22 @@ def compute_moments(freqs, fourier_amps, orders):
     return moments
 
 
-class DerKiureghian1983(object):
+class Calculator(object):
+    def __init__(self, name, abbrev):
+        """Create the peak factor calculator with a name and abbreviations."""
+        self._name = name
+        self._abbrev = abbrev
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def abbrev(self):
+        return self._abbrev
+
+
+class DerKiureghian1983(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
     limits suggested by Kiureghian and Neuenhofer [1]_.
 
@@ -55,8 +70,7 @@ class DerKiureghian1983(object):
 
     """
     def __init__(self, **kwds):
-        # No class variables are required
-        pass
+        super().__init__('Der Kiureghian (1983)', 'DK83')
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
         """Compute the peak factor.
@@ -104,7 +118,7 @@ class DerKiureghian1983(object):
         return peak_factor * resp_rms
 
 
-class ToroMcGuire1987(object):
+class ToroMcGuire1987(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
     modifications proposed by Toro and McGuire [1]_.
 
@@ -115,8 +129,7 @@ class ToroMcGuire1987(object):
     of the Seismological Society of America, 77(2), 468-489.
     """
     def __init__(self, **kwds):
-        # No class variables are required
-        pass
+        super().__init__('Toro & McGuire (1987)', 'TM87')
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None):
@@ -168,7 +181,7 @@ class ToroMcGuire1987(object):
         return peak_factor * resp_rms
 
 
-class BooreJoyner1984(object):
+class BooreJoyner1984(Calculator):
     """RVT calculation based on the peak factor definition by Cartwright and
     Longuet-Higgins (1956) [1]_ along with the root-mean-squared duration
     correction proposed by Boore and Joyner (1984) [2]_.
@@ -188,6 +201,9 @@ class BooreJoyner1984(object):
     stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
 
     """
+    def __init__(self, **kwds):
+        super().__init__('Boore & Joyner (1984)', 'BJ84')
+
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwds):
         """Compute the peak factor.
@@ -290,6 +306,8 @@ class LiuPezeshk1999(BooreJoyner1984):
         Seismological Society of America, 89(5), 1384-1389.
 
     """
+    def __init__(self, **kwds):
+        Calculator.__init__(self, 'Liu & Pezeshk (1999)', 'LP99')
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
                              m0, m1, m2, *args, **kwds):
@@ -417,7 +435,8 @@ class BooreThompson2012(BooreJoyner1984):
         .. [1] http://www.qhull.org/
 
         """
-        super(BooreThompson2012, self).__init__(**kwds)
+        Calculator.__init__(self, 'Boore & Thompson (2012)', 'BT12')
+
         region = get_region(region)
         self._CEOFS = _BT12_INTERPS[region](mag, np.log(dist))
 
@@ -439,7 +458,6 @@ class BooreThompson2012(BooreJoyner1984):
         osc_damping : float
             Fractional damping of the oscillator. For example, 0.05 for 5%
             damping.
-
         Returns
         -------
         duration_rms : float
