@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# encoding: utf-8
 
 from pyrvt import tools
 from pyrvt import motions
