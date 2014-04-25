@@ -13,7 +13,11 @@ config = {
     'author': 'Albert Kottke',
     'author_email': 'albert.kottke@gmail.com',
     'url': 'http://github.com/arkottke/pyrvt',
-    'scripts': ['scripts/rvt_operator.py'],
+    'entry_points': {
+        'console_scripts': [
+            'rvt_operator = pyrvt.runner',
+            ],
+        },
     'packages': ['pyrvt'],
     'package_data': {
         'pyrvt': ['data/*']
