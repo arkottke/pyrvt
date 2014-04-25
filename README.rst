@@ -107,7 +107,7 @@ target response spectrum the following command could be used:
 
 The required format for the events is best understood by looking at one of the
 example event files. The name of the input file should include an underscore
-(i.e., '_') during the creation of the output everything to the right of the
+(i.e., '_') during the creation of the output everything to the left of the
 last underscore is repeated.
 
 Frequently Asked Questions
