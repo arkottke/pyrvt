@@ -99,8 +99,6 @@ class DerKiureghian1985(Calculator):
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
 
-        # Compute the peak factor
-
         # Compute the rate of zero crossings
         crossing_rate = gm_duration * np.sqrt(m2 / m0) / np.pi
 
@@ -112,10 +110,11 @@ class DerKiureghian1985(Calculator):
             eff_crossing_rate = \
                 (1.63 * bandwidth ** 0.45 - 0.38) * crossing_rate
         else:
-            eff_crossing_rate = bandwidth
+            eff_crossing_rate = crossing_rate
 
+        # Compute the peak factor
         bar = np.sqrt(2 * np.log(eff_crossing_rate))
-        peak_factor = bar + 0.577 / bar
+        peak_factor = bar + 0.5772 / bar
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
@@ -174,7 +173,7 @@ class ToroMcGuire1987(Calculator):
             1.33)
 
         foo = np.sqrt(2 * np.log(zero_crossings))
-        peak_factor = (foo + 0.577 / foo)
+        peak_factor = (foo + 0.5772 / foo)
 
         if osc_freq and osc_damping:
             peak_factor *= np.sqrt(
