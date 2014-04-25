@@ -61,10 +61,11 @@ parser.add_argument(
     '-m', '--method', dest='method',
     help='''Specify the peak factor calculation method. Possible options
     are:
-        DK85: Der Kiureghian (1985)
+        DK85: Der Kiureghian (1985) [default]
         BJ84: Boore and Joyner (1984)
-        LP99: Liu and Pezeshk (1999) [default]
+        LP99: Liu and Pezeshk (1999)
         BT12: Boore and Thompson (2012)
+        TM87: Toro and McGuire (1987)
     If the BT12 method is used, then the magnitude, distance and region
     must be provided.'''
 )
