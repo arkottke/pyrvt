@@ -14,7 +14,7 @@ install:
     - conda update conda --yes
     - source activate testenv
     - conda install --yes numpy scipy matplotlib
-    - pip install coveralls nose openpyxl xlrd xlwt
+    - pip install coveralls nose openpyxl xlrd 
     - python setup.py install
 
 script:  
