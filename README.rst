@@ -1,7 +1,8 @@
-IRVT
-++++
+pyRVT
++++++
 
-.. image:: https://travis-ci.org/arkottke/pyrvt.png?branch=master   :target: https://travis-ci.org/arkottke/pyrvt
+.. image:: https://travis-ci.org/arkottke/pyrvt.svg?branch=master   :target: https://travis-ci.org/arkottke/pyrvt
+.. image:: https://coveralls.io/repos/arkottke/pyrvt/badge.png?branch=master :target: https://coveralls.io/r/arkottke/pyrvt?branch=master 
 
 
 Use random vibration theory to transform between Fourier amplitude spectrum and
@@ -10,14 +11,8 @@ response spectrum.
 Dependencies
 ============
 
-Prior to using IRVT, Python_ and a number of packages need to be installed. Two
-important points: 
-
-1. Make sure that you are downloading Python 2.7, and 
-2. Make sure that downloads are consistent with respect to 32-bit or 64-bit. If
-   you are unsure of the difference, I would suggest 32-bit.
-
-In addition to Python, the following packages need to be installed:
+Prior to using pyRVT, Python and a number of packages need to be installed. In
+addition to Python, the following packages need to be installed:
 
 *Required:*
 
@@ -33,31 +28,46 @@ In addition to Python, the following packages need to be installed:
 
 -  openpyxl -- reading xlsx files
 
-For a computer running Windows, I would recommend the 32-bit installation of
-Python (python-2.7.3.msi_) and installing the required packages provided by
-`Christoph Gohlke`_ (e.g., numpy_ and scipy_). The optional ``xlrd``, ``xlwt``,
-and ``openpyxl`` packages are provides by `base package`_ and provide support
-for reading xls and xlsx files, respectively. Again, make sure that you are
-downloading the proper version. For example, the appropriate file name for
-``scipy`` for a 32-bit installation is ``scipy-0.10.1.win32-py2.7.exe``.
+Install Python dependencies is best accomplished with a package manager. On
+Windows or OS-X, I recommend using Miniconda.
 
-.. _Python: http://python.org/download/
-.. _python-2.7.3.msi: http://python.org/ftp/python/2.7.3/python-2.7.3.msi
-.. _Christoph Gohlke: http://www.lfd.uci.edu/~gohlke/pythonlibs
-.. _numpy: http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
-.. _scipy: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy
-.. _base package: http://www.lfd.uci.edu/~gohlke/pythonlibs/#base
+Minconda has installers for `Windows 32-bit`, `Windows 64-bit`, and `OS-X`. See
+the full list of installers `here` -- make sure you select Miniconda3 for
+Python3.
 
-Using IRVT
-==========
+.. _Windows 32-bit: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-Windows-x86.exe
+.. _Windows 64-bit: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-Windows-x86_64.exe
+.. _OS-X: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-MacOSX-x86_64.sh
 
-IRVT is used by executing ``rvt_operator.py`` with a number of arguments. These
-arguments can be found by running ``rvt_operator.py``, which will produce the
+After the installer is finished, install the required dependencies by opening a
+terminal. On windows this is best accomplished with Windows Key + r, enter
+"cmd". Next enter the following command:
+
+::
+    conda install --yes numpy scipy matplotlib nose openpyxl xlrd pip
+
+On Windows, the text can copied and pasted if "Quick Edit" mode is enabled. To
+enable this feature, right click on the icon in the upper left portion of the
+window, and select "Properties", and then check the "Quick Edit Mode" check box
+within the "Edit Options" group. Copy the text, and then paste it by click the
+right mouse button.
+
+Next, install or upgrade pyRVT:
+
+::
+    pip install --user --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
+
+
+Using pyRVT
+===========
+
+pyRVT is used by executing ``rvt_operator`` with a number of arguments. These
+arguments can be found by running ``rvt_operator``, which will produce the
 following output:
 
 ::
   
-  C:\Users\arkottke\Documents\python\irvt>rvt_operator.py --help
+  C:\Users\arkottke\Documents\>rvt_operator --help
   usage: rvt_operator.py [-h] -i SRC [-o DEST] [-d DAMPING] [-f] {sa2fa,fa2sa}
   
   Compute reponse or Fourier amplitude spectra using RVT.
