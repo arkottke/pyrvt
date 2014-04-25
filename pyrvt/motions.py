@@ -86,7 +86,7 @@ def compute_geometric_spreading(dist, coefs):
 
 class RvtMotion(object):
     def __init__(self, freqs=None, fourier_amps=None, duration=None,
-                 peak_calculator=peak_calculators.LiuPezeshk1999()):
+                 peak_calculator=peak_calculators.DerKiureghian1985()):
         self.freqs = freqs
         self.fourier_amps = fourier_amps
         self.duration = duration
@@ -134,7 +134,7 @@ class RvtMotion(object):
 class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model."""
     def __init__(self, magnitude, distance, region,
-                 peak_calculator=peak_calculators.LiuPezeshk1999,
+                 peak_calculator=peak_calculators.DerKiureghian1985(),
                  stress_drop=None):
         """Compute the duration using the Atkinson and Boore (1995) model.
 
@@ -285,7 +285,7 @@ class CompatibleRvtMotion(RvtMotion):
     def __init__(self, osc_freqs, osc_resp_target, duration=None, damping=0.05,
                  magnitude=None, distance=None, stress_drop=None, region=None,
                  window_len=None,
-                 peak_calculator=peak_calculators.LiuPezeshk1999):
+                 peak_calculator=peak_calculators.DerKiureghian1985()):
         """Compute a Fourier amplitude spectrum that is compatible with a
         target response spectrum."""
         super(CompatibleRvtMotion, self).__init__(
