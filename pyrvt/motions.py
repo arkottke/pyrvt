@@ -135,7 +135,7 @@ class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model."""
     def __init__(self, magnitude, distance, region,
                  peak_calculator=peak_calculators.DerKiureghian1985(),
-                 stress_drop=None):
+                 stress_drop=None, depth=8):
         """Compute the duration using the Atkinson and Boore (1995) model.
 
         Parameters
@@ -147,8 +147,8 @@ class SourceTheoryMotion(RvtMotion):
         stress_drop : float or None
             stress drop of the event in bar. If stress_drop is None, then it
             will be computed using the Atkinson and Boore (2011) model.
-        shear_velocity : float
-            shear-wave velocity of the crustal in km/sec
+        depth : float
+            hypocenter depth [km]. Default is 8 km.
 
         Returns
         -------
@@ -171,7 +171,7 @@ class SourceTheoryMotion(RvtMotion):
             self.density = 2.8
             self.site_atten = 0.04
 
-            self.geometric_spreading = [(-1, 40), (-0.5, None)]
+            self.geometric_spreading = [(1, 40), (0.5, None)]
 
             if stress_drop:
                 self.stress_drop = stress_drop
@@ -194,7 +194,7 @@ class SourceTheoryMotion(RvtMotion):
             self.path_atten_power = 0.36
             self.site_atten = 0.006
 
-            self.geometric_spreading = [(-1, 70), (0, 130), (-0.5, None)]
+            self.geometric_spreading = [(1, 70), (0, 130), (0.5, None)]
 
             if stress_drop:
                 self.stress_drop = stress_drop
@@ -274,11 +274,11 @@ class SourceTheoryMotion(RvtMotion):
         site_comp = self.site_amp(np.log(self.freqs)) * site_dim
 
         # Conversion factor to convert from dyne-cm into gravity-sec
-        conv = 1.e-20 / 981.
+        conv = 1.e-20 / 980.7
         # Combine the three components and convert from displacement to
         # acceleleration
-        self.fourier_amps = (conv * (2. * np.pi * self.freq) ** 2.
-                            * source_comp * path_comp * site_comp)
+        self.fourier_amps = (conv * (2. * np.pi * self.freqs) ** 2.
+                             * source_comp * path_comp * site_comp)
 
 
 class CompatibleRvtMotion(RvtMotion):
@@ -320,11 +320,8 @@ class CompatibleRvtMotion(RvtMotion):
 
         for i, (osc_freq, osc_resp) in enumerate(
                 zip(osc_freqs, osc_resp_target)):
-            duration_rms = self._compute_duration_rms(
-                osc_freq, damping=damping, method='boore_joyner')
-
             fa_sqr_cur = (
-                ((duration_rms * osc_resp ** 2) / (2 * peak_factor ** 2) -
+                ((self.duration * osc_resp ** 2) / (2 * peak_factor ** 2) -
                  total) / (osc_freq * sdof_factor))
 
             if fa_sqr_cur < 0:
