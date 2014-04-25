@@ -1,8 +1,11 @@
 pyRVT
 +++++
 
-.. image:: https://travis-ci.org/arkottke/pyrvt.svg?branch=master   :target: https://travis-ci.org/arkottke/pyrvt
-.. image:: https://coveralls.io/repos/arkottke/pyrvt/badge.png?branch=master :target: https://coveralls.io/r/arkottke/pyrvt?branch=master 
+.. image:: https://travis-ci.org/arkottke/pyrvt.svg?branch=master   
+    :target: https://travis-ci.org/arkottke/pyrvt
+
+.. image:: https://coveralls.io/repos/arkottke/pyrvt/badge.png?branch=master 
+    :target: https://coveralls.io/r/arkottke/pyrvt?branch=master 
 
 
 Use random vibration theory to transform between Fourier amplitude spectrum and
