@@ -24,7 +24,7 @@ before_install:
     - sudo apt-get update
         
     # CORE DEPENDENCIES
-    - sudo apt-get install python-numpy cython libatlas-dev liblapack-dev gfortran python-scipy
+    - sudo apt-get install python-numpy cython libatlas-dev liblapack-dev gfortran python-scipy python-xlrd python-openpyxl
 install:
     # Install dependencies
     - $PIP_WHEEL_COMMAND --upgrade "numpy==$NUMPY_VERSION"
