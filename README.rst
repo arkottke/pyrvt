@@ -34,8 +34,8 @@ addition to Python, the following packages need to be installed:
 Install Python dependencies is best accomplished with a package manager. On
 Windows or OS-X, I recommend using Miniconda.
 
-Minconda has installers for `Windows 32-bit`, `Windows 64-bit`, and `OS-X`. See
-the full list of installers `here` -- make sure you select Miniconda3 for
+Minconda has installers for `Windows 32-bit`_, `Windows 64-bit`_, and `OS-X`_.
+See the full list of installers `here` -- make sure you select Miniconda3 for
 Python3.
 
 .. _Windows 32-bit: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-Windows-x86.exe
@@ -43,11 +43,12 @@ Python3.
 .. _OS-X: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-MacOSX-x86_64.sh
 
 After the installer is finished, install the required dependencies by opening a
-terminal. On windows this is best accomplished with Windows Key + r, enter
+terminal. On Windows, this is best accomplished with ``Windows Key + r``, enter
 "cmd". Next enter the following command:
 
 ::
-    conda install --yes numpy scipy matplotlib nose openpyxl xlrd pip
+ 
+  conda install --yes numpy scipy matplotlib nose openpyxl xlrd pip
 
 On Windows, the text can copied and pasted if "Quick Edit" mode is enabled. To
 enable this feature, right click on the icon in the upper left portion of the
@@ -58,7 +59,8 @@ right mouse button.
 Next, install or upgrade pyRVT:
 
 ::
-    pip install --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
+
+  pip install --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
 
 
 Using pyRVT
@@ -71,7 +73,7 @@ following output:
 ::
   
   C:\Users\arkottke\Documents\>rvt_operator --help
-  usage: rvt_operator.py [-h] -i SRC [-o DEST] [-d DAMPING] [-f] {sa2fa,fa2sa}
+  usage: rvt_operator [-h] -i SRC [-o DEST] [-d DAMPING] [-f] {sa2fa,fa2sa}
   
   Compute reponse or Fourier amplitude spectra using RVT.
   
@@ -101,7 +103,7 @@ following output:
 
 For example, to compute the Fourier amplitude spectra that were compatible with
 target response spectrum the following command could be used: 
-``rvt_operator.py sa2fa -i examples\example_targetSa.csv``
+``rvt_operator sa2fa -i examples\example_targetSa.csv``
 
 The required format for the events is best understood by looking at one of the
 example event files. The name of the input file should include an underscore
