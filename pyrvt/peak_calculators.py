@@ -12,6 +12,7 @@ from scipy import Inf
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 
+
 def compute_moments(freqs, fourier_amps, orders):
     """Compute the spectral moments.
 
@@ -42,20 +43,33 @@ def compute_moments(freqs, fourier_amps, orders):
     return moments
 
 
-class Davenport1964(object):
+class Calculator(object):
+    def __init__(self, name, abbrev):
+        """Create the peak factor calculator with a name and abbreviations."""
+        self._name = name
+        self._abbrev = abbrev
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def abbrev(self):
+        return self._abbrev
+
+
+class DerKiureghian1985(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
-    limits suggested by Kiureghian and Neuenhofer [1]_.
+    limits suggested by Der Kiureghian and Igusa [1]_.
 
     References
     ----------
-    .. [1] Kiureghian, A. D., & Neuenhofer, A. (1992). Response spectrum method
-    for multi‐support seismic excitations. Earthquake Engineering & Structural
-    Dynamics, 21(8), 713-740.
-
+    .. [1] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of multiply
+    supported secondary systems. Journal of engineering mechanics, 111(1),
+    20-41.
     """
     def __init__(self, **kwds):
-        # No class variables are required
-        pass
+        super().__init__('Der Kiureghian (1985)', 'DK85')
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
         """Compute the peak factor.
@@ -83,19 +97,25 @@ class Davenport1964(object):
             Expected maximum response
         """
 
-        m0, m2 = compute_moments(freqs, fourier_amps, [0, 2])
+        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the peak factor
-        foo = gm_duration * np.sqrt(m2 / m0) / np.pi
-        if foo < 1.6:
-            # To avoid unreasonable values of the peak factor for small
-            # frequencies, peak_factor of 1.56 is assumed for foo less than
-            # 1.56. This is based on the recommendation from Der Kiureghian
-            # (1992).
-            peak_factor = 1.56
+
+        # Compute the rate of zero crossings
+        crossing_rate = gm_duration * np.sqrt(m2 / m0) / np.pi
+
+        # Reduce the rate of zero crossings based on the bandwidth
+        bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
+        if bandwidth <= 0.1:
+            eff_crossing_rate = max(2.1, 2 * bandwidth * crossing_rate)
+        elif 0.1 < bandwidth <= 0.69:
+            eff_crossing_rate = \
+                (1.63 * bandwidth ** 0.45 - 0.38) * crossing_rate
         else:
-            bar = np.sqrt(2 * np.log(foo))
-            peak_factor = bar + 0.577 / bar
+            eff_crossing_rate = bandwidth
+
+        bar = np.sqrt(2 * np.log(eff_crossing_rate))
+        peak_factor = bar + 0.577 / bar
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
@@ -103,7 +123,70 @@ class Davenport1964(object):
         return peak_factor * resp_rms
 
 
-class BooreJoyner1984(object):
+class ToroMcGuire1987(Calculator):
+    """RVT calculation using peak factor derived by Davenport (1964) with
+    modifications proposed by Toro and McGuire [1]_.
+
+    References
+    ----------
+    .. [1] Toro, G. R., & McGuire, R. K. (1987). An investigation into
+    earthquake ground motion characteristics in eastern North America. Bulletin
+    of the Seismological Society of America, 77(2), 468-489.
+    """
+    def __init__(self, **kwds):
+        super().__init__('Toro & McGuire (1987)', 'TM87')
+
+    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
+                 osc_damping=None):
+        """Compute the peak factor.
+
+        Parameters
+        ----------
+        gm_duration : float
+            Duration of the strong-motion phase of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Aris
+            intensity [sec]
+        freqs : numpy.array
+            Frequency of the Fourier amplitude spectrum [Hz]
+        fourier_amps: numpy.array
+            Amplitude of the Fourie amplitude spectrum with a single
+            degree of freedom oscillator already applied if being used. Units
+            are not important.
+        osc_freq : float
+            Frequency of the oscillator [Hz]
+        osc_damping : float
+            Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+
+        Returns
+        -------
+        max_resp : float
+            Expected maximum response
+        """
+
+        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+
+        # Vanmarcke's (1976) bandwidth measure and central frequency
+        bandwidth = np.sqrt(1 - m1 ** 2 / (m0 * m2))
+        freq_cent = np.sqrt(m2 / m0) / (2 * np.pi)
+
+        zero_crossings = max(
+            2 * freq_cent * gm_duration * (1.63 * bandwidth ** 0.45 - 0.38),
+            1.33)
+
+        foo = np.sqrt(2 * np.log(zero_crossings))
+        peak_factor = (foo + 0.577 / foo)
+
+        if osc_freq and osc_damping:
+            peak_factor *= np.sqrt(
+                1 - np.exp(-2 * osc_damping * osc_freq * gm_duration))
+
+        # Compute the root-mean-squared response
+        resp_rms = np.sqrt(m0 / gm_duration)
+
+        return peak_factor * resp_rms
+
+
+class BooreJoyner1984(Calculator):
     """RVT calculation based on the peak factor definition by Cartwright and
     Longuet-Higgins (1956) [1]_ along with the root-mean-squared duration
     correction proposed by Boore and Joyner (1984) [2]_.
@@ -123,6 +206,9 @@ class BooreJoyner1984(object):
     stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
 
     """
+    def __init__(self, **kwds):
+        super().__init__('Boore & Joyner (1984)', 'BJ84')
+
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwds):
         """Compute the peak factor.
@@ -173,7 +259,8 @@ class BooreJoyner1984(object):
 
         return peak_factor * resp_rms
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args, **kwds):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
+                             **kwds):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -202,9 +289,6 @@ class BooreJoyner1984(object):
 
         # This equation was rewritten in Boore and Thompson (2012).
         foo = 1. / (osc_freq * gm_duration)
-        osc_duration = 1. / (2 * np.pi * osc_damping)
-
-        rms_duration = gm_duration + osc_duration
         dur_ratio = (1 + 1. / (2 * np.pi * osc_damping)
                      * (foo / (1 + coef * foo ** power)))
 
@@ -227,6 +311,8 @@ class LiuPezeshk1999(BooreJoyner1984):
         Seismological Society of America, 89(5), 1384-1389.
 
     """
+    def __init__(self, **kwds):
+        Calculator.__init__(self, 'Liu & Pezeshk (1999)', 'LP99')
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
                              m0, m1, m2, *args, **kwds):
@@ -354,11 +440,13 @@ class BooreThompson2012(BooreJoyner1984):
         .. [1] http://www.qhull.org/
 
         """
-        super(BooreThompson2012, self).__init__(**kwds)
-        region = get_region(region)
-        self._CEOFS = _BT12_INTERPS[region](mag, np.log(dist))
+        Calculator.__init__(self, 'Boore & Thompson (2012)', 'BT12')
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args, **kwds):
+        region = get_region(region)
+        self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
+
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
+                             **kwds):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -375,7 +463,6 @@ class BooreThompson2012(BooreJoyner1984):
         osc_damping : float
             Fractional damping of the oscillator. For example, 0.05 for 5%
             damping.
-
         Returns
         -------
         duration_rms : float
@@ -396,8 +483,10 @@ def get_peak_calculator(method):
     """Select a peak calculator based on a string.
 
     """
-    if method in ['D64', 'Davenport1964']:
-        return Davenport1964
+    if method in ['DK85', 'DerKiureghian1985']:
+        return DerKiureghian1985
+    if method in ['TM87', 'ToroMcGuire1987']:
+        return ToroMcGuire1987
     elif method in ['BJ84', 'BooreJoyner1984']:
         return BooreJoyner1984
     elif method in ['LP99', 'LiuPezeshk1999']:
@@ -406,6 +495,7 @@ def get_peak_calculator(method):
         return BooreThompson2012
     else:
         raise NotImplementedError
+
 
 def get_region(region):
     """Return the region naming used in this package.
