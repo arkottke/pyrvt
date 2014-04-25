@@ -55,7 +55,7 @@ right mouse button.
 Next, install or upgrade pyRVT:
 
 ::
-    pip install --user --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
+    pip install --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
 
 
 Using pyRVT
