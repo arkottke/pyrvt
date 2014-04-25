@@ -58,19 +58,18 @@ class Calculator(object):
         return self._abbrev
 
 
-class DerKiureghian1983(Calculator):
+class DerKiureghian1985(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
-    limits suggested by Kiureghian and Neuenhofer [1]_.
+    limits suggested by Der Kiureghian and Igusa [1]_.
 
     References
     ----------
-    .. [1] Kiureghian, A. D., & Neuenhofer, A. (1992). Response spectrum method
-    for multi‐support seismic excitations. Earthquake Engineering & Structural
-    Dynamics, 21(8), 713-740.
-
+    .. [1] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of multiply
+    supported secondary systems. Journal of engineering mechanics, 111(1),
+    20-41.
     """
     def __init__(self, **kwds):
-        super().__init__('Der Kiureghian (1983)', 'DK83')
+        super().__init__('Der Kiureghian (1985)', 'DK85')
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
         """Compute the peak factor.
@@ -98,19 +97,25 @@ class DerKiureghian1983(Calculator):
             Expected maximum response
         """
 
-        m0, m2 = compute_moments(freqs, fourier_amps, [0, 2])
+        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the peak factor
-        foo = gm_duration * np.sqrt(m2 / m0) / np.pi
-        if foo < 1.6:
-            # To avoid unreasonable values of the peak factor for small
-            # frequencies, peak_factor of 1.56 is assumed for foo less than
-            # 1.56. This is based on the recommendation from Der Kiureghian
-            # (1992).
-            peak_factor = 1.56
+
+        # Compute the rate of zero crossings
+        crossing_rate = gm_duration * np.sqrt(m2 / m0) / np.pi
+
+        # Reduce the rate of zero crossings based on the bandwidth
+        bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
+        if bandwidth <= 0.1:
+            eff_crossing_rate = max(2.1, 2 * bandwidth * crossing_rate)
+        elif 0.1 < bandwidth <= 0.69:
+            eff_crossing_rate = \
+                (1.63 * bandwidth ** 0.45 - 0.38) * crossing_rate
         else:
-            bar = np.sqrt(2 * np.log(foo))
-            peak_factor = bar + 0.577 / bar
+            eff_crossing_rate = bandwidth
+
+        bar = np.sqrt(2 * np.log(eff_crossing_rate))
+        peak_factor = bar + 0.577 / bar
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
@@ -438,7 +443,7 @@ class BooreThompson2012(BooreJoyner1984):
         Calculator.__init__(self, 'Boore & Thompson (2012)', 'BT12')
 
         region = get_region(region)
-        self._CEOFS = _BT12_INTERPS[region](mag, np.log(dist))
+        self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
                              **kwds):
@@ -478,8 +483,8 @@ def get_peak_calculator(method):
     """Select a peak calculator based on a string.
 
     """
-    if method in ['DK83', 'DerKiureghian1983']:
-        return DerKiureghian1983
+    if method in ['DK85', 'DerKiureghian1985']:
+        return DerKiureghian1985
     if method in ['TM87', 'ToroMcGuire1987']:
         return ToroMcGuire1987
     elif method in ['BJ84', 'BooreJoyner1984']:

@@ -9,6 +9,7 @@ from scipy.interpolate import interp1d
 
 from pyrvt import peak_calculators
 
+
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
     """Compute the absolute value single-degree-of-freedom transfer function.
 
@@ -27,8 +28,10 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
         Transfer function
 
     """
-    return np.abs(-osc_freq ** 2. / (np.square(freqs) - np.square(osc_freq)
-                                    - 2.j * osc_damping * osc_freq * freqs))
+    return np.abs(-osc_freq ** 2. /
+                  (np.square(freqs) - np.square(osc_freq)
+                   - 2.j * osc_damping * osc_freq * freqs))
+
 
 def compute_stress_drop(magnitude):
     """Compute the stress drop using Atkinson and Boore (2011) model.
@@ -114,7 +117,8 @@ class RvtMotion(object):
 
         return np.array([compute_spec_accel(f) for f in osc_freqs])
 
-    def compute_peak(self, transfer_func=None, osc_freq=None, osc_damping=None):
+    def compute_peak(self, transfer_func=None, osc_freq=None,
+                     osc_damping=None):
         """Compute the peak response.
 
         """
@@ -152,7 +156,8 @@ class SourceTheoryMotion(RvtMotion):
             ground motion duration
 
         """
-        super(SourceTheoryMotion, self).__init__(peak_calculator=peak_calculator)
+        super(SourceTheoryMotion, self).__init__(
+            peak_calculator=peak_calculator)
 
         self.magnitude = magnitude
         self.distance = distance
@@ -255,7 +260,8 @@ class SourceTheoryMotion(RvtMotion):
                        / (1. + (self.freqs / self.corner_freq) ** 2.))
 
         # Path component
-        path_atten = self.path_atten_coeff * self.freqs ** self.path_atten_power
+        path_atten =\
+            self.path_atten_coeff * self.freqs ** self.path_atten_power
         geo_atten = compute_geometric_spreading(self.hypo_distance,
                                                 self.geometric_spreading)
 
@@ -278,10 +284,12 @@ class SourceTheoryMotion(RvtMotion):
 class CompatibleRvtMotion(RvtMotion):
     def __init__(self, osc_freqs, osc_resp_target, duration=None, damping=0.05,
                  magnitude=None, distance=None, stress_drop=None, region=None,
-                 window_len=None, peak_calculator=peak_calculators.LiuPezeshk1999):
+                 window_len=None,
+                 peak_calculator=peak_calculators.LiuPezeshk1999):
         """Compute a Fourier amplitude spectrum that is compatible with a
         target response spectrum."""
-        super(CompatibleRvtMotion, self).__init__(peak_calculator=peak_calculator)
+        super(CompatibleRvtMotion, self).__init__(
+            peak_calculator=peak_calculator)
 
         osc_freqs = np.asarray(osc_freqs)
         osc_resp_target = np.asarray(osc_resp_target)
