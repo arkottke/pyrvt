@@ -1,38 +1,17 @@
 language: python
 python:
   - "3.3"
-# The use of wheels is based on .travis.yml of astropy
-# https://github.com/astropy/astropy/blob/master/.travis.yml
-env:
-    global:
-        - PIP_WHEEL_COMMAND="pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors"
-        - NUMPY_VERSION=1.8.0
-# Use binary installs for numpy and scipy
+# This was taken from https://github.com/mwaskom/seaborn/blob/master/.travis.yml
 before_install:
-    # Use utf8 encoding. Should be default, but this is insurance against
-    # future changes
-    - export PYTHONIOENCODING=UTF8
-        
-    # Install the pip that supports wheel
-    - pip install setuptools --upgrade
-    - pip install pip --upgrade
-    - pip install wheel
-        
-    # We do this to make sure we get dependencies so pip works below
-    # Note that travis does *not* use python packages installed via apt - it
-    # does all the building in an isolated virtualenv
-    - sudo apt-get update
-        
-    # CORE DEPENDENCIES
-    - sudo apt-get install python-numpy cython libatlas-dev liblapack-dev gfortran python-scipy python-xlrd python-openpyxl
+    - if [ ${TRAVIS_PYTHON_VERSION:0:1} == "2" ]; then wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; else wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=/home/travis/anaconda/bin:$PATH
 install:
-    # Install dependencies
-    - $PIP_WHEEL_COMMAND --upgrade "numpy==$NUMPY_VERSION"
-    - $PIP_WHEEL_COMMAND "scipy==0.13.1"
-    - $PIP_WHEEL_COMMAND "coveralls"
-    #- $PIP_WHEEL_COMMAND "matplotlib==1.3.0"
-    
-    # Install pyrvt
+    - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
+    - conda update conda --yes
+    - source activate testenv
+    - conda install --yes numpy scipy scipy numpy coveralls matplotlib
     - python setup.py install
 script:  
     - python setup.py nosetests --with-coverage --cover-package=pyrvt --verbosity=2
