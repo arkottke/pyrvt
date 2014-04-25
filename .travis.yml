@@ -1,7 +1,6 @@
 language: python
 python:
   - "3.3"
-  - "3.4"
 
 # This was taken from https://github.com/mwaskom/seaborn/blob/master/.travis.yml
 before_install:
