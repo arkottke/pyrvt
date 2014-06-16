@@ -58,6 +58,95 @@ class Calculator(object):
         return self._abbrev
 
 
+class Vanmarcke1975(Calculator):
+    """Peak factor calculation which includes the effects of clumping [1]_.
+
+    References
+    ----------
+    .. _[1] Vanmarcke, E. H. (1975). On the distribution of the first-passage time for
+    normal stationary random processes. Journal of applied mechanics, 42(1),
+    215-220.
+"""
+    def __init__(self, **kwds):
+        super().__init__('Vanmarcke (1975)', 'V75')
+
+    def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
+        """Compute the peak factor.
+
+        The cumulative density function (CDF) is defined by Vanmarcke (1975) as:
+
+        .. math::
+            :nowrap:
+            F_x(x) = \left[1 - \exp\left(-x^2/2\right)\right] \\
+                \exp\left[-N_z \frac{1 -
+                exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) - 1}\right]
+
+        where N_z is the number of zero crossings, delta_e is the effective
+        bandwidth (\delta ^ 1.2).
+
+        Typically, the expected value of the peak factor is calculated using the
+        probability density function (f_x(x) = d/dx F_x(x)) by:
+        .. math::
+            E[x] = int_0^\infinity x f_x(x) dx
+
+        However, because of the properties of F_x(x), specifically that it has
+        non-zero probablities for only positive values, E[x] can be computed
+        directly from F_x(x).
+        .. math::
+            E[x] = \int_0^\infinity 1 - F_x(x) dx.
+        This is based on the following references [1]_ and [2]_.
+
+        .. _[1]: http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
+
+        .. _[2]: http://stats.stackexchange.com/a/13377/48461
+
+        Parameters
+        ----------
+        gm_duration : float
+            Duration of the strong-motion phase of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Aris
+            intensity [sec]
+        freqs : numpy.array
+            Frequency of the Fourier amplitude spectrum [Hz]
+        fourier_amps: numpy.array
+            Amplitude of the Fourie amplitude spectrum with a single
+            degree of freedom oscillator already applied if being used. Units
+            are not important.
+        osc_freq : float
+            Frequency of the oscillator [Hz]
+        osc_damping : float
+            Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+
+        Returns
+        -------
+        max_resp : float
+            Expected maximum response
+        """
+
+        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+
+        # Compute the root-mean-squared response
+        resp_rms = np.sqrt(m0 / gm_duration)
+
+        bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
+        bandwidth_eff = bandwidth ** 1.2
+
+        num_zero_crossings = gm_duration * np.sqrt(m2 / m0) / np.pi
+
+        def ccdf(x):
+            """
+            The expected peak factor is computed as the integral of the complementary CDF (1 - CDF(x)).
+            """
+            return (1 - (1 - np.exp(-x ** 2 / 2)) *
+                    np.exp(-1 * num_zero_crossings
+                           * (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x))
+                           / (np.exp(x ** 2 / 2) - 1)))
+
+        peak_factor, error = quad(ccdf, 0, Inf)
+
+        return peak_factor * resp_rms
+
+
 class DerKiureghian1985(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
     limits suggested by Der Kiureghian and Igusa [1]_.
@@ -99,25 +188,25 @@ class DerKiureghian1985(Calculator):
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
 
-        # Compute the rate of zero crossings
-        crossing_rate = gm_duration * np.sqrt(m2 / m0) / np.pi
+        # Compute the root-mean-squared response
+        resp_rms = np.sqrt(m0 / gm_duration)
+
+        # Compute the number of zero crossings
+        num_zero_crossings = gm_duration * np.sqrt(m2 / m0) / np.pi
 
         # Reduce the rate of zero crossings based on the bandwidth
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         if bandwidth <= 0.1:
-            eff_crossing_rate = max(2.1, 2 * bandwidth * crossing_rate)
+            eff_crossings = max(2.1, 2 * bandwidth * num_zero_crossings)
         elif 0.1 < bandwidth <= 0.69:
-            eff_crossing_rate = \
-                (1.63 * bandwidth ** 0.45 - 0.38) * crossing_rate
+            eff_crossings = \
+                (1.63 * bandwidth ** 0.45 - 0.38) * num_zero_crossings
         else:
-            eff_crossing_rate = crossing_rate
+            eff_crossings = num_zero_crossings
 
         # Compute the peak factor
-        bar = np.sqrt(2 * np.log(eff_crossing_rate))
+        bar = np.sqrt(2 * np.log(eff_crossings))
         peak_factor = bar + 0.5772 / bar
-
-        # Compute the root-mean-squared response
-        resp_rms = np.sqrt(m0 / gm_duration)
 
         return peak_factor * resp_rms
 
@@ -136,7 +225,7 @@ class ToroMcGuire1987(Calculator):
         super().__init__('Toro & McGuire (1987)', 'TM87')
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None):
+                 osc_damping=None, **kwds):
         """Compute the peak factor.
 
         Parameters
@@ -492,6 +581,8 @@ def get_peak_calculator(method):
         return LiuPezeshk1999
     elif method in ['BT12', 'BooreThompson2012']:
         return BooreThompson2012
+    elif method in ['V75', 'Vanmarcke1975']:
+        return Vanmarcke1975
     else:
         raise NotImplementedError
 
