@@ -52,19 +52,61 @@ class Calculator(object):
 
     @property
     def name(self):
+        """Name of the calculator."""
         return self.NAME
 
     @property
     def abbrev(self):
+        """Abbreviated name of the calculator."""
         return self.ABBREV
 
 
 class Vanmarcke1975(Calculator):
-    """Peak factor calculation which includes the effects of clumping [1]_.
+    """Vanmarcke (1975) [#]_ peak factor which includes the effects of clumping.
 
-    .. _[1] Vanmarcke, E. H. (1975). On the distribution of the first-passage time for
-    normal stationary random processes. Journal of applied mechanics, 42(1),
-    215-220.
+    The peak factor equation is from equation (2) in (Der Kiureghian, 1980)
+    [#]_ , which is based on equation (29) in (Vanmarcke, 1975) .
+
+    The cumulative density function (CDF) of the peak is defined as:
+
+    .. math::
+        F_x(x) = \\left[1 - \\exp\\left(-x^2/2\\right)\\right]
+        \\exp\\left[-N_z \\frac{1 -
+            \\exp\\left(-\\sqrt{\\pi/2} \\delta_e x\\right)}{\\exp(x^2 / 2) -
+            1 }\\right]
+
+    where :math:`N_z` is the number of zero crossings, :math:`delta_e` is the
+    effective bandwidth (:math:`\delta ^ 1.2`).
+
+    Typically, the expected value of the peak factor is calculated using the
+    probability density function (:math:`f_x(x) = \\frac{d}{dx} F_x(x)`) by:
+
+    .. math::
+        E[x] = \\int_0^\\infty x f_x(x) dx
+
+    However, because of the properties of :math:`F_x(x)`, specifically that it has
+    non-zero probablities for only positive values, :math:`E[x]` can be computed
+    directly from :math:`F_x(x)`.
+
+    .. math::
+        E[x] = \\int_0^\\infty 1 - F_x(x) dx.
+
+    This is based on the following references [#]_ and [#]_.
+
+
+    References
+    ----------
+    .. [#] Der Kiureghian, A. (1980). Structural response to stationary
+        excitation. Journal of the Engineering Mechanics Division, 106(6),
+        1195-1213.
+
+    .. [#] Vanmarcke, E. H. (1975). On the distribution of the first-passage
+        time for normal stationary random processes. Journal of applied
+        mechanics, 42(1), 215-220.
+
+    .. [#] http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
+
+    .. [#] http://stats.stackexchange.com/a/13377/48461
 
     """
     NAME = 'Vanmarcke (1975)'
@@ -75,33 +117,6 @@ class Vanmarcke1975(Calculator):
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
         """Compute the peak factor.
-
-        The cumulative density function (CDF) is defined by Vanmarcke (1975) as:
-
-        .. math::
-            :nowrap:
-            F_x(x) = \left[1 - \exp\left(-x^2/2\right)\right] \\
-                \exp\left[-N_z \frac{1 -
-                exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) - 1}\right]
-
-        where N_z is the number of zero crossings, delta_e is the effective
-        bandwidth (\delta ^ 1.2).
-
-        Typically, the expected value of the peak factor is calculated using the
-        probability density function (f_x(x) = d/dx F_x(x)) by:
-        .. math::
-            E[x] = int_0^\infinity x f_x(x) dx
-
-        However, because of the properties of F_x(x), specifically that it has
-        non-zero probablities for only positive values, E[x] can be computed
-        directly from F_x(x).
-        .. math::
-            E[x] = \int_0^\infinity 1 - F_x(x) dx.
-        This is based on the following references [1]_ and [2]_.
-
-        .. _[1]: http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
-
-        .. _[2]: http://stats.stackexchange.com/a/13377/48461
 
         Parameters
         ----------
@@ -124,6 +139,7 @@ class Vanmarcke1975(Calculator):
         -------
         max_resp : float
             Expected maximum response
+
         """
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
@@ -137,8 +153,9 @@ class Vanmarcke1975(Calculator):
         num_zero_crossings = gm_duration * np.sqrt(m2 / m0) / np.pi
 
         def ccdf(x):
-            """
-            The expected peak factor is computed as the integral of the complementary CDF (1 - CDF(x)).
+            """ The expected peak factor is computed as the integral of the
+            complementary CDF (1 - CDF(x)).
+
             """
             return (1 - (1 - np.exp(-x ** 2 / 2)) *
                     np.exp(-1 * num_zero_crossings
@@ -151,14 +168,18 @@ class Vanmarcke1975(Calculator):
 
 
 class DerKiureghian1985(Calculator):
-    """RVT calculation using peak factor derived by Davenport (1964) with
-    limits suggested by Der Kiureghian and Igusa [1]_.
+    """RVT calculation using peak factor derived by Davenport (1964) [#]_ with
+    limits suggested by Der Kiureghian and Igusa [#]_.
 
     References
     ----------
-    .. _[1] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of multiply
-    supported secondary systems. Journal of engineering mechanics, 111(1),
-    20-41.
+    .. [#] Davenport, A. G. (1964). Note on the distribution of the largest
+        value of a random function with application to gust loading. In
+        Institute of Civil Engineering Proceedings, 28(2), 187-196.
+    .. [#] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of
+        multiply supported secondary systems. Journal of Engineering Mechanics,
+        111(1), 20-41.
+
     """
 
     NAME = 'Der Kiureghian (1985)'
@@ -220,13 +241,17 @@ class DerKiureghian1985(Calculator):
 
 class ToroMcGuire1987(Calculator):
     """RVT calculation using peak factor derived by Davenport (1964) with
-    modifications proposed by Toro and McGuire [1]_.
+    modifications proposed by Toro and McGuire [#]_.
 
     References
     ----------
-    .. _[1] Toro, G. R., & McGuire, R. K. (1987). An investigation into
-    earthquake ground motion characteristics in eastern North America. Bulletin
-    of the Seismological Society of America, 77(2), 468-489.
+    .. [#] Davenport, A. G. (1964). Note on the distribution of the largest
+        value of a random function with application to gust loading. In
+        Institute of Civil Engineering Proceedings, 28(2), 187-196.
+    .. [#] Toro, G. R., & McGuire, R. K. (1987). An investigation into
+        earthquake ground motion characteristics in eastern North America.
+        Bulletin of the Seismological Society of America, 77(2), 468-489.
+
     """
 
     NAME = 'Toro & McGuire (1987)'
@@ -260,6 +285,7 @@ class ToroMcGuire1987(Calculator):
         -------
         max_resp : float
             Expected maximum response
+
         """
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
@@ -287,22 +313,23 @@ class ToroMcGuire1987(Calculator):
 
 class BooreJoyner1984(Calculator):
     """RVT calculation based on the peak factor definition by Cartwright and
-    Longuet-Higgins (1956) [1]_ along with the root-mean-squared duration
-    correction proposed by Boore and Joyner (1984) [2]_.
+    Longuet-Higgins (1956) [#]_ along with the root-mean-squared duration
+    correction proposed by Boore and Joyner (1984) [#]_.
 
-    This RVT calculation is used by SMSIM and is described in Boore(2003) [3]_.
+    This RVT calculation is used by SMSIM and is described in Boore (2003)
+    [#]_.
 
     References
     ----------
-    .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
-    distribution of the maxima of a random function. Proceedings of the Royal
-    Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
-    212-232.
-    .. _[2] Boore, D. M., & Joyner, W. B. (1984). A note on the use of random
-    vibration theory to predict peak amplitudes of transient signals. Bulletin
-    of the Seismological Society of America, 74(5), 2035-2039.
-    .. _[3] Boore, D. M. (2003). Simulation of ground motion using the
-    stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
+    .. [#] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The
+        statistical distribution of the maxima of a random function.
+        Proceedings of the Royal Society of London. Series A. Mathematical and
+        Physical Sciences, 237(1209), 212-232.
+    .. [#] Boore, D. M., & Joyner, W. B. (1984). A note on the use of random
+        vibration theory to predict peak amplitudes of transient signals.
+        Bulletin of the Seismological Society of America, 74(5), 2035-2039.
+    .. [#] Boore, D. M. (2003). Simulation of ground motion using the
+        stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
 
     """
 
@@ -400,16 +427,16 @@ class BooreJoyner1984(Calculator):
 
 class LiuPezeshk1999(BooreJoyner1984):
     """ RVT calculation based on the peak factor definition by Cartwright and
-    Longuet-Higgins (1956) [1]_ along with the root-mean-squared duration
-    correction proposed by Liu and Pezeshk (1999) [2]_.
+    Longuet-Higgins (1956) [#]_ along with the root-mean-squared duration
+    correction proposed by Liu and Pezeshk (1999) [#]_.
 
     References
     ----------
-    .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
-    distribution of the maxima of a random function. Proceedings of the Royal
-    Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
-    212-232.
-    .. _[2] Liu, L., & Pezeshk, S. (1999). An improvement on the estimation of
+    .. [#] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
+        distribution of the maxima of a random function. Proceedings of the
+        Royal Society of London. Series A. Mathematical and Physical Sciences,
+        237(1209), 212-232.
+    .. [#] Liu, L., & Pezeshk, S. (1999). An improvement on the estimation of
         pseudoresponse spectral velocity using RVT method. Bulletin of the
         Seismological Society of America, 89(5), 1384-1389.
 
@@ -503,17 +530,17 @@ for region in ['wna', 'cena']:
 
 class BooreThompson2012(BooreJoyner1984):
     """RVT calculation based on the peak factor definition by Cartwright and
-    Longuet-Higgins (1956) [1]_ along with the root-mean-squared duration
-    correction proposed by Boore and Thompson (2012) [2]_.
+    Longuet-Higgins (1956) [#]_ along with the root-mean-squared duration
+    correction proposed by Boore and Thompson (2012) [#]_.
 
     References
     ----------
-     .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
-    distribution of the maxima of a random function. Proceedings of the Royal
-    Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
-    212-232.
-     .. _[2] Boore, D. M., & Thompson, E. M. (2012). Empirical Improvements for
-        Estimating Earthquake Response Spectra with Random‐Vibration Theory.
+    .. [#] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
+        distribution of the maxima of a random function.  Proceedings of the
+        Royal Society of London. Series A. Mathematical and Physical Sciences,
+        237(1209), 212-232.
+    .. [#] Boore, D. M., & Thompson, E. M. (2012). Empirical Improvements for
+        Estimating Earthquake Response Spectra with Random Vibration Theory.
         Bulletin of the Seismological Society of America, 102(2), 761-772.
 
     """
@@ -542,12 +569,12 @@ class BooreThompson2012(BooreJoyner1984):
         Notes
         -----
         The interpolant is constructed by triangulating the input data
-        with Qhull [1]_, and on each triangle performing linear
+        with Qhull [#r1]_, and on each triangle performing linear
         barycentric interpolation.
 
         References
         ----------
-        .. _[1] http://www.qhull.org/
+        .. _[#r1] http://www.qhull.org/
 
         """
         Calculator.__init__(self, **kwargs)
