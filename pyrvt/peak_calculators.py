@@ -22,7 +22,7 @@ def compute_moments(freqs, fourier_amps, orders):
     Parameters
     ----------
     freqs : numpy.array
-        Frequency of the Fouier amplitude spectrum [Hz]
+        Frequency of the Fourier amplitude spectrum [Hz]
 
     fourier_amps : numpy.array
         Amplitude of the Fourier amplitude spectrum [g-s]
@@ -44,33 +44,36 @@ def compute_moments(freqs, fourier_amps, orders):
 
 
 class Calculator(object):
-    def __init__(self, name, abbrev):
-        """Create the peak factor calculator with a name and abbreviations."""
-        self._name = name
-        self._abbrev = abbrev
+    NAME = ''
+    ABBREV = ''
+
+    def __init__(self, **kwargs):
+        pass
 
     @property
     def name(self):
-        return self._name
+        return self.NAME
 
     @property
     def abbrev(self):
-        return self._abbrev
+        return self.ABBREV
 
 
 class Vanmarcke1975(Calculator):
     """Peak factor calculation which includes the effects of clumping [1]_.
 
-    References
-    ----------
     .. _[1] Vanmarcke, E. H. (1975). On the distribution of the first-passage time for
     normal stationary random processes. Journal of applied mechanics, 42(1),
     215-220.
-"""
-    def __init__(self, **kwds):
-        super().__init__('Vanmarcke (1975)', 'V75')
 
-    def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
+    """
+    NAME = 'Vanmarcke (1975)'
+    ABBREV = 'V75'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
         """Compute the peak factor.
 
         The cumulative density function (CDF) is defined by Vanmarcke (1975) as:
@@ -153,14 +156,18 @@ class DerKiureghian1985(Calculator):
 
     References
     ----------
-    .. [1] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of multiply
+    .. _[1] Igusa, T., & Der Kiureghian, A. (1985). Dynamic response of multiply
     supported secondary systems. Journal of engineering mechanics, 111(1),
     20-41.
     """
-    def __init__(self, **kwds):
-        super().__init__('Der Kiureghian (1985)', 'DK85')
 
-    def __call__(self, gm_duration, freqs, fourier_amps, **kwds):
+    NAME = 'Der Kiureghian (1985)'
+    ABBREV = 'DK85'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -217,15 +224,19 @@ class ToroMcGuire1987(Calculator):
 
     References
     ----------
-    .. [1] Toro, G. R., & McGuire, R. K. (1987). An investigation into
+    .. _[1] Toro, G. R., & McGuire, R. K. (1987). An investigation into
     earthquake ground motion characteristics in eastern North America. Bulletin
     of the Seismological Society of America, 77(2), 468-489.
     """
-    def __init__(self, **kwds):
-        super().__init__('Toro & McGuire (1987)', 'TM87')
+
+    NAME = 'Toro & McGuire (1987)'
+    ABBREV = 'TM87'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwds):
+                 osc_damping=None, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -283,22 +294,26 @@ class BooreJoyner1984(Calculator):
 
     References
     ----------
-    .. [1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
+    .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
     distribution of the maxima of a random function. Proceedings of the Royal
     Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
     212-232.
-    .. [2] Boore, D. M., & Joyner, W. B. (1984). A note on the use of random
+    .. _[2] Boore, D. M., & Joyner, W. B. (1984). A note on the use of random
     vibration theory to predict peak amplitudes of transient signals. Bulletin
     of the Seismological Society of America, 74(5), 2035-2039.
-    .. [3] Boore, D. M. (2003). Simulation of ground motion using the
+    .. _[3] Boore, D. M. (2003). Simulation of ground motion using the
     stochastic method. Pure and applied geophysics, 160(3-4), 635-676.
 
     """
-    def __init__(self, **kwds):
-        super().__init__('Boore & Joyner (1984)', 'BJ84')
+
+    NAME = 'Boore & Joyner (1984)'
+    ABBREV = 'BJ84'
+
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwds):
+                 osc_damping=None, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -348,13 +363,13 @@ class BooreJoyner1984(Calculator):
         return peak_factor * resp_rms
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
-                             **kwds):
+                             **kwargs):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
         Based on Boore and Joyner (1984).
 
-        Paramaters
+        Parameters
         ----------
         gm_duration : float
             Duration of the strong-motion phase of the ground motion. Typically
@@ -390,26 +405,30 @@ class LiuPezeshk1999(BooreJoyner1984):
 
     References
     ----------
-    .. [1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
+    .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
     distribution of the maxima of a random function. Proceedings of the Royal
     Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
     212-232.
-    .. [2] Liu, L., & Pezeshk, S. (1999). An improvement on the estimation of
+    .. _[2] Liu, L., & Pezeshk, S. (1999). An improvement on the estimation of
         pseudoresponse spectral velocity using RVT method. Bulletin of the
         Seismological Society of America, 89(5), 1384-1389.
 
     """
-    def __init__(self, **kwds):
-        Calculator.__init__(self, 'Liu & Pezeshk (1999)', 'LP99')
+
+    NAME = 'Liu & Pezeshk (1999)'
+    ABBREV = 'LP99'
+
+    def __init__(self, **kwargs):
+        Calculator.__init__(self, **kwargs)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
-                             m0, m1, m2, *args, **kwds):
+                             m0, m1, m2, *args, **kwargs):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
         Based on Liu and Pezeshk (1999).
 
-        Paramaters
+        Parameters
         ----------
         gm_duration : float
             Duration of the strong-motion phase of the ground motion. Typically
@@ -451,8 +470,8 @@ class LiuPezeshk1999(BooreJoyner1984):
 def _load_bt12_data(region):
     """Load data from the Boore and Thompson (2012) parameter files.
 
-    Input
-    -----
+    Parameters
+    ----------
     region : str
         Region for which the parameters were developed. Possible options are:
             'wna' - Western North America (active tectonic)
@@ -460,7 +479,7 @@ def _load_bt12_data(region):
 
     Returns
     -------
-    np.recarray
+    parameters : np.recarray
         Parameters for the region
 
     """
@@ -489,17 +508,20 @@ class BooreThompson2012(BooreJoyner1984):
 
     References
     ----------
-     .. [1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
+     .. _[1] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The statistical
     distribution of the maxima of a random function. Proceedings of the Royal
     Society of London. Series A. Mathematical and Physical Sciences, 237(1209),
     212-232.
-     .. [2] Boore, D. M., & Thompson, E. M. (2012). Empirical Improvements for
+     .. _[2] Boore, D. M., & Thompson, E. M. (2012). Empirical Improvements for
         Estimating Earthquake Response Spectra with Random‐Vibration Theory.
         Bulletin of the Seismological Society of America, 102(2), 761-772.
 
     """
 
-    def __init__(self, region, mag, dist, **kwds):
+    NAME = 'Boore & Thompson (2012)'
+    ABBREV = 'BT12'
+
+    def __init__(self, region, mag, dist, **kwargs):
         """Initialize the RVT calculator.
 
         The duration ratio is defined by Equation (10) in Boore and Thompson
@@ -525,22 +547,22 @@ class BooreThompson2012(BooreJoyner1984):
 
         References
         ----------
-        .. [1] http://www.qhull.org/
+        .. _[1] http://www.qhull.org/
 
         """
-        Calculator.__init__(self, 'Boore & Thompson (2012)', 'BT12')
+        Calculator.__init__(self, **kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
-                             **kwds):
+                             **kwargs):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
         Based on Boore and Joyner (1984).
 
-        Paramaters
+        Parameters
         ----------
         gm_duration : float
             Duration of the strong-motion phase of the ground motion. Typically
@@ -551,6 +573,7 @@ class BooreThompson2012(BooreJoyner1984):
         osc_damping : float
             Fractional damping of the oscillator. For example, 0.05 for 5%
             damping.
+
         Returns
         -------
         duration_rms : float
@@ -570,19 +593,28 @@ class BooreThompson2012(BooreJoyner1984):
 def get_peak_calculator(method):
     """Select a peak calculator based on a string.
 
+    Parameters
+    ----------
+    method : str
+        Name of the peak calculation method
+
+    Returns
+    -------
+    calculator : pyrvt.peak_calculators.Calculator
+
     """
-    if method in ['DK85', 'DerKiureghian1985']:
-        return DerKiureghian1985
-    if method in ['TM87', 'ToroMcGuire1987']:
-        return ToroMcGuire1987
-    elif method in ['BJ84', 'BooreJoyner1984']:
-        return BooreJoyner1984
-    elif method in ['LP99', 'LiuPezeshk1999']:
-        return LiuPezeshk1999
-    elif method in ['BT12', 'BooreThompson2012']:
-        return BooreThompson2012
-    elif method in ['V75', 'Vanmarcke1975']:
-        return Vanmarcke1975
+
+    calculators = [
+        BooreJoyner1984,
+        DerKiureghian1985,
+        LiuPezeshk1999,
+        ToroMcGuire1987,
+        Vanmarcke1975,
+    ]
+
+    for calculator in calculators:
+        if method in [calculator.NAME, calculator.ABBREV]:
+            return calculator
     else:
         raise NotImplementedError
 
