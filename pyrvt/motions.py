@@ -1,13 +1,35 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-"""Random vibration theory motions."""
+# pyRVT: Seismological random vibration theory implemented with Python
+# Copyright (C) 2013-2014 Albert R. Kottke albert.kottke@gmail.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+File: motions.py
+Author: Albert Kottke
+Description: Random vibration theory motions.
+"""
 
 import numpy as np
 
 from scipy.interpolate import interp1d
 
-from pyrvt import peak_calculators
+from . import peak_calculators
+
+DEFAULT_CALC = peak_calculators.Vanmarcke1975()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
@@ -86,7 +108,7 @@ def compute_geometric_spreading(dist, coefs):
 
 class RvtMotion(object):
     def __init__(self, freqs=None, fourier_amps=None, duration=None,
-                 peak_calculator=peak_calculators.DerKiureghian1985()):
+                 peak_calculator=DEFAULT_CALC):
         self.freqs = freqs
         self.fourier_amps = fourier_amps
         self.duration = duration
@@ -134,7 +156,7 @@ class RvtMotion(object):
 class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model."""
     def __init__(self, magnitude, distance, region,
-                 peak_calculator=peak_calculators.DerKiureghian1985(),
+                 peak_calculator=DEFAULT_CALC,
                  stress_drop=None, depth=8):
         """Compute the duration using the Atkinson and Boore (1995) model.
 
@@ -284,8 +306,7 @@ class SourceTheoryMotion(RvtMotion):
 class CompatibleRvtMotion(RvtMotion):
     def __init__(self, osc_freqs, osc_resp_target, duration=None, damping=0.05,
                  magnitude=None, distance=None, stress_drop=None, region=None,
-                 window_len=None,
-                 peak_calculator=peak_calculators.DerKiureghian1985()):
+                 window_len=None, peak_calculator=DEFAULT_CALC):
         """Compute a Fourier amplitude spectrum that is compatible with a
         target response spectrum."""
         super(CompatibleRvtMotion, self).__init__(
@@ -340,8 +361,7 @@ class CompatibleRvtMotion(RvtMotion):
         # osciallator transfer function has a width.
         self.freqs = np.logspace(
             np.log10(osc_freqs[0] / 2.),
-            np.log10(2 * osc_freqs[-1]), 512)
-        #self.freq = np.r_[osc_freq[0] / 2., osc_freq, 2. * osc_freq[-1]]
+            np.log10(2 * osc_freqs[-1]), 1024)
         self.fourier_amps = np.empty_like(self.freqs)
 
         # Indices of the first and last point with the range of the provided

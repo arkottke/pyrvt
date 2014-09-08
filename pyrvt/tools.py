@@ -1,7 +1,27 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-"""Tools for reading/writing of input/output files."""
+# pyRVT: Seismological random vibration theory implemented with Python
+# Copyright (C) 2013-2014 Albert R. Kottke albert.kottke@gmail.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+File: tools.py
+Author: Albert Kottke
+Description: Tools for reading/writing of files and performing operations.
+"""
 
 import csv
 import glob
@@ -32,13 +52,13 @@ PARAMETER_NAMES = [
     ('magnitude', 'Magnitude'),
     ('distance', 'Distance (km)'),
     ('vs30', 'Vs30 (m/s)'),
-    ('kappa', 'Site Atten., Kappa0 (sec)'), # Site Atten., κ₀
+    ('kappa', 'Site Atten., Kappa0 (sec)'),  # Site Atten., κ₀
     ('duration', 'Duration (sec)'),
     ('region', 'Region'),
 ]
 
 
-def read_events(fname, response_type='sa'):
+def read_events(fname, response_type='psa'):
     """Read data from the file an Excel work book.
 
     Parameters
@@ -47,7 +67,7 @@ def read_events(fname, response_type='sa'):
         Filename of the input file.
     response_type : str
         Type of response. Possible options:
-            sa - (psuedo) spectral accleration [default]
+            psa - (psuedo) spectral accleration [default]
             fa  - Fourier amplitude
 
     Returns
@@ -56,11 +76,11 @@ def read_events(fname, response_type='sa'):
         Extension of input file
     reference : numpy.array
         Reference of the response. This is either period [sec] for
-        repsonse_type 'sa' or frequency [Hz] for response_type 'fa'
+        repsonse_type 'psa' or frequency [Hz] for response_type 'fa'
     events : list
         List of events read from the file
     """
-    assert response_type in ['sa', 'fa']
+    assert response_type in ['psa_target', 'fa']
 
     ext = os.path.splitext(fname)[1].lower()
     # Load the file depending on the format
@@ -109,20 +129,20 @@ def read_events(fname, response_type='sa'):
 
 
 def write_events(fname, reference, reference_label, response_type,
-                  response_label, events):
+                 response_label, events):
     """Write the events to a file.
 
     Parameters
     ----------
     fname : str
         Filename
-    reference : numpy.array
+    reference_target : numpy.array
         Value of the reference (e.g., frequency values)
     reference_label : str
         Label of the reference (e.g., Frequency [Hz])
     response_type : str
         Type of response. Possible options:
-            sa - Psuedo spectral accleration [default]
+            psa - Psuedo spectral accleration [default]
             fa  - Fourier amplitude
     events : list
         Events to write to file
@@ -186,6 +206,7 @@ def compute_compatible_spectra(method, periods, events, damping):
     target_freqs = 1. / periods
 
     for e in events:
+        print(method)
         crm = motions.CompatibleRvtMotion(
             target_freqs,
             e['psa_target'],
@@ -194,7 +215,9 @@ def compute_compatible_spectra(method, periods, events, damping):
             distance=e['distance'],
             duration=e['duration'],
             region=e['region'],
-            peak_calculator=get_peak_calculator(method)
+            peak_calculator=get_peak_calculator(
+                method, dict(region=e['region'], mag=e['magnitude'],
+                             dist=e['distance']))
         )
 
         freqs = crm.freqs
@@ -202,18 +225,18 @@ def compute_compatible_spectra(method, periods, events, damping):
         if not e['duration']:
             e['duration'] = crm.duration
 
-        e['fa'] = crm.fourier_amp
+        e['fa'] = crm.fourier_amps
         e['psa_calc'] = crm.compute_osc_resp(target_freqs, damping)
 
     return freqs
 
 
-def operation_sa2fa(src, dst, damping, method, fixed_spacing):
+def operation_psa2fa(src, dst, damping, method, fixed_spacing):
     '''Compute the acceleration response spectrum from a Fourier amplitude
     spectrum.'''
 
     for filename_src in glob.iglob(src):
-        ext, periods, events = read_events(filename_src, 'sa_target')
+        ext, periods, events = read_events(filename_src, 'psa_target')
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
@@ -226,7 +249,8 @@ def operation_sa2fa(src, dst, damping, method, fixed_spacing):
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = compute_compatible_spectra(method, periods, events, damping=damping)
+        freqs = compute_compatible_spectra(method, periods, events,
+                                           damping=damping)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -235,12 +259,12 @@ def operation_sa2fa(src, dst, damping, method, fixed_spacing):
         pathname_dst = os.path.join(dst, basename.rsplit('_', 1)[0])
 
         write_events(pathname_dst + '_sa' + ext, periods, 'Period (s)',
-                      'psa_calc', 'Sa (g)', events)
+                     'psa_calc', 'Sa (g)', events)
         write_events(pathname_dst + '_fa' + ext, freqs, 'Frequency (Hz)',
-                      'fa', 'FA (g-s)', events)
+                     'fa', 'FA (g-s)', events)
 
 
-def operation_fa2sa(src, dst, damping, method, fixed_spacing):
+def operation_fa2psa(src, dst, damping, method, fixed_spacing):
     '''Compute the Fourier amplitude spectrum from a acceleration response
     spectrum.'''
 
@@ -258,9 +282,11 @@ def operation_fa2sa(src, dst, damping, method, fixed_spacing):
         for e in events:
             m = motions.RvtMotion(
                 freq=freq,
-                fourier_amp=e['fa'],
+                fourier_amps=e['fa'],
                 duration=e['duration'],
-                peak_calculator=get_peak_calculator(method)
+                peak_calculator=get_peak_calculator(
+                    method, dict(region=e['region'], mag=e['magnitude'],
+                                 dist=e['distance']))
             )
             e['sa'] = m.compute_osc_resp(osc_freq, damping)
 
@@ -272,4 +298,4 @@ def operation_fa2sa(src, dst, damping, method, fixed_spacing):
         pathname_dst = os.path.join(dst, basename.rsplit('_', 1)[0])
 
         write_events(pathname_dst + '_sa' + ext, period, 'Period (s)', 'sa',
-                      'PSA (g)', events)
+                     'PSA (g)', events)

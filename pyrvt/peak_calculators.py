@@ -1,8 +1,28 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 
-"""Published peak factor models, which compute the expected peak ground
-motion. A specific model may include oscillator duration correction."""
+# pyRVT: Seismological random vibration theory implemented with Python
+# Copyright (C) 2013-2014 Albert R. Kottke albert.kottke@gmail.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+File: peak_calculators.py
+Author: Albert Kottke
+Description: Published peak factor models, which compute the expected peak
+ground motion. A specific model may include oscillator duration correction.
+"""
 
 import os
 
@@ -84,9 +104,9 @@ class Vanmarcke1975(Calculator):
     .. math::
         E[x] = \\int_0^\\infty x f_x(x) dx
 
-    However, because of the properties of :math:`F_x(x)`, specifically that it has
-    non-zero probablities for only positive values, :math:`E[x]` can be computed
-    directly from :math:`F_x(x)`.
+    However, because of the properties of :math:`F_x(x)`, specifically that it
+    has non-zero probablities for only positive values, :math:`E[x]` can be
+    computed directly from :math:`F_x(x)`.
 
     .. math::
         E[x] = \\int_0^\\infty 1 - F_x(x) dx.
@@ -159,7 +179,8 @@ class Vanmarcke1975(Calculator):
             """
             return (1 - (1 - np.exp(-x ** 2 / 2)) *
                     np.exp(-1 * num_zero_crossings
-                           * (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x))
+                           * (1 - np.exp(-1 * np.sqrt(np.pi / 2)
+                                         * bandwidth_eff * x))
                            / (np.exp(x ** 2 / 2) - 1)))
 
         peak_factor, error = quad(ccdf, 0, Inf)
@@ -617,13 +638,15 @@ class BooreThompson2012(BooreJoyner1984):
         return gm_duration * dur_ratio
 
 
-def get_peak_calculator(method):
+def get_peak_calculator(method, calc_kwds):
     """Select a peak calculator based on a string.
 
     Parameters
     ----------
     method : str
         Name of the peak calculation method
+    calc_kwds : dict
+        Keywords passed to the calculator
 
     Returns
     -------
@@ -633,6 +656,7 @@ def get_peak_calculator(method):
 
     calculators = [
         BooreJoyner1984,
+        BooreThompson2012,
         DerKiureghian1985,
         LiuPezeshk1999,
         ToroMcGuire1987,
@@ -641,9 +665,9 @@ def get_peak_calculator(method):
 
     for calculator in calculators:
         if method in [calculator.NAME, calculator.ABBREV]:
-            return calculator
+            return calculator(**calc_kwds)
     else:
-        raise NotImplementedError
+        raise NotImplementedError('No calculator for: %s' % method)
 
 
 def get_region(region):
