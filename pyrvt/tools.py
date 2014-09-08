@@ -193,7 +193,8 @@ def write_events(fname, reference, reference_label, response_type,
         wb = openpyxl.Workbook()
         ws = wb.create_sheet()
 
-        map(ws.append, rows)
+        for row in rows:
+            ws.append(row)
 
         wb.save(fname)
     else:
@@ -206,7 +207,6 @@ def compute_compatible_spectra(method, periods, events, damping):
     target_freqs = 1. / periods
 
     for e in events:
-        print(method)
         crm = motions.CompatibleRvtMotion(
             target_freqs,
             e['psa_target'],
