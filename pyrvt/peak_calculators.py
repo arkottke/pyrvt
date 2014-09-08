@@ -358,7 +358,7 @@ class BooreJoyner1984(Calculator):
     ABBREV = 'BJ84'
 
     def __init__(self, **kwargs):
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwargs):

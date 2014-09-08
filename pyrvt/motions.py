@@ -23,6 +23,8 @@ Author: Albert Kottke
 Description: Random vibration theory motions.
 """
 
+import enum
+
 import numpy as np
 
 from scipy.interpolate import interp1d
@@ -33,7 +35,7 @@ DEFAULT_CALC = peak_calculators.Vanmarcke1975()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
-    """Compute the absolute value single-degree-of-freedom transfer function.
+    """Compute the single-degree-of-freedom transfer function.
 
     Parameters
     ----------
@@ -43,16 +45,15 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
         Frequency of the oscillator [Hz]
     osc_damping : float
         Damping of the oscillator [decimal].
-
     Returns
     -------
     numpy.array
-        Transfer function
+        Complex valued ransfer function
 
     """
-    return np.abs(-osc_freq ** 2. /
-                  (np.square(freqs) - np.square(osc_freq)
-                   - 2.j * osc_damping * osc_freq * freqs))
+    return (-freqs ** 2. /
+            (freqs ** 2 - osc_freq ** 2
+             - 2.j * osc_damping * osc_freq * freqs))
 
 
 def compute_stress_drop(magnitude):
@@ -115,8 +116,8 @@ class RvtMotion(object):
         self.peak_calculator = peak_calculator
 
     def compute_osc_resp(self, osc_freqs, damping=0.05):
-        """Compute the response of an oscillator with a specific frequency and
-        damping.
+        """Compute the psuedo-acceleration spectral response of an oscillator
+        with a specific frequency and damping.
 
         Parameters
         ----------
@@ -124,20 +125,29 @@ class RvtMotion(object):
             Natural frequency of the oscillator [Hz]
         damping : float (optional)
             Fractional damping of the oscillator.
-
+        resp_type : OscResponse
+            Type of osciallator response. Default is
+            OscResponse.pseudo_acc
         Returns
         -------
         psa : numpy.array
             peak psuedo spectral acceleration of the oscillator
 
         """
+        # Conversion from acceleration to displacement
+        tf_gm = (2.j * np.pi * self.freqs) ** -2
 
         def compute_spec_accel(fn):
-            # Compute the transfer function
-            h = compute_sdof_tf(self.freqs, fn, damping)
-            return self.compute_peak(h, osc_freq=fn, osc_damping=damping)
+            return self.compute_peak(
+                tf_gm * compute_sdof_tf(self.freqs, fn, damping),
+                osc_freq=fn, osc_damping=damping)
 
-        return np.array([compute_spec_accel(f) for f in osc_freqs])
+        resp = np.array([compute_spec_accel(f) for f in osc_freqs])
+
+        # Conversion between spectral displacement and pseudo acceleration.
+        resp *= (2 * np.pi * osc_freqs) ** 2
+
+        return resp
 
     def compute_peak(self, transfer_func=None, osc_freq=None,
                      osc_damping=None):
@@ -147,7 +157,7 @@ class RvtMotion(object):
         if transfer_func is None:
             fourier_amps = self.fourier_amps
         else:
-            fourier_amps = transfer_func * self.fourier_amps
+            fourier_amps = np.abs(transfer_func) * self.fourier_amps
 
         return self.peak_calculator(self.duration, self.freqs, fourier_amps,
                                     osc_freq=osc_freq, osc_damping=osc_damping)
