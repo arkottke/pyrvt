@@ -23,15 +23,13 @@ Author: Albert Kottke
 Description: Random vibration theory motions.
 """
 
-import enum
-
 import numpy as np
 
 from scipy.interpolate import interp1d
 
 from . import peak_calculators
 
-DEFAULT_CALC = peak_calculators.Vanmarcke1975()
+DEFAULT_CALC = peak_calculators.LiuPezeshk1999()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
