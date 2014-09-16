@@ -26,6 +26,7 @@ Description: Tools for reading/writing of files and performing operations.
 import csv
 import glob
 import os
+import sys
 
 import numpy as np
 
@@ -171,9 +172,15 @@ def write_events(fname, reference, reference_label, response_type,
     ext = os.path.splitext(fname)[1].lower()
 
     if ext == '.csv':
-        with open(fname, 'wt', newline='') as fp:
-            writer = csv.writer(fp)
-            writer.writerows(rows)
+        if sys.version_info < (3, 1):
+            fp = open(fname, 'wt')
+        else:
+            fp = open(fname, 'wt', newline='')
+
+        writer = csv.writer(fp)
+        writer.writerows(rows)
+
+        fp.close()
     elif ext == '.xls':
         if xlwt is None:
             raise RuntimeError('xlwt is required to open an xls file')
@@ -191,7 +198,7 @@ def write_events(fname, reference, reference_label, response_type,
             raise RuntimeError('openpyxl is required to open an xlsx file')
 
         wb = openpyxl.Workbook()
-        ws = wb.create_sheet()
+        ws = wb.worksheets[0]
 
         for row in rows:
             ws.append(row)
@@ -231,7 +238,7 @@ def compute_compatible_spectra(method, periods, events, damping):
     return freqs
 
 
-def operation_psa2fa(src, dst, damping, method, fixed_spacing):
+def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
     '''Compute the acceleration response spectrum from a Fourier amplitude
     spectrum.'''
 
@@ -264,7 +271,7 @@ def operation_psa2fa(src, dst, damping, method, fixed_spacing):
                      'fa', 'FA (g-s)', events)
 
 
-def operation_fa2psa(src, dst, damping, method, fixed_spacing):
+def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
     '''Compute the Fourier amplitude spectrum from a acceleration response
     spectrum.'''
 
@@ -273,22 +280,22 @@ def operation_fa2psa(src, dst, damping, method, fixed_spacing):
         osc_freq = 1. / period
 
     for filename_src in glob.iglob(src):
-        ext, freq, events = read_events(filename_src, 'fa')
+        ext, freqs, events = read_events(filename_src, 'fa')
 
         if not fixed_spacing:
-            osc_freq = freq
-            period = 1. / osc_freq
+            osc_freq = freqs
+            periods = 1. / osc_freqs
 
         for e in events:
             m = motions.RvtMotion(
-                freq=freq,
+                freqs=freqs,
                 fourier_amps=e['fa'],
                 duration=e['duration'],
                 peak_calculator=get_peak_calculator(
                     method, dict(region=e['region'], mag=e['magnitude'],
                                  dist=e['distance']))
             )
-            e['sa'] = m.compute_osc_resp(osc_freq, damping)
+            e['sa'] = m.compute_osc_resp(osc_freqs, damping)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -297,5 +304,5 @@ def operation_fa2psa(src, dst, damping, method, fixed_spacing):
 
         pathname_dst = os.path.join(dst, basename.rsplit('_', 1)[0])
 
-        write_events(pathname_dst + '_sa' + ext, period, 'Period (s)', 'sa',
+        write_events(pathname_dst + '_sa' + ext, periods, 'Period (s)', 'sa',
                      'PSA (g)', events)

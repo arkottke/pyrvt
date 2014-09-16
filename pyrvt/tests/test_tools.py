@@ -20,6 +20,7 @@
 import filecmp
 import os
 import tempfile
+import shutil
 
 from numpy.testing import assert_almost_equal, assert_allclose, \
     assert_equal
@@ -106,30 +107,80 @@ def test_read_events_xlsx():
 
 
 def check_write_events(ext):
-    # TODO: This test is unsuccessful. Need to figure out a way to compare
-    # files
+    # Load the original data
     src_fname = os.path.join(
         os.path.dirname(__file__),
         'data', 'test_sa' + ext)
     ext, periods, events = tools.read_events(src_fname, 'psa_target')
 
+    # Write the data
     handle, dst_fname = tempfile.mkstemp(suffix=ext)
     tools.write_events(
         dst_fname,
         periods, 'Period (s)',
-        'sa', 'SA (g)',
+        'psa_target', 'SA (g)',
         events)
     os.close(handle)
 
-    success = filecmp.cmp(src_fname, dst_fname)
+    # Reload the data
+    _ext, _periods, _events = tools.read_events(dst_fname, 'psa_target')
+
     os.unlink(dst_fname)
 
-    assert success
+    assert_equal(ext, _ext)
+    assert_almost_equal(periods, _periods)
+
+    for event, _event in zip(events, _events):
+        for key in event:
+            if key == 'region':
+                assert_equal(event[key], _event[key])
+            else:
+                assert_almost_equal(event[key], _event[key])
 
 
-# def test_write_events_csv():
-#     check_write_events('.csv')
+def test_write_events_csv():
+    check_write_events('.csv')
+
+try:
+    import xlwt
+
+    def test_write_events_xls():
+        check_write_events('.xls')
+except ImportError:
+    pass
 
 
-# def test_write_events_xlsx():
-#     check_write_events('.xlsx')
+def test_write_events_xlsx():
+    check_write_events('.xlsx')
+
+
+def test_compute_compatible_spectra():
+    src_fname = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_sa.csv')
+    ext, periods, events = tools.read_events(src_fname, 'psa_target')
+
+    tools.compute_compatible_spectra('LP99', periods, events[:1], 0.05)
+
+    # Test that the fit is within 2% of the target
+    assert_allclose(events[0]['psa_target'], events[0]['psa_calc'], rtol=0.02)
+
+
+def test_operation_psa2fa():
+    src_fname = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_sa.csv')
+    dest_dirname = tempfile.mkdtemp()
+
+    # Do not need to check the output as it is checked in test_compute_compatible_spectra
+    tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
+
+    shutil.rmtree(dest_dirname)
+
+
+def test_operation_fa2psa():
+    src_fname = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_fa.csv')
+    dest_dirname = tempfile.mkdtemp()
+
+    tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
+
+    shutil.rmtree(dest_dirname)
