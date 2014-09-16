@@ -48,7 +48,7 @@ terminal. On Windows, this is best accomplished with ``Windows Key + r``, enter
 
 ::
  
-  conda install --yes numpy scipy matplotlib nose openpyxl xlrd pip
+  conda install --yes setuptools numpy scipy matplotlib nose openpyxl xlrd pip
 
 On Windows, the text can copied and pasted if "Quick Edit" mode is enabled. To
 enable this feature, right click on the icon in the upper left portion of the

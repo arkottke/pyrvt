@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 config = {
     'name': 'pyRVT',
@@ -15,7 +12,7 @@ config = {
     'url': 'http://github.com/arkottke/pyrvt',
     'entry_points': {
         'console_scripts': [
-            'rvt_operator = pyrvt.runner',
+            'rvt_operator = pyrvt.runner:main',
             ],
         },
     'packages': ['pyrvt'],

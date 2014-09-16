@@ -71,13 +71,18 @@ parser.add_argument(
     must be provided.'''
 )
 
-args = parser.parse_args()
 
-if args.operation == 'psa2fa':
-    operation_psa2fa(args.src, args.dst, args.damping, args.method,
-                     args.fixed_spacing)
-elif args.operation == 'fa2psa':
-    operation_fa2psa(args.src, args.dst, args.damping, args.method,
-                     args.fixed_spacing)
-else:
-    raise NotImplementedError
+def main():
+    args = parser.parse_args()
+
+    if args.operation == 'psa2fa':
+        operation_psa2fa(args.src, args.dst, args.damping, args.method,
+                         args.fixed_spacing)
+    elif args.operation == 'fa2psa':
+        operation_fa2psa(args.src, args.dst, args.damping, args.method,
+                         args.fixed_spacing)
+    else:
+        raise NotImplementedError
+
+if __name__ == '__main__':
+    main()
