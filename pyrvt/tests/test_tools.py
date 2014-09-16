@@ -22,7 +22,7 @@ import os
 import tempfile
 
 from numpy.testing import assert_almost_equal, assert_allclose, \
-    assert_string_equal
+    assert_equal
 
 from .. import tools
 
@@ -61,7 +61,7 @@ def check_read_events(ext):
     values = [5, 5, 760, 0.039447, 1.361042, 'WNA']
     for k, v in zip(keys, values):
         if k in ['region']:
-            assert_string_equal(e[k], v)
+            assert_equal(e[k], v)
         else:
             assert_almost_equal(e[k], v, decimal=6)
 
@@ -88,9 +88,13 @@ def check_read_events(ext):
          0.004082, 0.003605, 0.003173, 0.002780],
         atol=6)
 
-# Python3 is not supported by Xlrd
-# def test_read_events_xls():
-#     check_read_events('.xls')
+try:
+    import xlrd
+
+    def test_read_events_xls():
+        check_read_events('.xls')
+except ImportError:
+    pass
 
 
 def test_read_events_csv():

@@ -23,6 +23,8 @@ addition to Python, the following packages need to be installed:
 
 - scipy -- indefinite integration
 
+- nose -- required for the unit tests
+
 *Optional:*
 
 -  matplotlib -- used for plotting

@@ -20,9 +20,12 @@ config = {
         'pyrvt': ['data/*']
     },
     'requires': [
+        'matplotlib',
         'nose',
         'numpy',
+        'openpyxl',
         'scipy',
+        'setuptools'
     ],
     'test_suite': 'nose.collector',
     'classifiers': [
@@ -32,6 +35,7 @@ config = {
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering',
     ],
 }

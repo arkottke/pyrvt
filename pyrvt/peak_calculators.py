@@ -133,7 +133,7 @@ class Vanmarcke1975(Calculator):
     ABBREV = 'V75'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Vanmarcke1975, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
         """Compute the peak factor.
@@ -207,7 +207,7 @@ class DerKiureghian1985(Calculator):
     ABBREV = 'DK85'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(DerKiureghian1985, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
         """Compute the peak factor.
@@ -279,7 +279,7 @@ class ToroMcGuire1987(Calculator):
     ABBREV = 'TM87'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(ToroMcGuire1987, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwargs):
@@ -358,7 +358,7 @@ class BooreJoyner1984(Calculator):
     ABBREV = 'BJ84'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(BooreJoyner1984, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, **kwargs):
@@ -467,7 +467,7 @@ class LiuPezeshk1999(BooreJoyner1984):
     ABBREV = 'LP99'
 
     def __init__(self, **kwargs):
-        Calculator.__init__(self, **kwargs)
+        super(LiuPezeshk1999, self).__init__(**kwargs)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
                              m0, m1, m2, *args, **kwargs):
@@ -598,7 +598,7 @@ class BooreThompson2012(BooreJoyner1984):
         .. _[#r1] http://www.qhull.org/
 
         """
-        Calculator.__init__(self, **kwargs)
+        super(BooreThompson2012, self).__init__(**kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
