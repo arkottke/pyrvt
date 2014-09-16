@@ -58,17 +58,21 @@ parser.add_argument(
     0.01 to 10 sec log-spaced with 100 points. Target SA values will be
     interpolated if needed''')
 parser.add_argument(
-    '-m', '--method', dest='method', default='V75',
+    '-m', '--method', dest='method', default='LP99',
     help='''Specify the peak factor calculation method. Possible options
     are:
         BJ84: Boore and Joyner (1984)
         BT12: Boore and Thompson (2012)
         DK85: Der Kiureghian (1985)
-        LP99: Liu and Pezeshk (1999)
+        LP99: Liu and Pezeshk (1999) [default]
         TM87: Toro and McGuire (1987)
-        V75: Vanmarcke (1975) [default]
+        V75: Vanmarcke (1975)
     If the BT12 method is used, then the magnitude, distance and region
-    must be provided.'''
+    must be provided.
+
+    The LP99 is the default method as it provides correction for oscillation
+    duration without the need for specifying magnitude, distance, and region.
+    '''
 )
 
 
