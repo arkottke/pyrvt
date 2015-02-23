@@ -17,15 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
 import numpy as np
 from numpy.testing import assert_allclose
 
 from .. import motions
 from .. import peak_calculators
-from ..tests import readers
 
+import matplotlib.pyplot as plt
 
 def test_compatible_rvt_motion():
     # Compute the target from the point source model.
@@ -34,10 +32,8 @@ def test_compatible_rvt_motion():
         peak_calculator=peak_calculators.DerKiureghian1985())
     target.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
 
-    osc_freqs = np.logspace(-1, 2)
+    osc_freqs = np.logspace(-1, 2, num=50)
     osc_resp_target = target.compute_osc_resp(osc_freqs, damping=0.05)
-
-    print(osc_resp_target)
 
     compat = motions.CompatibleRvtMotion(
         osc_freqs, osc_resp_target,
@@ -48,3 +44,27 @@ def test_compatible_rvt_motion():
 
     # Might be off by a few percent because of difficulties with the inversion.
     assert_allclose(osc_resp_target, osc_resp_compat, rtol=0.03, atol=0.05)
+
+    # fig, axes = plt.subplots(2, 1)
+    #
+    # ax = axes.flat[0]
+    #
+    # ax.plot(target.freqs, target.fourier_amps, 'b-', label='Target')
+    # ax.plot(compat.freqs, compat.fourier_amps, 'r--', label='Compatible')
+    #
+    # ax.set_xlabel('Frequency (Hz)')
+    # ax.set_xscale('log')
+    # ax.set_ylabel('Fourier Ampl. (cm/s)')
+    # ax.set_yscale('log')
+    #
+    # ax = axes.flat[1]
+    #
+    # ax.plot(osc_freqs, osc_resp_target, 'b-', label='Target')
+    # ax.plot(osc_freqs, osc_resp_compat, 'r--', label='Compatible')
+    #
+    # ax.set_xlabel('Frequency (Hz)')
+    # ax.set_xscale('log')
+    # ax.set_ylabel('Spectral Accel. (cm/s²)')
+    # ax.set_yscale('log')
+    #
+    # fig.savefig('compatible_fas.png', dpi=300)
