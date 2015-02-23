@@ -33,7 +33,8 @@ DEFAULT_CALC = peak_calculators.LiuPezeshk1999()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
-    """Compute the single-degree-of-freedom transfer function.
+    """Compute the single-degree-of-freedom transfer function. When applied on the acceleration
+    Fourier amplitude spectrum, it provides the psuedo-spectral acceleration.
 
     Parameters
     ----------
@@ -46,7 +47,7 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
     Returns
     -------
     numpy.array
-        Complex valued ransfer function
+        Complex valued transfer function
 
     """
     return (-osc_freq ** 2. /
@@ -132,19 +133,12 @@ class RvtMotion(object):
             peak psuedo spectral acceleration of the oscillator
 
         """
-        # Conversion from acceleration to displacement
-        tf_gm = (2.j * np.pi * self.freqs) ** -2
-
         def compute_spec_accel(fn):
             return self.compute_peak(
-                tf_gm * compute_sdof_tf(self.freqs, fn, damping),
+                compute_sdof_tf(self.freqs, fn, damping),
                 osc_freq=fn, osc_damping=damping)
 
         resp = np.array([compute_spec_accel(f) for f in osc_freqs])
-
-        # Conversion between spectral displacement and pseudo acceleration.
-        resp *= (2 * np.pi * osc_freqs) ** 2
-
         return resp
 
     def compute_peak(self, transfer_func=None, osc_freq=None,
