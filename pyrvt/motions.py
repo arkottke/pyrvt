@@ -49,7 +49,7 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
         Complex valued ransfer function
 
     """
-    return (-freqs ** 2. /
+    return (-osc_freq ** 2. /
             (freqs ** 2 - osc_freq ** 2
              - 2.j * osc_damping * osc_freq * freqs))
 
