@@ -33,7 +33,8 @@ DEFAULT_CALC = peak_calculators.LiuPezeshk1999()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
-    """Compute the single-degree-of-freedom transfer function.
+    """Compute the single-degree-of-freedom transfer function. When applied on the acceleration
+    Fourier amplitude spectrum, it provides the psuedo-spectral acceleration.
 
     Parameters
     ----------
@@ -46,10 +47,10 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
     Returns
     -------
     numpy.array
-        Complex valued ransfer function
+        Complex valued transfer function
 
     """
-    return (-freqs ** 2. /
+    return (-osc_freq ** 2. /
             (freqs ** 2 - osc_freq ** 2
              - 2.j * osc_damping * osc_freq * freqs))
 
@@ -132,19 +133,12 @@ class RvtMotion(object):
             peak psuedo spectral acceleration of the oscillator
 
         """
-        # Conversion from acceleration to displacement
-        tf_gm = (2.j * np.pi * self.freqs) ** -2
-
         def compute_spec_accel(fn):
             return self.compute_peak(
-                tf_gm * compute_sdof_tf(self.freqs, fn, damping),
+                compute_sdof_tf(self.freqs, fn, damping),
                 osc_freq=fn, osc_damping=damping)
 
         resp = np.array([compute_spec_accel(f) for f in osc_freqs])
-
-        # Conversion between spectral displacement and pseudo acceleration.
-        resp *= (2 * np.pi * osc_freqs) ** 2
-
         return resp
 
     def compute_peak(self, transfer_func=None, osc_freq=None,
@@ -215,7 +209,8 @@ class SourceTheoryMotion(RvtMotion):
                 np.log([0.01, 0.09, 0.16, 0.51, 0.84, 1.25, 2.26, 3.17, 6.05,
                         16.60, 61.20, 100.00]),
                 [1.00, 1.10, 1.18, 1.42, 1.58, 1.74, 2.06, 2.25, 2.58, 3.13,
-                 4.00, 4.40])
+                 4.00, 4.40],
+                bounds_error=False)
         elif self.region == 'cena':
             # Default parameters for the CEUS from Campbell (2003)
             self.shear_velocity = 3.6
@@ -238,7 +233,8 @@ class SourceTheoryMotion(RvtMotion):
                 np.log([0.01, 0.10, 0.20, 0.30, 0.50, 0.90, 1.25, 1.80, 3.00,
                         5.30, 8.00, 14.00, 30.00, 60.00, 100.00]),
                 [1.00, 1.02, 1.03, 1.05, 1.07, 1.09, 1.11, 1.12, 1.13, 1.14,
-                 1.15, 1.15, 1.15, 1.15, 1.15])
+                 1.15, 1.15, 1.15, 1.15, 1.15],
+                bounds_error=False)
 
         else:
             raise NotImplementedError
@@ -301,7 +297,18 @@ class SourceTheoryMotion(RvtMotion):
 
         # Site component
         site_dim = np.exp(-np.pi * self.site_atten * self.freqs)
-        site_comp = self.site_amp(np.log(self.freqs)) * site_dim
+
+        ln_freqs = np.log(self.freqs)
+        site_amp = self.site_amp(ln_freqs)
+        if np.any(np.isnan(site_amp)):
+            # Need to extrapolate
+            mask = ln_freqs < self.site_amp.x[0]
+            site_amp[mask] = self.site_amp.y[0]
+
+            mask = self.site_amp.x[-1] < ln_freqs
+            site_amp[mask] = self.site_amp.y[-1]
+
+        site_comp = site_amp * site_dim
 
         # Conversion factor to convert from dyne-cm into gravity-sec
         conv = 1.e-20 / 980.7

@@ -28,10 +28,8 @@ import os
 
 import numpy as np
 
-from scipy import Inf
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
-
 
 def compute_moments(freqs, fourier_amps, orders):
     """Compute the spectral moments.
@@ -80,6 +78,18 @@ class Calculator(object):
         """Abbreviated name of the calculator."""
         return self.ABBREV
 
+    def __call__(self, peak_factor, resp_rms, full_output):
+        """Return the computed peak response."""
+        resp_peak = resp_rms * peak_factor
+
+        if full_output:
+            return resp_peak, peak_factor
+        else:
+            return resp_peak
+
+    @classmethod
+    def limited_num_zero_crossings(cls, num_zero_crossings):
+        return max(1.33, num_zero_crossings)
 
 class Vanmarcke1975(Calculator):
     """Vanmarcke (1975) [#]_ peak factor which includes the effects of clumping.
@@ -133,9 +143,10 @@ class Vanmarcke1975(Calculator):
     ABBREV = 'V75'
 
     def __init__(self, **kwargs):
-        super(Vanmarcke1975, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
+    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq, osc_damping, full_output=False,
+                 **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -147,18 +158,22 @@ class Vanmarcke1975(Calculator):
         freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
         fourier_amps: numpy.array
-            Amplitude of the Fourie amplitude spectrum with a single
+            Amplitude of the Fourier amplitude spectrum with a single
             degree of freedom oscillator already applied if being used. Units
             are not important.
         osc_freq : float
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+        full_output : bool, optional
+            If the full output should be returned
 
         Returns
         -------
         max_resp : float
             Expected maximum response
+        peak_factor : float
+            Associated peak factor. Only provided in `full_output` is True.
 
         """
 
@@ -170,7 +185,8 @@ class Vanmarcke1975(Calculator):
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         bandwidth_eff = bandwidth ** 1.2
 
-        num_zero_crossings = gm_duration * np.sqrt(m2 / m0) / np.pi
+        num_zero_crossings = self.limited_num_zero_crossings(
+            gm_duration * np.sqrt(m2 / m0) / np.pi)
 
         def ccdf(x):
             """ The expected peak factor is computed as the integral of the
@@ -183,9 +199,77 @@ class Vanmarcke1975(Calculator):
                                          * bandwidth_eff * x))
                            / (np.exp(x ** 2 / 2) - 1)))
 
-        peak_factor, error = quad(ccdf, 0, Inf)
+        peak_factor, error = quad(ccdf, 0, np.inf)
 
-        return peak_factor * resp_rms
+        if osc_freq and osc_damping:
+            peak_factor *= np.sqrt(
+                1 - np.exp(-2 * osc_damping * osc_freq * gm_duration))
+
+        return super().__call__(peak_factor, resp_rms, full_output)
+
+
+class Davenport1964(Calculator):
+    """RVT calculation using the asymptotic solution proposed by Davenport (1964) [#]_.
+
+    References
+    ----------
+    .. [#] Davenport, A. G. (1964). Note on the distribution of the largest
+        value of a random function with application to gust loading. In
+        Institute of Civil Engineering Proceedings, 28(2), 187-196.
+
+    """
+
+    NAME = 'Davenport (1964)'
+    ABBREV = 'D64'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
+        """Compute the peak factor.
+
+        Parameters
+        ----------
+        gm_duration : float
+            Duration of the strong-motion phase of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Aris
+            intensity [sec]
+        freqs : numpy.array
+            Frequency of the Fourier amplitude spectrum [Hz]
+        fourier_amps: numpy.array
+            Amplitude of the Fourier amplitude spectrum with a single
+            degree of freedom oscillator already applied if being used. Units
+            are not important.
+        osc_freq : float
+            Frequency of the oscillator [Hz]
+        osc_damping : float
+            Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+        full_output : bool, optional
+            If the full output should be returned
+
+        Returns
+        -------
+        max_resp : float
+            Expected maximum response
+        peak_factor : float
+            Associated peak factor. Only provided in `full_output` is True.
+
+        """
+
+        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+
+        # Compute the root-mean-squared response
+        resp_rms = np.sqrt(m0 / gm_duration)
+
+        # Compute the number of zero crossings
+        num_zero_crossings = self.limited_num_zero_crossings(
+            gm_duration * np.sqrt(m2 / m0) / np.pi)
+
+        # Compute the peak factor
+        bar = np.sqrt(2 * np.log(num_zero_crossings))
+        peak_factor = bar + 0.5772 / bar
+
+        return super().__call__(peak_factor, resp_rms, full_output)
 
 
 class DerKiureghian1985(Calculator):
@@ -207,9 +291,9 @@ class DerKiureghian1985(Calculator):
     ABBREV = 'DK85'
 
     def __init__(self, **kwargs):
-        super(DerKiureghian1985, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, **kwargs):
+    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -221,18 +305,23 @@ class DerKiureghian1985(Calculator):
         freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
         fourier_amps: numpy.array
-            Amplitude of the Fourie amplitude spectrum with a single
+            Amplitude of the Fourier amplitude spectrum with a single
             degree of freedom oscillator already applied if being used. Units
             are not important.
         osc_freq : float
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+        full_output : bool, optional
+            If the full output should be returned
 
         Returns
         -------
         max_resp : float
             Expected maximum response
+        peak_factor : float
+            Associated peak factor. Only provided in `full_output` is True.
+
         """
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
@@ -253,11 +342,13 @@ class DerKiureghian1985(Calculator):
         else:
             eff_crossings = num_zero_crossings
 
+        eff_crossings = self.limited_num_zero_crossings(eff_crossings)
+
         # Compute the peak factor
         bar = np.sqrt(2 * np.log(eff_crossings))
         peak_factor = bar + 0.5772 / bar
 
-        return peak_factor * resp_rms
+        return super().__call__(peak_factor, resp_rms, full_output)
 
 
 class ToroMcGuire1987(Calculator):
@@ -279,10 +370,10 @@ class ToroMcGuire1987(Calculator):
     ABBREV = 'TM87'
 
     def __init__(self, **kwargs):
-        super(ToroMcGuire1987, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
+                 osc_damping=None, full_output=False, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -294,32 +385,35 @@ class ToroMcGuire1987(Calculator):
         freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
         fourier_amps: numpy.array
-            Amplitude of the Fourie amplitude spectrum with a single
+            Amplitude of the Fourier amplitude spectrum with a single
             degree of freedom oscillator already applied if being used. Units
             are not important.
         osc_freq : float
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
+        full_output : bool, optional
+            If the full output should be returned
 
         Returns
         -------
         max_resp : float
             Expected maximum response
+        peak_factor : float
+            Associated peak factor. Only provided in `full_output` is True.
 
         """
 
         m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Vanmarcke's (1976) bandwidth measure and central frequency
-        bandwidth = np.sqrt(1 - m1 ** 2 / (m0 * m2))
+        bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         freq_cent = np.sqrt(m2 / m0) / (2 * np.pi)
 
-        zero_crossings = max(
-            2 * freq_cent * gm_duration * (1.63 * bandwidth ** 0.45 - 0.38),
-            1.33)
+        num_zero_crossings = self.limited_num_zero_crossings(
+            2 * freq_cent * gm_duration * (1.63 * bandwidth ** 0.45 - 0.38))
 
-        foo = np.sqrt(2 * np.log(zero_crossings))
+        foo = np.sqrt(2 * np.log(num_zero_crossings))
         peak_factor = (foo + 0.5772 / foo)
 
         if osc_freq and osc_damping:
@@ -329,10 +423,84 @@ class ToroMcGuire1987(Calculator):
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
 
-        return peak_factor * resp_rms
+        return super().__call__(peak_factor, resp_rms, full_output)
 
 
-class BooreJoyner1984(Calculator):
+class CartwrightLonguetHiggins1956(Calculator):
+    """RVT calculation based on the peak factor definition by Cartwright and
+    Longuet-Higgins (1956) [#]_. No modification for stationarity.
+
+    References
+    ----------
+    .. [#] Cartwright, D. E., & Longuet-Higgins, M. S. (1956). The
+        statistical distribution of the maxima of a random function.
+        Proceedings of the Royal Society of London. Series A. Mathematical and
+        Physical Sciences, 237(1209), 212-232.
+    """
+
+    NAME = 'Cartwright & Longuet-Higgins (1956)'
+    ABBREV = 'CLH56'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
+                 osc_damping=None, full_output=False, **kwargs):
+        """Compute the peak factor.
+
+        Parameters
+        ----------
+        gm_duration : float
+            Duration of the strong-motion phase of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Aris
+            intensity [sec]
+        freqs : numpy.array
+            Frequency of the Fourier amplitude spectrum [Hz]
+        fourier_amps: numpy.array
+            Amplitude of the Fourier amplitude spectrum with a single
+            degree of freedom oscillator already applied if being used. Units
+            are not important.
+        osc_freq : float
+            Frequency of the oscillator [Hz]
+        osc_damping : float
+            Fractional damping of the oscillator. For example, 0.05 for 5%
+            damping.
+        full_output : bool, optional
+            If the full output should be returned
+
+        Returns
+        -------
+        max_resp : float
+            Expected maximum response
+        peak_factor : float
+            Associated peak factor. Only provided in `full_output` is True.
+
+        """
+        m0, m1, m2, m4 = compute_moments(freqs, fourier_amps, [0, 1, 2, 4])
+
+        bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
+        num_extrema = max(2., np.sqrt(m4 / m2) * gm_duration / np.pi)
+
+        # Compute the peak factor by the indefinite integral.
+        peak_factor = np.sqrt(2.) * quad(
+            lambda z: 1. - (1. - bandwidth * np.exp(-z * z)) ** num_extrema, 0, np.inf)[0]
+
+        # Compute the root-mean-squared response -- correcting for the RMS duration.
+        if osc_freq and osc_damping:
+            rms_duration = self.compute_duration_rms(
+                gm_duration, osc_freq, osc_damping, m0, m1, m2)
+        else:
+            rms_duration = gm_duration
+
+        resp_rms = np.sqrt(m0 / rms_duration)
+
+        return super().__call__(peak_factor, resp_rms, full_output)
+
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
+        return gm_duration
+
+
+class BooreJoyner1984(CartwrightLonguetHiggins1956):
     """RVT calculation based on the peak factor definition by Cartwright and
     Longuet-Higgins (1956) [#]_ along with the root-mean-squared duration
     correction proposed by Boore and Joyner (1984) [#]_.
@@ -358,60 +526,9 @@ class BooreJoyner1984(Calculator):
     ABBREV = 'BJ84'
 
     def __init__(self, **kwargs):
-        super(BooreJoyner1984, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
-        """Compute the peak factor.
-
-        Parameters
-        ----------
-        gm_duration : float
-            Duration of the strong-motion phase of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Aris
-            intensity [sec]
-        freqs : numpy.array
-            Frequency of the Fourier amplitude spectrum [Hz]
-        fourier_amps: numpy.array
-            Amplitude of the Fourie amplitude spectrum with a single
-            degree of freedom oscillator already applied if being used. Units
-            are not important.
-        osc_freq : float
-            Frequency of the oscillator [Hz]
-        osc_damping : float
-            Fractional damping of the oscillator. For example, 0.05 for 5%
-            damping.
-
-        Returns
-        -------
-        max_resp : float
-            Expected maximum response
-
-        """
-
-        m0, m1, m2, m4 = compute_moments(freqs, fourier_amps, [0, 1, 2, 4])
-
-        bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
-        num_extrema = max(2., np.sqrt(m4 / m2) * gm_duration / np.pi)
-
-        # Compute the peak factor by the indefinite integral
-        peak_factor = np.sqrt(2.) * quad(
-            lambda z: 1. - (1. - bandwidth * np.exp(-z * z)) ** num_extrema,
-            0, Inf)[0]
-
-        # Compute the root-mean-squared response
-        if osc_freq is None:
-            rms_duration = gm_duration
-        else:
-            rms_duration = self.compute_duration_rms(
-                gm_duration, osc_freq, osc_damping, m0, m1, m2)
-
-        resp_rms = np.sqrt(m0 / rms_duration)
-
-        return peak_factor * resp_rms
-
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
-                             **kwargs):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -467,7 +584,7 @@ class LiuPezeshk1999(BooreJoyner1984):
     ABBREV = 'LP99'
 
     def __init__(self, **kwargs):
-        super(LiuPezeshk1999, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
                              m0, m1, m2, *args, **kwargs):
@@ -510,9 +627,7 @@ class LiuPezeshk1999(BooreJoyner1984):
         dur_ratio = (1 + 1. / (2 * np.pi * osc_damping)
                      * (foo / (1 + coef * foo ** power)))
 
-        rms_duration = gm_duration * dur_ratio
-
-        return rms_duration
+        return gm_duration * dur_ratio
 
 
 def _load_bt12_data(region):
@@ -598,7 +713,7 @@ class BooreThompson2012(BooreJoyner1984):
         .. _[#r1] http://www.qhull.org/
 
         """
-        super(BooreThompson2012, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
@@ -657,6 +772,8 @@ def get_peak_calculator(method, calc_kwds):
     calculators = [
         BooreJoyner1984,
         BooreThompson2012,
+        CartwrightLonguetHiggins1956,
+        Davenport1964,
         DerKiureghian1985,
         LiuPezeshk1999,
         ToroMcGuire1987,

@@ -75,3 +75,24 @@ def test_boore_thompson_2012_ena():
         'test-bt12_ena.m6.00r0020.0_fs.col',
         'test-bt12_ena.m6.00r020.0_rs.rv.col',
     )
+
+
+def test_peak_factor_formulations():
+    methods = ['V75', 'D64', 'DK85', 'TM87']
+    for method in methods:
+        yield check_formulation, method
+
+
+def check_formulation(method):
+    mag = 6.5
+    dist = 20
+    region = 'cena'
+
+    m = motions.SourceTheoryMotion(
+        mag, dist, region,
+        peak_calculator=peak_calculators.get_peak_calculator(
+            method, dict(mag=mag, dist=dist, region=region))
+    )
+    m.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
+
+    assert np.any(np.isreal(m.fourier_amps))
