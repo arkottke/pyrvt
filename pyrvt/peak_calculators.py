@@ -143,7 +143,7 @@ class Vanmarcke1975(Calculator):
     ABBREV = 'V75'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Vanmarcke1975, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq, osc_damping, full_output=False,
                  **kwargs):
@@ -202,10 +202,15 @@ class Vanmarcke1975(Calculator):
         peak_factor, error = quad(ccdf, 0, np.inf)
 
         if osc_freq and osc_damping:
-            peak_factor *= np.sqrt(
-                1 - np.exp(-2 * osc_damping * osc_freq * gm_duration))
+            peak_factor *= self.nonstationarity_factor(osc_dampin, osc_freq, gm_duration)
 
-        return super().__call__(peak_factor, resp_rms, full_output)
+        return super(Vanmarcke1975, self).__call__(peak_factor, resp_rms, full_output)
+
+    @classmethod
+    def nonstationarity_factor(cls, osc_damping, osc_freq,  gm_duration):
+        return np.sqrt(
+            1 - np.exp(-4 * np.pi * osc_damping * osc_freq * gm_duration))
+
 
 
 class Davenport1964(Calculator):
@@ -223,7 +228,7 @@ class Davenport1964(Calculator):
     ABBREV = 'D64'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Davenport1964, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
         """Compute the peak factor.
@@ -269,7 +274,7 @@ class Davenport1964(Calculator):
         bar = np.sqrt(2 * np.log(num_zero_crossings))
         peak_factor = bar + 0.5772 / bar
 
-        return super().__call__(peak_factor, resp_rms, full_output)
+        return super(Davenport1964, self).__call__(peak_factor, resp_rms, full_output)
 
 
 class DerKiureghian1985(Calculator):
@@ -291,7 +296,7 @@ class DerKiureghian1985(Calculator):
     ABBREV = 'DK85'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(DerKiureghian1985, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
         """Compute the peak factor.
@@ -348,7 +353,7 @@ class DerKiureghian1985(Calculator):
         bar = np.sqrt(2 * np.log(eff_crossings))
         peak_factor = bar + 0.5772 / bar
 
-        return super().__call__(peak_factor, resp_rms, full_output)
+        return super(DerKiureghian1985, self).__call__(peak_factor, resp_rms, full_output)
 
 
 class ToroMcGuire1987(Calculator):
@@ -370,7 +375,7 @@ class ToroMcGuire1987(Calculator):
     ABBREV = 'TM87'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(ToroMcGuire1987, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, full_output=False, **kwargs):
@@ -417,13 +422,13 @@ class ToroMcGuire1987(Calculator):
         peak_factor = (foo + 0.5772 / foo)
 
         if osc_freq and osc_damping:
-            peak_factor *= np.sqrt(
-                1 - np.exp(-2 * osc_damping * osc_freq * gm_duration))
+            peak_factor *= Vanmarcke1975.nonstationarity_factor(
+                osc_damping, osc_freq, gm_duration)
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
 
-        return super().__call__(peak_factor, resp_rms, full_output)
+        return super(ToroMcGuire1987, self).__call__(peak_factor, resp_rms, full_output)
 
 
 class CartwrightLonguetHiggins1956(Calculator):
@@ -442,7 +447,7 @@ class CartwrightLonguetHiggins1956(Calculator):
     ABBREV = 'CLH56'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(CartwrightLonguetHiggins1956, self).__init__(**kwargs)
 
     def __call__(self, gm_duration, freqs, fourier_amps, osc_freq=None,
                  osc_damping=None, full_output=False, **kwargs):
@@ -494,7 +499,7 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         resp_rms = np.sqrt(m0 / rms_duration)
 
-        return super().__call__(peak_factor, resp_rms, full_output)
+        return super(CartwrightLonguetHiggins1956, self).__call__(peak_factor, resp_rms, full_output)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
         return gm_duration
@@ -526,7 +531,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     ABBREV = 'BJ84'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(BooreJoyner1984, self).__init__(**kwargs)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the oscillator duration used in the calculation of the
@@ -584,7 +589,7 @@ class LiuPezeshk1999(BooreJoyner1984):
     ABBREV = 'LP99'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(LiuPezeshk1999, self).__init__(**kwargs)
 
     def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
                              m0, m1, m2, *args, **kwargs):
@@ -713,7 +718,7 @@ class BooreThompson2012(BooreJoyner1984):
         .. _[#r1] http://www.qhull.org/
 
         """
-        super().__init__(**kwargs)
+        super(BooreThompson2012, self).__init__(**kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
