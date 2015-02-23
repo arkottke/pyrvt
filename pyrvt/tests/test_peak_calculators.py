@@ -77,12 +77,6 @@ def test_boore_thompson_2012_ena():
     )
 
 
-def test_peak_factor_formulations():
-    methods = ['V75', 'D64', 'DK85', 'TM87']
-    for method in methods:
-        yield check_formulation, method
-
-
 def check_formulation(method):
     mag = 6.5
     dist = 20
@@ -96,3 +90,9 @@ def check_formulation(method):
     m.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     assert np.any(np.isreal(m.fourier_amps))
+
+
+def test_peak_factor_formulations():
+    methods = ['V75', 'D64', 'DK85', 'TM87']
+    for method in methods:
+        yield check_formulation, method
