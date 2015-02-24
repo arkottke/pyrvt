@@ -18,10 +18,14 @@ import os
 
 import mock
 
-# Create mock modules so these aren't built by readthedocs
-mock_modules = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate']
-for mod_name in mock_modules:
-    sys.modules[mod_name] = mock.Mock()
+# # Create mock modules so these aren't built by readthedocs
+# # See http://blog.rtwilson.com/how-to-make-your-sphinx-documentation-compile-with-readthedocs-when-youre-using-numpy-and-scipy/
+# mock_modules = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
+#                 'scipy.interpolate', 'scipy.interpolate'
+#
+#                 ]
+# for mod_name in mock_modules:
+#     sys.modules[mod_name] = mock.Mock()
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
