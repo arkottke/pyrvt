@@ -79,7 +79,7 @@ class Calculator(object):
         """Abbreviated name of the calculator."""
         return self.ABBREV
 
-    def __call__(self, peak_factor, resp_rms, full_output):
+    def _select_output(self, peak_factor, resp_rms, full_output):
         """Return the computed peak response."""
         resp_peak = resp_rms * peak_factor
 
@@ -208,8 +208,7 @@ class Vanmarcke1975(Calculator):
             peak_factor *= self.nonstationarity_factor(
                 osc_damping, osc_freq, gm_duration)
 
-        return super(Vanmarcke1975, self).__call__(
-            peak_factor, resp_rms, full_output)
+        return self._select_output(peak_factor, resp_rms, full_output)
 
     @classmethod
     def nonstationarity_factor(cls, osc_damping, osc_freq,  gm_duration):
@@ -278,10 +277,9 @@ class Davenport1964(Calculator):
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
-        return super(Davenport1964, self).__call__(
-            peak_factor, resp_rms, full_output)
+        return self._select_output(peak_factor, resp_rms, full_output)
 
-    def asymtotic_approx(cls, zero_crossings):
+    def asymtotic_approx(self, zero_crossings):
         """Compute the peak-factor from the asymptotic approximation.
 
         Parameters
@@ -374,8 +372,7 @@ class DerKiureghian1985(Davenport1964):
         eff_crossings = self.limited_num_zero_crossings(eff_crossings)
         peak_factor = self.asymtotic_approx(eff_crossings)
 
-        return super(DerKiureghian1985, self).__call__(
-            peak_factor, resp_rms, full_output)
+        return self._select_output(peak_factor, resp_rms, full_output)
 
 
 class ToroMcGuire1987(Davenport1964):
@@ -450,8 +447,7 @@ class ToroMcGuire1987(Davenport1964):
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
 
-        return super(ToroMcGuire1987, self).__call__(
-            peak_factor, resp_rms, full_output)
+        return self._select_output(peak_factor, resp_rms, full_output)
 
 
 class CartwrightLonguetHiggins1956(Calculator):
@@ -525,8 +521,7 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         resp_rms = np.sqrt(m0 / rms_duration)
 
-        return super(CartwrightLonguetHiggins1956, self).__call__(
-            peak_factor, resp_rms, full_output)
+        return self._select_output(peak_factor, resp_rms, full_output)
 
     def compute_duration_rms(self, gm_duration, *args):
         """Compute the RMS duration. Not used by
@@ -836,6 +831,7 @@ def get_region(region):
     Returns
     -------
     region : str
+        Region either ``cena`` or ``wna``.
 
     """
     region = region.lower()
