@@ -31,6 +31,7 @@ import numpy as np
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 
+
 def compute_moments(freqs, fourier_amps, orders):
     """Compute the spectral moments.
 
@@ -91,6 +92,7 @@ class Calculator(object):
     def limited_num_zero_crossings(cls, num_zero_crossings):
         return max(1.33, num_zero_crossings)
 
+
 class Vanmarcke1975(Calculator):
     """Vanmarcke (1975) [#]_ peak factor which includes the effects of clumping.
 
@@ -145,8 +147,8 @@ class Vanmarcke1975(Calculator):
     def __init__(self, **kwargs):
         super(Vanmarcke1975, self).__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq, osc_damping, full_output=False,
-                 **kwargs):
+    def __call__(self, gm_duration, freqs, fourier_amps, osc_freq, osc_damping,
+                 full_output=False, **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -194,17 +196,19 @@ class Vanmarcke1975(Calculator):
 
             """
             return (1 - (1 - np.exp(-x ** 2 / 2)) *
-                    np.exp(-1 * num_zero_crossings
-                           * (1 - np.exp(-1 * np.sqrt(np.pi / 2)
-                                         * bandwidth_eff * x))
-                           / (np.exp(x ** 2 / 2) - 1)))
+                    np.exp(-1 * num_zero_crossings *
+                           (1 - np.exp(-1 * np.sqrt(np.pi / 2) *
+                                       bandwidth_eff * x)) /
+                           (np.exp(x ** 2 / 2) - 1)))
 
         peak_factor, error = quad(ccdf, 0, np.inf)
 
         if osc_freq and osc_damping:
-            peak_factor *= self.nonstationarity_factor(osc_dampin, osc_freq, gm_duration)
+            peak_factor *= self.nonstationarity_factor(
+                osc_damping, osc_freq, gm_duration)
 
-        return super(Vanmarcke1975, self).__call__(peak_factor, resp_rms, full_output)
+        return super(Vanmarcke1975, self).__call__(
+            peak_factor, resp_rms, full_output)
 
     @classmethod
     def nonstationarity_factor(cls, osc_damping, osc_freq,  gm_duration):
@@ -212,9 +216,9 @@ class Vanmarcke1975(Calculator):
             1 - np.exp(-4 * np.pi * osc_damping * osc_freq * gm_duration))
 
 
-
 class Davenport1964(Calculator):
-    """RVT calculation using the asymptotic solution proposed by Davenport (1964) [#]_.
+    """RVT calculation using the asymptotic solution proposed by Davenport
+    (1964) [#]_.
 
     References
     ----------
@@ -230,7 +234,8 @@ class Davenport1964(Calculator):
     def __init__(self, **kwargs):
         super(Davenport1964, self).__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
+    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False,
+                 **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -274,7 +279,8 @@ class Davenport1964(Calculator):
         bar = np.sqrt(2 * np.log(num_zero_crossings))
         peak_factor = bar + 0.5772 / bar
 
-        return super(Davenport1964, self).__call__(peak_factor, resp_rms, full_output)
+        return super(Davenport1964, self).__call__(
+            peak_factor, resp_rms, full_output)
 
 
 class DerKiureghian1985(Calculator):
@@ -298,7 +304,8 @@ class DerKiureghian1985(Calculator):
     def __init__(self, **kwargs):
         super(DerKiureghian1985, self).__init__(**kwargs)
 
-    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False, **kwargs):
+    def __call__(self, gm_duration, freqs, fourier_amps, full_output=False,
+                 **kwargs):
         """Compute the peak factor.
 
         Parameters
@@ -353,7 +360,8 @@ class DerKiureghian1985(Calculator):
         bar = np.sqrt(2 * np.log(eff_crossings))
         peak_factor = bar + 0.5772 / bar
 
-        return super(DerKiureghian1985, self).__call__(peak_factor, resp_rms, full_output)
+        return super(DerKiureghian1985, self).__call__(
+            peak_factor, resp_rms, full_output)
 
 
 class ToroMcGuire1987(Calculator):
@@ -428,7 +436,8 @@ class ToroMcGuire1987(Calculator):
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
 
-        return super(ToroMcGuire1987, self).__call__(peak_factor, resp_rms, full_output)
+        return super(ToroMcGuire1987, self).__call__(
+            peak_factor, resp_rms, full_output)
 
 
 class CartwrightLonguetHiggins1956(Calculator):
@@ -488,9 +497,11 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         # Compute the peak factor by the indefinite integral.
         peak_factor = np.sqrt(2.) * quad(
-            lambda z: 1. - (1. - bandwidth * np.exp(-z * z)) ** num_extrema, 0, np.inf)[0]
+            lambda z: 1. - (1. - bandwidth * np.exp(-z * z)) ** num_extrema,
+            0, np.inf)[0]
 
-        # Compute the root-mean-squared response -- correcting for the RMS duration.
+        # Compute the root-mean-squared response -- correcting for the RMS
+        # duration.
         if osc_freq and osc_damping:
             rms_duration = self.compute_duration_rms(
                 gm_duration, osc_freq, osc_damping, m0, m1, m2)
@@ -499,9 +510,12 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         resp_rms = np.sqrt(m0 / rms_duration)
 
-        return super(CartwrightLonguetHiggins1956, self).__call__(peak_factor, resp_rms, full_output)
+        return super(CartwrightLonguetHiggins1956, self).__call__(
+            peak_factor, resp_rms, full_output)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
+                             m2):
+        """Compute the RMS duration if needed."""
         return gm_duration
 
 
@@ -533,7 +547,8 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     def __init__(self, **kwargs):
         super(BooreJoyner1984, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1, m2):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
+                             m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -562,8 +577,8 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
 
         # This equation was rewritten in Boore and Thompson (2012).
         foo = 1. / (osc_freq * gm_duration)
-        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping)
-                     * (foo / (1 + coef * foo ** power)))
+        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
+                     (foo / (1 + coef * foo ** power)))
 
         return gm_duration * dur_ratio
 
@@ -629,8 +644,8 @@ class LiuPezeshk1999(BooreJoyner1984):
         # Same model as used in Boore and Joyner (1984). This equation was
         # rewritten in Boore and Thompson (2012).
         foo = 1. / (osc_freq * gm_duration)
-        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping)
-                     * (foo / (1 + coef * foo ** power)))
+        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
+                     (foo / (1 + coef * foo ** power)))
 
         return gm_duration * dur_ratio
 
@@ -751,9 +766,9 @@ class BooreThompson2012(BooreJoyner1984):
         c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
         foo = 1 / (osc_freq * gm_duration)
-        dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3))
-                     * (1 + c4 / (2 * np.pi * osc_damping) *
-                        (foo / (1 + c5 * foo ** c6)) ** c7))
+        dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) &
+                     (1 + c4 / (2 * np.pi * osc_damping) *
+                      (foo / (1 + c5 * foo ** c6)) ** c7))
 
         return gm_duration * dur_ratio
 

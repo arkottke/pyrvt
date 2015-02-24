@@ -276,15 +276,15 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
     spectrum.'''
 
     if fixed_spacing:
-        period = np.logspace(-2, 1, 100)
-        osc_freq = 1. / period
+        periods = np.logspace(-2, 1, 100)
+        osc_freqs = 1. / periods
 
     for filename_src in glob.iglob(src):
         ext, freqs, events = read_events(filename_src, 'fa')
 
         if not fixed_spacing:
             osc_freq = freqs
-            periods = 1. / osc_freqs
+            periods = 1. / osc_freq
 
         for e in events:
             m = motions.RvtMotion(
