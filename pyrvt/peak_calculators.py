@@ -167,8 +167,9 @@ class Vanmarcke1975(Calculator):
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
-        full_output : bool, optional
-            If the full output should be returned
+        full_output : bool
+            (optional) If the full output should be returned. Default is
+            ``False``.
 
         Returns
         -------
@@ -242,7 +243,7 @@ class Davenport1964(Calculator):
         ----------
         gm_duration : float
             Duration of the strong-motion phase of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Aris
+            defined as the duration between the 5% and 75% normalized Arias
             intensity [sec]
         freqs : numpy.array
             Frequency of the Fourier amplitude spectrum [Hz]
@@ -254,8 +255,8 @@ class Davenport1964(Calculator):
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
-        full_output : bool, optional
-            If the full output should be returned
+        full_output : bool
+            (optional) If the full output should be returned
 
         Returns
         -------
@@ -324,15 +325,16 @@ class DerKiureghian1985(Calculator):
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
-        full_output : bool, optional
-            If the full output should be returned
+        full_output : bool
+            (optional) If the full output should be returned. Default is
+            ``False``.
 
         Returns
         -------
         max_resp : float
             Expected maximum response
         peak_factor : float
-            Associated peak factor. Only provided in `full_output` is True.
+            Associated peak factor. Only provided in `full_output` is ``True``.
 
         """
 
@@ -405,15 +407,16 @@ class ToroMcGuire1987(Calculator):
             Frequency of the oscillator [Hz]
         osc_damping : float
             Damping of the oscillator [decimal]. For example, 0.05 for 5%.
-        full_output : bool, optional
-            If the full output should be returned
+        full_output : bool
+            (optional) If the full output should be returned. Default is
+            ``False``.
 
         Returns
         -------
         max_resp : float
             Expected maximum response
         peak_factor : float
-            Associated peak factor. Only provided in `full_output` is True.
+            Associated peak factor. Only provided in `full_output` is ``True``.
 
         """
 
@@ -479,15 +482,16 @@ class CartwrightLonguetHiggins1956(Calculator):
         osc_damping : float
             Fractional damping of the oscillator. For example, 0.05 for 5%
             damping.
-        full_output : bool, optional
-            If the full output should be returned
+        full_output : bool
+            (optional) If the full output should be returned. Default is
+            ``False``.
 
         Returns
         -------
         max_resp : float
             Expected maximum response
         peak_factor : float
-            Associated peak factor. Only provided in `full_output` is True.
+            Associated peak factor. Only provided in `full_output` is ``True``.
 
         """
         m0, m1, m2, m4 = compute_moments(freqs, fourier_amps, [0, 1, 2, 4])
@@ -513,7 +517,8 @@ class CartwrightLonguetHiggins1956(Calculator):
         return super(CartwrightLonguetHiggins1956, self).__call__(
             peak_factor, resp_rms, full_output)
 
-    def compute_duration_rms(self, *args):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
+                             m2):
         """Compute the RMS duration if needed."""
         return gm_duration
 
@@ -546,7 +551,8 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     def __init__(self, **kwargs):
         super(BooreJoyner1984, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
+                             m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -736,7 +742,8 @@ class BooreThompson2012(BooreJoyner1984):
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
+                             **kwargs):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
