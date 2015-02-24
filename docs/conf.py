@@ -262,3 +262,7 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# Fix warnings about nonexisting document
+# https://github.com/phn/pytpm/issues/3#issuecomment-12133978
+numpydoc_show_class_members = False
