@@ -39,14 +39,15 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
     Parameters
     ----------
     freqs : numpy.array
-        Frequencies [Hz] at which the transfer function should be calculated.
+        Frequencies [Hz] at which the transfer function should be calculated
     osc_freq : float
         Frequency of the oscillator [Hz]
     osc_damping : float
-        Damping of the oscillator [decimal].
+        Damping of the oscillator [decimal]
+
     Returns
     -------
-    numpy.array
+    tf : numpy.array
         Complex valued transfer function
 
     """
@@ -61,12 +62,12 @@ def compute_stress_drop(magnitude):
     Parameters
     ----------
     magnitude : float
-        moment magnitude of the stress drop.
+        moment magnitude of the stress drop
 
     Returns
     -------
-    stress_drop :
-        stress drop in bars.
+    stress_drop : float
+        stress drop in bars
 
     """
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
@@ -107,6 +108,26 @@ def compute_geometric_spreading(dist, coefs):
 
 
 class RvtMotion(object):
+    """A :class:`RvtMotion` object used to store the basic characterization of an
+    RVT motion.
+
+     Parameters
+     ----------
+     freqs : numpy.array
+        Frequency array [Hz]
+
+    fourier_amps : numpy.array
+        Absolute value of acceleration Fourier amplitudes
+
+    duration : float
+        Ground motion duration.
+
+    peak_calculator : :class:`pyrvt.peak_calculators.Calculator`
+        Peak calculator object
+
+    """
+
+
     def __init__(self, freqs=None, fourier_amps=None, duration=None,
                  peak_calculator=DEFAULT_CALC):
         self.freqs = freqs
@@ -115,22 +136,21 @@ class RvtMotion(object):
         self.peak_calculator = peak_calculator
 
     def compute_osc_resp(self, osc_freqs, damping=0.05):
-        """Compute the psuedo-acceleration spectral response of an oscillator
+        """Compute the pseudo-acceleration spectral response of an oscillator
         with a specific frequency and damping.
 
         Parameters
         ----------
         osc_freq : numpy.array
             Natural frequency of the oscillator [Hz]
+
         damping : float (optional)
             Fractional damping of the oscillator.
-        resp_type : OscResponse
-            Type of osciallator response. Default is
-            OscResponse.pseudo_acc
+
         Returns
         -------
         psa : numpy.array
-            peak psuedo spectral acceleration of the oscillator
+            peak pseudo-spectral acceleration of the oscillator
 
         """
         def compute_spec_accel(fn):
@@ -145,6 +165,19 @@ class RvtMotion(object):
                      osc_damping=None):
         """Compute the peak response.
 
+        Parameters
+        ----------
+        transfer_func : numpy.array
+            (optional) Transfer function to apply to the motion. Defaults to ``None``.
+
+        osc_freq : float
+            (optional) Oscillator frequency for correction of RVT peak calculation. Defaults to
+            ``None``.
+
+        osc_damping : float
+            (optional) Oscillator frequency for correction of RVT peak calculation. Defaults to
+            ``None``.
+
         """
         if transfer_func is None:
             fourier_amps = self.fourier_amps
@@ -156,30 +189,36 @@ class RvtMotion(object):
 
 
 class SourceTheoryMotion(RvtMotion):
-    """Single-corner source theory model."""
+    """Single-corner source theory model.
+
+    Compute the duration using the Atkinson and Boore (1995) model.
+
+    Parameters
+    ----------
+    magnitude : float
+        moment magnitude of the event
+
+    distance : float
+        distance in km
+
+    region : str
+        Region for the parameters. Either ``cena`` for Central and Eastern
+        North America, or ``wna`` for Western North America.
+
+    peak_calculator : :class:`pyrvt.peak_calculators.Calculator`
+        Peak calculator object. Results computed with peak calculators other
+        than that used to develop the model may provide incorrect results.
+
+    stress_drop : float or None
+        (optional) stress drop of the event [bars]. For ``cena``, the default
+        value is computed by the Atkinson and Boore (2011) model, while for ``wna`` the default
+        value is 100 bars.
+
+    depth : float
+        (optional) hypocenter depth [km]. Default is 8 km.
+    """
     def __init__(self, magnitude, distance, region,
-                 peak_calculator=DEFAULT_CALC,
-                 stress_drop=None, depth=8):
-        """Compute the duration using the Atkinson and Boore (1995) model.
-
-        Parameters
-        ----------
-        magnitude : float
-            moment magnitude of the event
-        distance : float
-            distance in km
-        stress_drop : float or None
-            stress drop of the event in bar. If stress_drop is None, then it
-            will be computed using the Atkinson and Boore (2011) model.
-        depth : float
-            hypocenter depth [km]. Default is 8 km.
-
-        Returns
-        -------
-        duration : float
-            ground motion duration
-
-        """
+                 peak_calculator=DEFAULT_CALC, stress_drop=None, depth=8):
         super(SourceTheoryMotion, self).__init__(
             peak_calculator=peak_calculator)
 
@@ -224,7 +263,7 @@ class SourceTheoryMotion(RvtMotion):
             if stress_drop:
                 self.stress_drop = stress_drop
             else:
-                self.stress_drop = 150.
+                self.stress_drop = compute_stress_drop(magnitude)
 
             # Crustal amplification from Campbell (2003) using the
             # log-frequency and the amplification based on a quarter-wave
@@ -240,7 +279,7 @@ class SourceTheoryMotion(RvtMotion):
             raise NotImplementedError
 
         # Depth to rupture
-        self.depth = 8.
+        self.depth = depth
         self.hypo_distance = np.sqrt(self.distance ** 2. + self.depth ** 2.)
 
         # Constants
@@ -250,6 +289,9 @@ class SourceTheoryMotion(RvtMotion):
                                / self.seismic_moment) ** (1./3.))
 
     def compute_duration(self):
+        """Compute the duration by combination of source and path
+
+        """
         # Source component
         duration_source = 1. / self.corner_freq
 
@@ -276,6 +318,15 @@ class SourceTheoryMotion(RvtMotion):
         return duration_source + duration_path
 
     def compute_fourier_amps(self, freqs):
+        """Compute the acceleration Fourier amplitudes for a frequency range.
+
+        Parameters
+        ----------
+        freqs : numpy.array
+            Frequency range
+
+        """
+
         self.freqs = np.asarray(freqs)
         self.duration = self.compute_duration()
 
@@ -319,11 +370,13 @@ class SourceTheoryMotion(RvtMotion):
 
 
 class CompatibleRvtMotion(RvtMotion):
+    """Compute a Fourier amplitude spectrum that is compatible with a
+    target response spectrum.
+
+    """
     def __init__(self, osc_freqs, osc_resp_target, duration=None, damping=0.05,
                  magnitude=None, distance=None, stress_drop=None, region=None,
                  window_len=None, peak_calculator=DEFAULT_CALC):
-        """Compute a Fourier amplitude spectrum that is compatible with a
-        target response spectrum."""
         super(CompatibleRvtMotion, self).__init__(
             peak_calculator=peak_calculator)
 
