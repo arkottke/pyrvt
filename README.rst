@@ -5,18 +5,20 @@ pyRVT
     :target: https://travis-ci.org/arkottke/pyrvt
 
 .. image:: https://coveralls.io/repos/arkottke/pyrvt/badge.png?branch=master 
-    :target: https://coveralls.io/r/arkottke/pyrvt?branch=master 
+    :target: https://coveralls.io/r/arkottke/pyrvt?branch=master
 
+.. image:: https://readthedocs.org/projects/pyrvt/badge/?version=latest
+    :target: http://pyrvt.readthedocs.org/
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+    :alt: Join the chat at https://gitter.im/arkottke/pyrvt
+    :target: https://gitter.im/arkottke/pyrvt?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 Use random vibration theory to transform between Fourier amplitude spectrum and
 response spectrum.
 
 Dependencies
 ============
-
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/arkottke/pyrvt
-   :target: https://gitter.im/arkottke/pyrvt?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 Prior to using pyRVT, Python and a number of packages need to be installed. In
 addition to Python, the following packages need to be installed:
@@ -40,7 +42,7 @@ addition to Python, the following packages need to be installed:
 Install Python dependencies is best accomplished with a package manager. On
 Windows or OS-X, I recommend using Miniconda.
 
-Minconda has installers for `Windows 32-bit`_, `Windows 64-bit`_, and `OS-X`_.
+Miniconda has installers for `Windows 32-bit`_, `Windows 64-bit`_, and `OS-X`_.
 See the full list of installers `here` -- make sure you select Miniconda3 for
 Python3.
 
