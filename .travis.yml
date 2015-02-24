@@ -16,7 +16,7 @@ install:
     - conda update conda --yes
     - source activate testenv
     - conda install --yes numpy scipy matplotlib openpyxl coverage
-    - pip install coveralls nose
+    - pip install coveralls nose numpydoc
     - python setup.py install
 
 script:  

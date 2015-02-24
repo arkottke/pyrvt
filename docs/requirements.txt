@@ -1,9 +1,0 @@
-matplotlib
-numpy
-numpydoc
-nose
-openpyxl
-sphinx
-scipy
-xlrd
-xlwt
