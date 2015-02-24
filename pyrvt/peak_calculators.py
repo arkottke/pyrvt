@@ -763,7 +763,7 @@ class BooreThompson2012(BooreJoyner1984):
         c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
         foo = 1 / (osc_freq * gm_duration)
-        dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) &
+        dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) *
                      (1 + c4 / (2 * np.pi * osc_damping) *
                       (foo / (1 + c5 * foo ** c6)) ** c7))
 
