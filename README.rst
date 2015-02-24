@@ -14,6 +14,10 @@ response spectrum.
 Dependencies
 ============
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/arkottke/pyrvt
+   :target: https://gitter.im/arkottke/pyrvt?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 Prior to using pyRVT, Python and a number of packages need to be installed. In
 addition to Python, the following packages need to be installed:
 
