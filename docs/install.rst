@@ -29,13 +29,13 @@ Miniconda has installers for `Windows 32-bit`_, `Windows 64-bit`_, and `OS-X`_.
 See the full list of installers `here` -- make sure you select Miniconda3 for
 Python3.
 
-.. _Windows 32-bit: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-Windows-x86.exe
-.. _Windows 64-bit: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-Windows-x86_64.exe
-.. _OS-X: http://repo.continuum.io/miniconda/Miniconda3-3.3.0-MacOSX-x86_64.sh
+.. _Windows 32-bit: http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Windows-x86.exe
+.. _Windows 64-bit: http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Windows-x86_64.exe
+.. _OS-X: http://repo.continuum.io/miniconda/Miniconda3-3.8.3-MacOSX-x86_64.sh
 
 After the installer is finished, install the required dependencies by opening a
 terminal. On Windows, this is best accomplished with ``Windows Key + r``, enter
-"cmd". Next enter the following command:
+``cmd``. Next enter the following command:
 
 ::
  
@@ -47,8 +47,11 @@ window, and select "Properties", and then check the "Quick Edit Mode" check box
 within the "Edit Options" group. Copy the text, and then paste it by click the
 right mouse button.
 
-Next, install or upgrade pyRVT:
+Now that the dependencies have been installed, install or upgrade pyRVT using
+pip:
 
 ::
 
   pip install --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
+
+You should now have pyRVT completedly installed. Next, read about pyRVT usage_.

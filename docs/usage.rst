@@ -39,15 +39,17 @@ following output:
                           be interpolated if needed
     -m METHOD, --method METHOD
                           Specify the peak factor calculation method. Possible
-                          options are: BJ84: Boore and Joyner (1984) BT12: Boore
-                          and Thompson (2012) DK85: Der Kiureghian (1985) LP99:
-                          Liu and Pezeshk (1999) [default] TM87: Toro and
-                          McGuire (1987) V75: Vanmarcke (1975) If the BT12
-                          method is used, then the magnitude, distance and
-                          region must be provided. The LP99 is the default
-                          method as it provides correction for oscillation
-                          duration without the need for specifying magnitude,
-                          distance, and region.
+                          options are:
+                           - BJ84: Boore and Joyner (1984)
+                           - BT12: Boore and Thompson (2012) 
+                           - D64: Davenport (1964)
+                           - DK85: Der Kiureghian (1985) 
+                           - LP99: Liu and Pezeshk (1999)
+                           - TM87: Toro and McGuire (1987) 
+                           - V75: Vanmarcke (1975) [default]
+                          If the BT12 method is used, then the magnitude,
+                          distance and region must be provided by the input
+                          file.
 
 For example, to compute the Fourier amplitude spectra that were compatible with
 target response spectrum the following command could be used: 
