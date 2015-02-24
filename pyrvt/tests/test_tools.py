@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import filecmp
 import os
 import tempfile
 import shutil
@@ -59,7 +58,7 @@ def check_read_events(ext):
     # Test the characteristics of the event
     e = events[0]
     keys = ['magnitude', 'distance', 'vs30', 'kappa', 'duration', 'region']
-    values = [5, 5, 760, 0.039447, 1.361042, 'WNA']
+    values = [5, 5, 760, 0.039447, 1.361042, 'wna']
     for k, v in zip(keys, values):
         if k in ['region']:
             assert_equal(e[k], v)
@@ -170,7 +169,8 @@ def test_operation_psa2fa():
         os.path.dirname(__file__), 'data', 'test_sa.csv')
     dest_dirname = tempfile.mkdtemp()
 
-    # Do not need to check the output as it is checked in test_compute_compatible_spectra
+    # Do not need to check the output as it is checked in
+    # test_compute_compatible_spectra
     tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
 
     shutil.rmtree(dest_dirname)
