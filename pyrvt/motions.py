@@ -33,8 +33,9 @@ DEFAULT_CALC = peak_calculators.LiuPezeshk1999()
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
-    """Compute the single-degree-of-freedom transfer function. When applied on the acceleration
-    Fourier amplitude spectrum, it provides the psuedo-spectral acceleration.
+    """Compute the single-degree-of-freedom transfer function. When applied on
+    the acceleration Fourier amplitude spectrum, it provides the
+    psuedo-spectral acceleration.
 
     Parameters
     ----------
@@ -52,8 +53,8 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
 
     """
     return (-osc_freq ** 2. /
-            (freqs ** 2 - osc_freq ** 2
-             - 2.j * osc_damping * osc_freq * freqs))
+            (freqs ** 2 - osc_freq ** 2 -
+             2.j * osc_damping * osc_freq * freqs))
 
 
 def compute_stress_drop(magnitude):
@@ -127,7 +128,6 @@ class RvtMotion(object):
 
     """
 
-
     def __init__(self, freqs=None, fourier_amps=None, duration=None,
                  peak_calculator=DEFAULT_CALC):
         self.freqs = freqs
@@ -168,15 +168,16 @@ class RvtMotion(object):
         Parameters
         ----------
         transfer_func : numpy.array
-            (optional) Transfer function to apply to the motion. Defaults to ``None``.
+            (optional) Transfer function to apply to the motion. Defaults to
+            ``None``.
 
         osc_freq : float
-            (optional) Oscillator frequency for correction of RVT peak calculation. Defaults to
-            ``None``.
+            (optional) Oscillator frequency for correction of RVT peak
+            calculation. Defaults to ``None``.
 
         osc_damping : float
-            (optional) Oscillator frequency for correction of RVT peak calculation. Defaults to
-            ``None``.
+            (optional) Oscillator frequency for correction of RVT peak
+            calculation. Defaults to ``None``.
 
         """
         if transfer_func is None:
@@ -210,12 +211,12 @@ class SourceTheoryMotion(RvtMotion):
         than that used to develop the model may provide incorrect results.
 
     stress_drop : float or None
-        (optional) stress drop of the event [bars]. For ``cena``, the default
-        value is computed by the Atkinson and Boore (2011) model, while for ``wna`` the default
-        value is 100 bars.
+        (optional) Stress drop of the event [bars]. For ``cena``, the default
+        value is computed by the Atkinson and Boore (2011) model, while for
+        ``wna`` the default value is 100 bars.
 
     depth : float
-        (optional) hypocenter depth [km]. Default is 8 km.
+        (optional) Hypocenter depth [km]. Default is 8 km.
     """
     def __init__(self, magnitude, distance, region,
                  peak_calculator=DEFAULT_CALC, stress_drop=None, depth=8):
@@ -284,9 +285,8 @@ class SourceTheoryMotion(RvtMotion):
 
         # Constants
         self.seismic_moment = 10. ** (1.5 * (self.magnitude + 10.7))
-        self.corner_freq = (4.9e6 * self.shear_velocity
-                            * (self.stress_drop
-                               / self.seismic_moment) ** (1./3.))
+        self.corner_freq = (4.9e6 * self.shear_velocity *
+                            (self.stress_drop / self.seismic_moment) ** (1./3.))
 
     def compute_duration(self):
         """Compute the duration by combination of source and path
@@ -331,10 +331,10 @@ class SourceTheoryMotion(RvtMotion):
         self.duration = self.compute_duration()
 
         # Model component
-        const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density
-                               * self.shear_velocity ** 3.)
-        source_comp = (const * self.seismic_moment
-                       / (1. + (self.freqs / self.corner_freq) ** 2.))
+        const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density *
+                               self.shear_velocity ** 3.)
+        source_comp = (const * self.seismic_moment /
+                       (1. + (self.freqs / self.corner_freq) ** 2.))
 
         # Path component
         path_atten =\
@@ -343,8 +343,8 @@ class SourceTheoryMotion(RvtMotion):
                                                 self.geometric_spreading)
 
         path_comp = geo_atten * np.exp(
-            (-np.pi * self.freqs * self.hypo_distance)
-            / (path_atten * self.shear_velocity))
+            (-np.pi * self.freqs * self.hypo_distance) /
+            (path_atten * self.shear_velocity))
 
         # Site component
         site_dim = np.exp(-np.pi * self.site_atten * self.freqs)
@@ -365,8 +365,8 @@ class SourceTheoryMotion(RvtMotion):
         conv = 1.e-20 / 980.7
         # Combine the three components and convert from displacement to
         # acceleleration
-        self.fourier_amps = (conv * (2. * np.pi * self.freqs) ** 2.
-                             * source_comp * path_comp * site_comp)
+        self.fourier_amps = (conv * (2. * np.pi * self.freqs) ** 2. *
+                             source_comp * path_comp * site_comp)
 
 
 class CompatibleRvtMotion(RvtMotion):
@@ -422,8 +422,8 @@ class CompatibleRvtMotion(RvtMotion):
             if i == 0:
                 total = fa_sqr_cur * osc_freq / 2.
             else:
-                total += ((fa_sqr_cur - fa_sqr_prev)
-                          / 2 * (osc_freq - osc_freqs[i-1]))
+                total += ((fa_sqr_cur - fa_sqr_prev) /
+                          2 * (osc_freq - osc_freqs[i-1]))
 
         # The frequency needs to be extended to account for the fact that the
         # osciallator transfer function has a width.
@@ -511,8 +511,8 @@ class CompatibleRvtMotion(RvtMotion):
             # Compute the fit between the target and computed oscillator
             # response
             self.rmse = np.sqrt(np.mean(
-                (osc_resp_target
-                 - self.compute_osc_resp(osc_freqs, damping)) ** 2))
+                (osc_resp_target -
+                 self.compute_osc_resp(osc_freqs, damping)) ** 2))
 
             self.iterations += 1
 
