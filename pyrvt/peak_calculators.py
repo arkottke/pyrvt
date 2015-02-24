@@ -276,15 +276,30 @@ class Davenport1964(Calculator):
         num_zero_crossings = self.limited_num_zero_crossings(
             gm_duration * np.sqrt(m2 / m0) / np.pi)
 
-        # Compute the peak factor
-        bar = np.sqrt(2 * np.log(num_zero_crossings))
-        peak_factor = bar + 0.5772 / bar
+        peak_factor = self.asymtotic_approx(num_zero_crossings)
 
         return super(Davenport1964, self).__call__(
             peak_factor, resp_rms, full_output)
 
+    def asymtotic_approx(cls, zero_crossings):
+        """Compute the peak-factor from the asymptotic approximation.
 
-class DerKiureghian1985(Calculator):
+        Parameters
+        ----------
+        zero_crossings : float
+            Number of zero crossing.
+
+        Returns
+        -------
+        peak_factor : float
+            Peak factor
+
+        """
+        x = np.sqrt(2 * np.log(zero_crossings))
+        return x + 0.5772 / x
+
+
+class DerKiureghian1985(Davenport1964):
     """RVT calculation using peak factor derived by Davenport (1964) [#]_ with
     limits suggested by Der Kiureghian and Igusa [#]_.
 
@@ -357,16 +372,13 @@ class DerKiureghian1985(Calculator):
             eff_crossings = num_zero_crossings
 
         eff_crossings = self.limited_num_zero_crossings(eff_crossings)
-
-        # Compute the peak factor
-        bar = np.sqrt(2 * np.log(eff_crossings))
-        peak_factor = bar + 0.5772 / bar
+        peak_factor = self.asymtotic_approx(eff_crossings)
 
         return super(DerKiureghian1985, self).__call__(
             peak_factor, resp_rms, full_output)
 
 
-class ToroMcGuire1987(Calculator):
+class ToroMcGuire1987(Davenport1964):
     """RVT calculation using peak factor derived by Davenport (1964) with
     modifications proposed by Toro and McGuire [#]_.
 
@@ -429,8 +441,7 @@ class ToroMcGuire1987(Calculator):
         num_zero_crossings = self.limited_num_zero_crossings(
             2 * freq_cent * gm_duration * (1.63 * bandwidth ** 0.45 - 0.38))
 
-        foo = np.sqrt(2 * np.log(num_zero_crossings))
-        peak_factor = (foo + 0.5772 / foo)
+        peak_factor = self.asymtotic_approx(num_zero_crossings)
 
         if osc_freq and osc_damping:
             peak_factor *= Vanmarcke1975.nonstationarity_factor(
