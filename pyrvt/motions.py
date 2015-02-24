@@ -186,7 +186,8 @@ class RvtMotion(object):
             fourier_amps = np.abs(transfer_func) * self.fourier_amps
 
         return self.peak_calculator(self.duration, self.freqs, fourier_amps,
-                                    osc_freq=osc_freq, osc_damping=osc_damping)
+                                    osc_freq=osc_freq, osc_damping=osc_damping,
+                                    full_output=False)
 
 
 class SourceTheoryMotion(RvtMotion):
