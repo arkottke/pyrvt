@@ -10,6 +10,9 @@
 # Ignore sphinix working directories
 /docs/_build
 
+# Ignore temp output
+/examples/tmp_output/
+
 # Ignore vim swap and undo files
 *.swp
 *.un~
