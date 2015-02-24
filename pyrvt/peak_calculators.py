@@ -201,7 +201,7 @@ class Vanmarcke1975(Calculator):
                                        bandwidth_eff * x)) /
                            (np.exp(x ** 2 / 2) - 1)))
 
-        peak_factor, error = quad(ccdf, 0, np.inf)
+        peak_factor = quad(ccdf, 0, np.inf)[0]
 
         if osc_freq and osc_damping:
             peak_factor *= self.nonstationarity_factor(
@@ -266,7 +266,7 @@ class Davenport1964(Calculator):
 
         """
 
-        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+        m0, m2 = compute_moments(freqs, fourier_amps, [0, 2])
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / gm_duration)
@@ -513,8 +513,7 @@ class CartwrightLonguetHiggins1956(Calculator):
         return super(CartwrightLonguetHiggins1956, self).__call__(
             peak_factor, resp_rms, full_output)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
-                             m2):
+    def compute_duration_rms(self, *args):
         """Compute the RMS duration if needed."""
         return gm_duration
 
@@ -547,8 +546,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     def __init__(self, **kwargs):
         super(BooreJoyner1984, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
-                             m2):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -606,8 +604,8 @@ class LiuPezeshk1999(BooreJoyner1984):
     def __init__(self, **kwargs):
         super(LiuPezeshk1999, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping,
-                             m0, m1, m2, *args, **kwargs):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
+                             m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -738,8 +736,7 @@ class BooreThompson2012(BooreJoyner1984):
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
-                             **kwargs):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -803,8 +800,8 @@ def get_peak_calculator(method, calc_kwds):
     for calculator in calculators:
         if method in [calculator.NAME, calculator.ABBREV]:
             return calculator(**calc_kwds)
-    else:
-        raise NotImplementedError('No calculator for: %s' % method)
+
+    raise NotImplementedError('No calculator for: %s' % method)
 
 
 def get_region(region):

@@ -124,6 +124,10 @@ def read_events(fname, response_type='psa'):
         # Extract the appropriate attributes
         e = {k: v[i] for k, v in parameters.items()}
         e[response_type] = resps
+
+        if 'region' in e:
+            e['region'] = get_region(e['region'])
+
         events.append(e)
 
     return ext, reference, events
