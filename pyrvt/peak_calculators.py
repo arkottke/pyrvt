@@ -517,9 +517,10 @@ class CartwrightLonguetHiggins1956(Calculator):
         return super(CartwrightLonguetHiggins1956, self).__call__(
             peak_factor, resp_rms, full_output)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
-                             m2):
-        """Compute the RMS duration if needed."""
+    def compute_duration_rms(self, gm_duration, *args):
+        """Compute the RMS duration. Not used by
+        CartwrightLonguetHiggins1956."""
+        del args
         return gm_duration
 
 
@@ -551,8 +552,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     def __init__(self, **kwargs):
         super(BooreJoyner1984, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, m0, m1,
-                             m2):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -576,6 +576,8 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
             Duration of the root-mean-squared oscillator response [sec]
 
         """
+        del args
+
         power = 3.
         coef = 1. / 3.
 
@@ -742,8 +744,7 @@ class BooreThompson2012(BooreJoyner1984):
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
-    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args,
-                             **kwargs):
+    def compute_duration_rms(self, gm_duration, osc_freq, osc_damping, *args):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
@@ -767,6 +768,8 @@ class BooreThompson2012(BooreJoyner1984):
             Duration of the root-mean-squared oscillator response [sec]
 
         """
+        del args
+
         c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
         foo = 1 / (osc_freq * gm_duration)
