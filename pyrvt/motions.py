@@ -144,8 +144,8 @@ class RvtMotion(object):
         osc_freq : numpy.array
             Natural frequency of the oscillator [Hz]
 
-        damping : float (optional)
-            Fractional damping of the oscillator.
+        damping : float
+            (optional) Fractional damping of the oscillator. Default is 0.05.
 
         Returns
         -------
