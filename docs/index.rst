@@ -14,8 +14,8 @@ Contents:
    :maxdepth: 2
 
    install
-   faqs
    usage
+   faqs
 
 API Documentation
 -----------------

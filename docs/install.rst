@@ -54,4 +54,6 @@ pip:
 
   pip install --upgrade https://github.com/arkottke/pyrvt/archive/master.zip
 
-You should now have pyRVT completely installed. Next, read about pyRVT usage_.
+You should now have pyRVT completely installed. Next, read about
+:ref:`using <usage>` pyRVT.
+
