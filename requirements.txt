@@ -1,10 +1,12 @@
 coverage
 coveralls
+jinja2
 nose
 numpy
 numpydoc
 openpyxl
-pkg-config
+setuptools
+sphinx
 scipy
 xlrd
 xlwt
