@@ -18,6 +18,7 @@ Peak Calculators
 
 .. automodule:: pyrvt.peak_calculators
     :members:
+    :special-members:
 
 Tools
 -----

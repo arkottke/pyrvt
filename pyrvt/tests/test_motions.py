@@ -33,17 +33,17 @@ def test_compatible_rvt_motion():
     target.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)
-    osc_resp_target = target.compute_osc_resp(osc_freqs, damping=0.05)
+    osc_accels_target = target.compute_osc_accels(osc_freqs, 0.05)
 
     compat = motions.CompatibleRvtMotion(
-        osc_freqs, osc_resp_target,
-        duration=target.duration, damping=0.05,
+        osc_freqs, osc_accels_target,
+        duration=target.duration, osc_damping=0.05,
         peak_calculator=peak_calculators.DerKiureghian1985())
 
-    osc_resp_compat = compat.compute_osc_resp(osc_freqs, damping=0.05)
+    osc_accels_compat = compat.compute_osc_accels(osc_freqs, 0.05)
 
     # Might be off by a few percent because of difficulties with the inversion.
-    assert_allclose(osc_resp_target, osc_resp_compat, rtol=0.03, atol=0.05)
+    assert_allclose(osc_accels_target, osc_accels_compat, rtol=0.03, atol=0.05)
 
     # fig, axes = plt.subplots(2, 1)
     #

@@ -217,18 +217,19 @@ def compute_compatible_spectra(method, periods, events, damping):
     """
     target_freqs = 1. / periods
 
+    event_keys = ['magnitude', 'distance', 'region']
+
     for e in events:
+        event_kwds = {key: e[key] for key in event_keys}
+
         crm = motions.CompatibleRvtMotion(
             target_freqs,
             e['psa_target'],
-            damping=damping,
-            magnitude=e['magnitude'],
-            distance=e['distance'],
             duration=e['duration'],
-            region=e['region'],
+            osc_damping=damping,
+            event_kwds=event_kwds,
             peak_calculator=get_peak_calculator(
-                method, dict(region=e['region'], mag=e['magnitude'],
-                             dist=e['distance']))
+                method, event_kwds)
         )
 
         freqs = crm.freqs
@@ -237,7 +238,7 @@ def compute_compatible_spectra(method, periods, events, damping):
             e['duration'] = crm.duration
 
         e['fa'] = crm.fourier_amps
-        e['psa_calc'] = crm.compute_osc_resp(target_freqs, damping)
+        e['psa_calc'] = crm.compute_osc_accels(target_freqs, damping)
 
     return freqs
 
@@ -299,7 +300,7 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
                     method, dict(region=e['region'], mag=e['magnitude'],
                                  dist=e['distance']))
             )
-            e['sa'] = m.compute_osc_resp(osc_freqs, damping)
+            e['sa'] = m.compute_osc_accels(osc_freqs, damping)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
