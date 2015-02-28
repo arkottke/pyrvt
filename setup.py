@@ -8,7 +8,7 @@ import versioneer
 versioneer.VCS = 'git'
 versioneer.versionfile_source = 'pyrvt/_version.py'
 versioneer.versionfile_build = 'pyrvt/_version.py'
-versioneer.tag_prefix = ''
+versioneer.tag_prefix = 'v'
 versioneer.parentdir_prefix = 'pyrvt-'
 
 config = dict(
