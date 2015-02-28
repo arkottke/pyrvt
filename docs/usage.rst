@@ -8,10 +8,9 @@ arguments can be found by running ``rvt_operator``, which will produce the
 following output:
 
 ::
-  
   C:\Users\arkottke\Documents\>rvt_operator --help
-  usage: runner.py [-h] -i SRC [-o DST] [-d DAMPING] [-f] [-m METHOD]
-                   {psa2fa,fa2psa}
+  usage: runner.py [-h] -i INPUT [-o OUTPUT] [-d DAMPING] [-f] [-m METHOD]
+                 {psa2fa,fa2psa}
   
   Compute response or Fourier amplitude spectra using RVT.
   
@@ -23,13 +22,15 @@ following output:
   
   optional arguments:
     -h, --help            show this help message and exit
-    -i SRC, --input SRC   Path containing the input file(s). Supported file
+    -i INPUT, --input INPUT
+                          Path containing the input file(s). Supported file
                           types are csv, xls, and xlsx -- provided the required
                           packages have been installed. A single file or glob
                           can be specified. An example of a glob would be
                           "input/*_sa.xls" for all files within directory
                           "input" ending in "_sa.xls".
-    -o DST, --output DST  Path where the output files should be created. If this
+    -o OUTPUT, --output OUTPUT
+                          Path where the output files should be created. If this
                           directory does not exist it will be created. Default:
                           ./output
     -d DAMPING, --damping DAMPING
@@ -39,18 +40,14 @@ following output:
                           be interpolated if needed
     -m METHOD, --method METHOD
                           Specify the peak factor calculation method. Possible
-                          options are:
-                           - BJ84: Boore and Joyner (1984)
-                           - BT12: Boore and Thompson (2012) 
-                           - D64: Davenport (1964)
-                           - DK85: Der Kiureghian (1985) 
-                           - LP99: Liu and Pezeshk (1999)
-                           - TM87: Toro and McGuire (1987) 
-                           - V75: Vanmarcke (1975) [default]
-                          If the BT12 method is used, then the magnitude,
-                          distance and region must be provided by the input
-                          file.
-
+                          options are: [BJ84] Boore and Joyner (1984), [BT12]
+                          Boore and Thompson (2012), [DK85] Der Kiureghian
+                          (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro and
+                          McGuire (1987), and [V75] Vanmarcke (1975). If the
+                          BT12 method is used, then the magnitude, distance and
+                          region must be provided by the input files. If no
+                          value is provided, then 'V75' is used as the default.
+  
 For example, to compute the Fourier amplitude spectra that were compatible with
 target response spectrum the following command could be used: 
 ``rvt_operator psa2fa -i examples\example_targetSa.csv``
