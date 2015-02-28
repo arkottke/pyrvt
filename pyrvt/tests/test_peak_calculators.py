@@ -20,7 +20,7 @@
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from .. import motions
 from .. import peak_calculators
@@ -46,11 +46,15 @@ def check_osc_accels(peak_calculator, fname_fs, fname_rs):
 
 
 def test_boore_joyner_1984():
+    bj84 = peak_calculators.BooreJoyner1984()
     check_osc_accels(
-        peak_calculators.BooreJoyner1984(),
+        bj84,
         'test-bj84.m6.00r0020.0_fs.col',
         'test-bj84.m6.00r020.0_rs.rv.col',
     )
+
+    assert_equal(bj84.name, 'Boore & Joyner (1984)')
+    assert_equal(bj84.abbrev, 'BJ84')
 
 
 def test_liu_pezeshk_1999():
@@ -89,7 +93,10 @@ def check_formulation(method):
     )
     m.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
 
-    assert np.any(np.isreal(m.fourier_amps))
+    osc_freqs = np.logspace(-1, 2, num=50)
+    osc_accels = m.compute_osc_accels(osc_freqs, 0.05)
+
+    assert np.all(np.isreal(osc_accels))
 
 
 def test_peak_factor_formulations():

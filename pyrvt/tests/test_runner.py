@@ -21,7 +21,7 @@ import sys
 
 from .. import runner
 
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_almost_equal, assert_string_equal, assert_equal
 
 def test_args():
     tests = [
@@ -61,6 +61,10 @@ def check_args(cmd_line, values):
 
     for name, value in values:
         if name == 'damping':
-            assert_almost_equal(value, getattr(args, name))
+            f = assert_almost_equal
+        elif name == 'fixed_spacing':
+            f = assert_equal
         else:
-            assert_equal(value, getattr(args, name))
+            f = assert_string_equal
+
+        f(value, getattr(args, name))
