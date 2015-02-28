@@ -17,20 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-File: __init__.py
-Author: Albert Kottke
-Description: Package initialization.
-"""
-
 from . import tools, motions, peak_calculators
 
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
 
 def test(level=1, verbosity=1):
     """Load the numpy tester."""
     from numpy.testing import Tester
     return Tester().test(level, verbosity)
 
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
