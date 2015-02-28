@@ -8,5 +8,5 @@ openpyxl
 setuptools
 sphinx
 scipy
-xlrd
-xlwt
+xlrd; python_version <= '2.7'
+xlwt; python_version <= '2.7'
