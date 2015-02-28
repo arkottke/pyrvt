@@ -172,7 +172,6 @@ def test_operation_psa2fa():
     # Do not need to check the output as it is checked in
     # test_compute_compatible_spectra
     tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
-
     shutil.rmtree(dest_dirname)
 
 
@@ -181,6 +180,5 @@ def test_operation_fa2psa():
         os.path.dirname(__file__), 'data', 'test_fa.csv')
     dest_dirname = tempfile.mkdtemp()
 
-    tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
-
+    tools.operation_fa2psa(src_fname, dest_dirname, 0.05, 'LP99', True)
     shutil.rmtree(dest_dirname)
