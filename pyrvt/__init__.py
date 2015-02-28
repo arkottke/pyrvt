@@ -30,3 +30,7 @@ def test(level=1, verbosity=1):
     """Load the numpy tester."""
     from numpy.testing import Tester
     return Tester().test(level, verbosity)
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

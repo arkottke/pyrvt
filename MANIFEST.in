@@ -1,0 +1,2 @@
+include versioneer.py
+include pyrvt/_version.py
