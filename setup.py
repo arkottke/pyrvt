@@ -3,23 +3,32 @@
 
 from setuptools import setup
 
-config = {
-    'name': 'pyRVT',
-    'version': '0.1',
-    'description': 'Seismologic Random Vibration Theory',
-    'author': 'Albert Kottke',
-    'author_email': 'albert.kottke@gmail.com',
-    'url': 'http://github.com/arkottke/pyrvt',
-    'entry_points': {
+import versioneer
+
+versioneer.VCS = 'git'
+versioneer.versionfile_source = 'pyrvt/_version.py'
+versioneer.versionfile_build = 'pyrvt/_version.py'
+versioneer.tag_prefix = ''
+versioneer.parentdir_prefix = 'pyrvt-'
+
+config = dict(
+    name='pyRVT',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+    description='Seismologic Random Vibration Theory',
+    author='Albert Kottke',
+    author_email='albert.kottke@gmail.com',
+    url='http://github.com/arkottke/pyrvt',
+    entry_points={
         'console_scripts': [
             'rvt_operator = pyrvt.runner:main',
             ],
         },
-    'packages': ['pyrvt'],
-    'package_data': {
+    packages=['pyrvt'],
+    package_data={
         'pyrvt': ['data/*']
     },
-    'requires': [
+    requires=[
         'matplotlib',
         'nose',
         'numpy',
@@ -27,8 +36,8 @@ config = {
         'scipy',
         'setuptools'
     ],
-    'test_suite': 'nose.collector',
-    'classifiers': [
+    test_suite='nose.collector',
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -38,6 +47,6 @@ config = {
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering',
     ],
-}
+)
 
 setup(**config)
