@@ -88,21 +88,17 @@ def check_read_events(ext):
          0.004082, 0.003605, 0.003173, 0.002780],
         atol=6)
 
-try:
-    import xlrd
 
-    def test_read_events_xls():
-        check_read_events('.xls')
-except ImportError:
-    pass
+def test_read_events():
+    exts = ['.csv', '.xlsx']
+    try:
+        import xlrd
+        exts.append('.xls')
+    except ImportError:
+        pass
 
-
-def test_read_events_csv():
-    check_read_events('.csv')
-
-
-def test_read_events_xlsx():
-    check_read_events('.xlsx')
+    for ext in exts:
+        yield check_read_events, ext
 
 
 def check_write_events(ext):
@@ -137,20 +133,17 @@ def check_write_events(ext):
                 assert_almost_equal(event[key], _event[key])
 
 
-def test_write_events_csv():
-    check_write_events('.csv')
+def test_write_events():
+    exts = ['.csv', '.xlsx']
 
-try:
-    import xlwt
+    try:
+        import xlwt
+        exts.append('.xls')
+    except ImportError:
+        pass
 
-    def test_write_events_xls():
-        check_write_events('.xls')
-except ImportError:
-    pass
-
-
-def test_write_events_xlsx():
-    check_write_events('.xlsx')
+    for ext in exts:
+        yield check_write_events, ext
 
 
 def test_compute_compatible_spectra():
