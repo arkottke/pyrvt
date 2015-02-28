@@ -16,8 +16,6 @@
 import sys
 import os
 
-import pyrvt
-
 from unittest.mock import MagicMock
 
 # Mock modules for modules that depend on C
@@ -29,6 +27,8 @@ class Mock(MagicMock):
 MOCK_MODULES = ['numpy', 'scipy', 'scipy.integrate', 'scipy.interpolate',
                 'matplotlib', 'xlrd', 'xlwt', 'openpyxl']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+import pyrvt
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
