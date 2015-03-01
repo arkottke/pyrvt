@@ -852,6 +852,7 @@ def get_peak_calculator(method, calc_kwds):
     calculator : :class:`.Calculator`
 
     """
+    calc_kwds = calc_kwds or dict()
 
     calculators = [
         BooreJoyner1984,

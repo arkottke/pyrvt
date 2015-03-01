@@ -20,15 +20,106 @@
 """
 Classes and functions used to define random vibration theory (RVT) based
 motions.
+
+References
+----------
+.. [AH84] Anderson, J. G., & Hough, S. E. (1984). A model for the shape of the
+    Fourier amplitude spectrum of acceleration at high frequencies. Bulletin of
+    the Seismological Society of America, 74(5), 1969-1993.
+
+.. [AB11] Atkinson, G. M., & Boore, D. M. (2011). Modifications to existing
+    ground-motion prediction equations in light of new data. Bulletin of the
+    Seismological Society of America, 101(3), 1121-1135.
+
+.. [C03] Campbell, K. W. (2003). Prediction of strong ground motion using
+    the hybrid empirical method and its use in the development of ground-motion
+    (attenuation) relations in eastern North America.  Bulletin of the
+    Seismological Society of America, 93(3), 1012-1033.
+
+.. [GV76] Gasparini, D. A., & Vanmarcke, E. H. (1976). Simulated earthquake
+    motions compatible with prescribed response spectra.  Massachusetts
+    Institute of Technology, Department of Civil Engineering, Constructed
+    Facilities Division.
+
 """
 
 import numpy as np
 
+from scipy.stats import linregress
 from scipy.interpolate import interp1d
 
 from . import peak_calculators
 
 DEFAULT_CALC = 'V75'
+
+
+def increasing_x(x, y=None):
+    """Check if *x* is monotonically increasing. If not, reverse it.
+
+    Parameters
+    ----------
+    x : :class:`numpy.array`
+        X values, which are checked.
+
+    y : :class:`numpy.array` or ``None``, default: ``None``
+        Y values, which are reversed if *x* is reversed
+
+    Returns
+    -------
+    If *y* is not ``None``, then returns (*x*, *y*), otherwise only returns *x*.
+    x : :class:`numpy.array`
+        X values in monotonically increasing order.
+
+    y : :class:`numpy.array`
+        Y values in same order as *x*.
+
+    Raises
+    ------
+    :class:`NotImplementedError`
+        If *x* is not monotonic.
+    """
+
+    diffs = np.diff(x)
+    if np.all(0 <= diffs):
+        # All increasing, do nothing
+        pass
+    elif np.all(diffs <= 0):
+        # All decreasing, reverse
+        x = x[::-1]
+        if y is not None:
+            y = y[::-1]
+    else:
+        raise NotImplementedError('Values are not regularly ordered.')
+
+    if y is None:
+        return x
+    else:
+        return x, y
+
+
+def log_spaced_values(min, max):
+    """Generate values with constant log-spacing.
+
+    Values are generated with 512 points per decade.
+
+    Parameters
+    ----------
+    min : float
+        Minimum value of the range.
+
+    max : float
+        Maximum value of the range.
+
+    Returns
+    -------
+    value : :class:`numpy.array`
+        Log-spaced values
+
+    """
+    lower = np.log10(min)
+    upper = np.log10(max)
+    count = np.ceil(512 * (upper - lower))
+    return np.logspace(lower, upper, count)
 
 
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
@@ -60,12 +151,6 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
 
 def compute_stress_drop(magnitude):
     """Compute the stress drop using [AB11]_ model.
-
-    References
-    ----------
-    .. [AB11] Atkinson, G. M., & Boore, D. M. (2011). Modifications to existing
-        ground-motion prediction equations in light of new data. Bulletin of
-        the Seismological Society of America, 101(3), 1121-1135.
 
     Parameters
     ----------
@@ -121,13 +206,13 @@ class RvtMotion(object):
 
     Parameters
     ----------
-    freqs : :class:`numpy.array`
+    freqs : :class:`numpy.array` or ``None``, default: ``None``
         Frequency array [Hz]
 
-    fourier_amps : :class:`numpy.array`
+    fourier_amps : :class:`numpy.array` or ``None``, default: ``None``
         Absolute value of acceleration Fourier amplitudes.
 
-    duration : float
+    duration : float or ``None``, default: ``None``
         Ground motion duration [dec].
 
     peak_calculator : str or :class:`~.peak_calculators.Calculator`, default: ``None``
@@ -147,6 +232,10 @@ class RvtMotion(object):
         self._fourier_amps = fourier_amps
         self._duration = duration
 
+        if self._freqs is not None:
+            self._freqs, self._fourier_amps = increasing_x(
+                self._freqs, self._fourier_amps)
+
         if isinstance(peak_calculator, peak_calculators.Calculator):
             self.peak_calculator = peak_calculator
         else:
@@ -161,7 +250,7 @@ class RvtMotion(object):
     @property
     def fourier_amps(self):
         """Acceleration Fourier amplitude values."""
-        return self._freqs
+        return self._fourier_amps
 
     @property
     def duration(self):
@@ -222,16 +311,66 @@ class RvtMotion(object):
                                     osc_freq=osc_freq, osc_damping=osc_damping,
                                     full_output=False)
 
+    def compute_attenuation(self, min_freq, max_freq=None, full=False):
+        """Compute the site attenuation (κ) based on a log-linear fit.
+
+        This function computes the site attenuation defined by [AH84]_ as:
+
+        .. math::
+            a(f) = A_0 \exp(-\pi \kappa f) \\text( for ) f > f_E
+
+        for a single Fourier amplitude spectrum
+
+
+        Parameters
+        ----------
+        min_freq : float
+            minimum frequency of the fit
+
+        max_freq : float or ``None``, default: ``None``
+            maximum frequency of the fit. If ``None``, then the maximum
+            frequency range is used.
+
+        full : bool, default: ``False``
+            If the complete output should be returned
+
+        Returns
+        -------
+        If *full* is ``False``, then only *atten* is returned. Otherwise,
+        the tuple (*atten*, *r_value*, *freqs*, *fitted*) is return.
+
+        atten : float
+            attenuation parameter
+
+        r_sqrt : float
+            sqared correlation coefficient of the fit (R²). See
+            :function:`scipy.stats.linregress`.
+
+        freqs : :class:`numpy.array`
+            selected frequencies
+
+        fitted : :class:`numpy.array`
+            fitted values
+
+        """
+        max_freq = max_freq or self.freqs[-1]
+        mask = (min_freq <= self.freqs) & (self.freqs <= max_freq)
+
+        slope, intercept, r_value, p_value, stderr = linregress(
+            self.freqs[mask], np.log(self.fourier_amps[mask]))
+
+        atten = slope / -np.pi
+
+        if full:
+            freqs = self.freqs[mask]
+            fitted = np.exp(intercept + slope * freqs)
+            return atten, r_value ** 2, freqs, fitted
+        else:
+            return atten
+
 
 class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model with default parameters from [C03]_.
-
-    References
-    ----------
-    .. [C03] Campbell, K. W. (2003). Prediction of strong ground motion using
-        the hybrid empirical method and its use in the development of
-        ground-motion (attenuation) relations in eastern North America.
-        Bulletin of the Seismological Society of America, 93(3), 1012-1033.
 
     Parameters
     ----------
@@ -367,17 +506,21 @@ class SourceTheoryMotion(RvtMotion):
 
         return duration_source + duration_path
 
-    def compute_fourier_amps(self, freqs):
+    def compute_fourier_amps(self, freqs=None):
         """Compute the acceleration Fourier amplitudes for a frequency range.
 
         Parameters
         ----------
-        freqs : numpy.array
-            Frequency range
+        freqs : :class:`numpy.array` or ``None``, default: ``None``
+            Frequency range. If no frequency range is specified then
+            :function:`log_spaced_values(0.05, 200.)` is used.
 
         """
+        if freqs is None:
+            self._freqs = log_spaced_values(0.05, 200.)
+        else:
+            self._freqs = increasing_x(np.asarray(freqs))
 
-        self._freqs = np.asarray(freqs)
         self._duration = self.compute_duration()
 
         # Model component
@@ -467,13 +610,8 @@ class CompatibleRvtMotion(RvtMotion):
         super(CompatibleRvtMotion, self).__init__(
             peak_calculator=peak_calculator)
 
-        osc_freqs = np.asarray(osc_freqs)
-        osc_accels_target = np.asarray(osc_accels_target)
-
-        # Order by increasing frequency
-        ind = osc_freqs.argsort()
-        osc_freqs = osc_freqs[ind]
-        osc_accels_target = osc_accels_target[ind]
+        osc_freqs, osc_accels_target = increasing_x(
+            np.asarray(osc_freqs), np.asarray(osc_accels_target))
 
         if duration:
             self._duration = duration
@@ -485,12 +623,10 @@ class CompatibleRvtMotion(RvtMotion):
             osc_freqs, osc_accels_target, osc_damping)
 
         # The frequency needs to be extended to account for the fact that the
-        # osciallator transfer function has a width. The number of frequencies
+        # oscillator transfer function has a width. The number of frequencies
         # depends on the range of frequencies provided.
-        lower = np.log10(osc_freqs[0] / 2.)
-        upper = np.log10(2 * osc_freqs[-1])
-        count = int(512 * (upper - lower))
-        self._freqs = np.logspace(lower, upper, count)
+        self._freqs = log_spaced_values(osc_freqs[0] / 2.,
+                                        2. * osc_freqs[-1])
         self._fourier_amps = np.empty_like(self._freqs)
 
         # Indices of the first and last point with the range of the provided
@@ -501,7 +637,6 @@ class CompatibleRvtMotion(RvtMotion):
         # last is extend one past the usable range to allow use of first:last
         # notation
         last = indices[-1, 0] + 1
-
         log_freqs = np.log(self._freqs)
         log_osc_freqs = np.log(osc_freqs)
 
@@ -581,7 +716,7 @@ class CompatibleRvtMotion(RvtMotion):
             self.iterations += 1
 
     def _estimate_fourier_amps(self, osc_freqs, osc_accels, osc_damping):
-        """Compute an estimate of the FAS using the Vanmarcke methodology.
+        """Compute an estimate of the FAS using the [GV76]_ methodology.
 
         Parameters
         ----------
@@ -601,10 +736,9 @@ class CompatibleRvtMotion(RvtMotion):
             frequencies specifed by *osc_freqs*.
 
         """
-        # TODO Add reference to the docstring
 
         # Compute initial value using Vanmarcke methodology. The response is
-        # first computed at the lowest frequency and then subsequently comptued
+        # first computed at the lowest frequency and then subsequently computed
         # at higher frequencies.
 
         peak_factor = 2.5

@@ -25,6 +25,32 @@ from .. import peak_calculators
 
 import matplotlib.pyplot as plt
 
+def test_compute_attenuation():
+    m = motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
+    m.compute_fourier_amps()
+
+    atten = m.compute_attenuation(50)
+    assert_allclose(0.006, atten, rtol=0.01)
+
+def test_compute_attenuation_full():
+    m = motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
+    m.compute_fourier_amps()
+
+    atten, r_value, freqs, fitted = m.compute_attenuation(50, full=True)
+
+    assert_allclose(0.006, atten, rtol=0.01)
+    assert_allclose(1.0, r_value, rtol=0.01)
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.plot(m.freqs, m.fourier_amps, 'b-')
+    # ax.set_xlabel('Frequency (Hz)')
+    # ax.set_xscale('log')
+    # ax.set_ylabel('Amplitude')
+    # ax.set_yscale('log')
+    #
+    # fig.savefig('test')
+
 def test_compatible_rvt_motion():
     # Compute the target from the point source model.
     target = motions.SourceTheoryMotion(

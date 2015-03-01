@@ -18,9 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-File: tools.py
-Author: Albert Kottke
-Description: Tools for reading/writing of files and performing operations.
+Tools for reading/writing of files and performing operations.
 """
 
 import csv
