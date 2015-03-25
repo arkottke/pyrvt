@@ -26,7 +26,7 @@ config = dict(
         },
     packages=['pyrvt'],
     package_data={
-        'pyrvt': ['data/*']
+        'pyrvt': ['data/*'],
     },
     requires=[
         'matplotlib',
@@ -34,7 +34,7 @@ config = dict(
         'numpy',
         'openpyxl',
         'scipy',
-        'setuptools'
+        'setuptools',
     ],
     test_suite='nose.collector',
     classifiers=[
@@ -47,6 +47,7 @@ config = dict(
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering',
     ],
+    zip_safe=False,
 )
 
 setup(**config)
