@@ -344,7 +344,7 @@ class RvtMotion(object):
 
         r_sqrt : float
             sqared correlation coefficient of the fit (R²). See
-            :func:`scipy.stats.linregress`.
+            `scipy.stats.linregress`.
 
         freqs : :class:`numpy.array`
             selected frequencies
@@ -513,7 +513,7 @@ class SourceTheoryMotion(RvtMotion):
         ----------
         freqs : :class:`numpy.array` or ``None``, default: ``None``
             Frequency range. If no frequency range is specified then
-            :function:`log_spaced_values(0.05, 200.)` is used.
+            `log_spaced_values(0.05, 200.)` is used.
 
         """
         if freqs is None:
