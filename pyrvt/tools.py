@@ -102,7 +102,7 @@ def read_events(fname, response_type='psa'):
     elif ext == '.xlsx':
         if openpyxl is None:
             raise RuntimeError('openpyxl is required to open an xlsx file')
-        wb = openpyxl.load_workbook(fname, data_only=True)
+        wb = openpyxl.load_workbook(fname, read_only=True)
         ws = wb.worksheets[0]
         rows = [[r.value for r in row] for row in ws.rows]
     else:
