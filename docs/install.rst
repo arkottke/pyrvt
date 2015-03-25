@@ -27,8 +27,7 @@ Windows or OS-X, I recommend using Miniconda3. On Linux, the package manager
 is preferred.
 
 Miniconda has installers for `Windows 32-bit`_, `Windows 64-bit`_, and `OS-X`_.
-See the full list of installers `here` -- make sure you select Miniconda3 for
-Python3. However, Python27 is also supported.
+While pyRVT has support Python27, Python3 is preferred.
 
 .. _Windows 32-bit: http://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86.exe
 .. _Windows 64-bit: http://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
