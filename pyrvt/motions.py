@@ -344,7 +344,7 @@ class RvtMotion(object):
 
         r_sqrt : float
             sqared correlation coefficient of the fit (R²). See
-            :function:`scipy.stats.linregress`.
+            :func:`scipy.stats.linregress`.
 
         freqs : :class:`numpy.array`
             selected frequencies
