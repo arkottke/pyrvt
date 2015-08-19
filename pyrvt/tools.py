@@ -210,8 +210,40 @@ def write_events(fname, reference, reference_label, response_type,
         raise NotImplementedError
 
 
-def compute_compatible_spectra(method, periods, events, damping):
+def compute_compatible_spectra(method, periods, events, damping=0.05):
     """ Compute the response spectrum compatible motions.
+
+    Parameters
+    ----------
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    periods : :class:`numpy.array`
+        Periods of the oscillator response shared across all events.
+    events : list[dict]
+        All events to consider. Each dictionary should have the following keys:
+            psa_target - target psuedo-spectral accelerations
+            duration   - duration of the ground motion
+            magnitude  - earthquake magnitude
+            distance   - earthquake distance in [km]
+            region     - earthquake source region,
+            see :func:`~.peak_calculators.get_region`
+        If no duration is provided one is estimated from the magnitude,
+        distance, and region
+    damping : float, default: 0.05
+        Damping ratio in decimal
+
+    Returns
+    -------
+    freqs : :class:`numpy.array`
+        Frequency of the computed Fourier amplitude spectra.
+
+    The function also modifies the provided `events` dictionary and adds the
+    following keys:
+        duration - duration of the ground motion if one was not specified
+        fa       - Fourier amplitude spectra in units of g/sec
+        psa_calc - Psuedo-spectral acceleration calculated from `fa`. This
+                   will differ slightly from `psa_target`.
     """
     target_freqs = 1. / periods
 
@@ -242,15 +274,32 @@ def compute_compatible_spectra(method, periods, events, damping):
 
 
 def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
-    '''Compute the acceleration response spectrum from a Fourier amplitude
-    spectrum.'''
+    """Compute the acceleration response spectrum from a Fourier amplitude
+    spectrum.
+
+    Parameters
+    ----------
+    src : str
+        Source for the psuedo-spectral accelerations (PSA). This can be a
+        filename or pattern used in :func:`glob.glob.`
+    dst : dst
+        Destination directory for the output. The directory is created if it
+        does not exist.
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    fixed_spacing : bool, default: True
+        If True, then the periods are interpolated to 301 points equally
+        space in log-space from 0.01 to 10.
+
+    """
 
     for filename_src in glob.iglob(src):
         ext, periods, events = read_events(filename_src, 'psa_target')
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
-            _periods = np.logspace(-2, 1, 100)
+            _periods = np.logspace(-2, 1, 301)
 
             for e in events:
                 e['psa_target'] = np.exp(np.interp(
@@ -275,11 +324,28 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
 
 
 def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
-    '''Compute the Fourier amplitude spectrum from a acceleration response
-    spectrum.'''
+    """Compute the Fourier amplitude spectrum from a acceleration response
+    spectrum.
+
+    Parameters
+    ----------
+    src : str
+        Source for the Fourier amplitudes. This can be a filename
+        or pattern used in :func:`glob.glob.`
+    dst : dst
+        Destination directory for the output PSA. The directory is created if it
+        does not exist.
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    fixed_spacing : bool, default: True
+        If True, then the periods are interpolated to 301 points equally
+        space in log-space from 0.01 to 10.
+
+    """
 
     if fixed_spacing:
-        periods = np.logspace(-2, 1, 100)
+        periods = np.logspace(-2, 1, 301)
         osc_freqs = 1. / periods
 
     for filename_src in glob.iglob(src):

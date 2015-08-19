@@ -878,7 +878,9 @@ def get_region(region):
     Parameters
     ----------
     region : str
-        Name for region
+        Name for region. Synonymous regions are:
+            cena - cena, ena, ceus, eus
+            wna  - wna, wus
 
     Returns
     -------
