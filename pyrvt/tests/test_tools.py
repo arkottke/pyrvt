@@ -20,6 +20,7 @@
 import os
 import tempfile
 import shutil
+import time
 
 from numpy.testing import assert_almost_equal, assert_allclose, \
     assert_equal
@@ -120,6 +121,7 @@ def check_write_events(ext):
     # Reload the data
     _ext, _periods, _events = tools.read_events(dst_fname, 'psa_target')
 
+    # Delete the temporary file
     os.unlink(dst_fname)
 
     assert_equal(ext, _ext)

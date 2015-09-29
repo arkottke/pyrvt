@@ -105,6 +105,10 @@ def read_events(fname, response_type='psa'):
         wb = openpyxl.load_workbook(fname, read_only=True)
         ws = wb.worksheets[0]
         rows = [[r.value for r in row] for row in ws.rows]
+        # Close the file so that it may be deleted if needed. This is only
+        # important so that in the test cases the temporary .xlsx file can be
+        # deleted.
+        wb._archive.close()
     else:
         raise NotImplementedError
 
