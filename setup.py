@@ -6,7 +6,7 @@ from setuptools import setup
 import versioneer
 
 config = dict(
-    name='pyRVT',
+    name='pyrvt',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='Seismologic Random Vibration Theory',
@@ -18,9 +18,9 @@ config = dict(
             'rvt_operator = pyrvt.runner:main',
             ],
         },
-    packages=['pyrvt'],
+    packages=['pyrvt', 'pyrvt.tests'],
     package_data={
-        'pyrvt': ['data/*'],
+        'pyrvt': ['data/*', 'tests/data/*'],
     },
     requires=[
         'matplotlib',
