@@ -175,3 +175,13 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+
+livehtml:
+	sphinx-autobuild -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html\
+	    --watch ../pyrvt \
+	    -i "*.swp" \
+	    -i "*.swx" \
+	    -i "*.swpx" \
+	    -i "*~" \
+	    -i "\.*" \
+	    -i "*4913"

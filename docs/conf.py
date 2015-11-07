@@ -24,9 +24,11 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return Mock()
 
-MOCK_MODULES = ['numpy', 'scipy', 'scipy.integrate', 'scipy.interpolate',
-                'scipy.stats', 'matplotlib', 'xlrd', 'xlwt', 'openpyxl']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+MOCK_MODULES = ['numpy', 'numpy.testing', 'scipy', 'scipy.integrate',
+                'scipy.interpolate', 'scipy.stats', 'matplotlib', 'xlrd',
+                'xlwt', 'openpyxl']
+
+sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -44,8 +46,10 @@ sys.path.insert(0, os.path.abspath('..'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'numpydoc'
+    'sphinxcontrib.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

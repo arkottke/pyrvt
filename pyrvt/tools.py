@@ -222,18 +222,44 @@ def compute_compatible_spectra(method, periods, events, damping=0.05):
     method : str
         RVT peak factor method, see
         :func:`~.peak_calculators.get_peak_calculator`.
+
     periods : :class:`numpy.array`
         Periods of the oscillator response shared across all events.
+
     events : list[dict]
         All events to consider. Each dictionary should have the following keys:
-            psa_target - target psuedo-spectral accelerations
-            duration   - duration of the ground motion
-            magnitude  - earthquake magnitude
-            distance   - earthquake distance in [km]
-            region     - earthquake source region,
-            see :func:`~.peak_calculators.get_region`
+            psa_target
+                target psuedo-spectral accelerations
+
+            duration *optional*
+                duration of the ground motion
+
+            magnitude
+                earthquake magnitude
+
+            distance
+                earthquake distance in [km]
+
+            region
+                earthquake source region, see
+                :func:`~.peak_calculators.get_region`
+
         If no duration is provided one is estimated from the magnitude,
-        distance, and region
+        distance, and region.
+
+        The function modifies the provided `events` dictionaries and adds
+        the following keys:
+
+            duration
+                duration of the ground motion if one was not specified
+
+            fa
+                Fourier amplitude spectra in units of g/sec
+
+            psa_calc
+                Psuedo-spectral acceleration calculated from `fa`. This will
+                differ slightly from `psa_target`.
+
     damping : float, default: 0.05
         Damping ratio in decimal
 
@@ -241,13 +267,6 @@ def compute_compatible_spectra(method, periods, events, damping=0.05):
     -------
     freqs : :class:`numpy.array`
         Frequency of the computed Fourier amplitude spectra.
-
-    The function also modifies the provided `events` dictionary and adds the
-    following keys:
-        duration - duration of the ground motion if one was not specified
-        fa       - Fourier amplitude spectra in units of g/sec
-        psa_calc - Psuedo-spectral acceleration calculated from `fa`. This
-                   will differ slightly from `psa_target`.
     """
     target_freqs = 1. / periods
 

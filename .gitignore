@@ -7,15 +7,18 @@
 /build
 /pyRVT.egg-info
 
-# Ignore sphinix working directories
+# Sphinix working directories
 /docs/_build
 
-# Ignore temp output
+# Temp output
 /examples/tmp_output/
 
-# Ignore vim swap and undo files
+# Vim swap and undo files
 *.swp
 *.un~
+
+# Vim tags
+tags
 
 # PyCharm directory
 .idea/

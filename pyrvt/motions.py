@@ -21,26 +21,6 @@
 Classes and functions used to define random vibration theory (RVT) based
 motions.
 
-References
-----------
-.. [AH84] Anderson, J. G., & Hough, S. E. (1984). A model for the shape of the
-    Fourier amplitude spectrum of acceleration at high frequencies. Bulletin of
-    the Seismological Society of America, 74(5), 1969-1993.
-
-.. [AB11] Atkinson, G. M., & Boore, D. M. (2011). Modifications to existing
-    ground-motion prediction equations in light of new data. Bulletin of the
-    Seismological Society of America, 101(3), 1121-1135.
-
-.. [C03] Campbell, K. W. (2003). Prediction of strong ground motion using
-    the hybrid empirical method and its use in the development of ground-motion
-    (attenuation) relations in eastern North America.  Bulletin of the
-    Seismological Society of America, 93(3), 1012-1033.
-
-.. [GV76] Gasparini, D. A., & Vanmarcke, E. H. (1976). Simulated earthquake
-    motions compatible with prescribed response spectra.  Massachusetts
-    Institute of Technology, Department of Civil Engineering, Constructed
-    Facilities Division.
-
 """
 
 import numpy as np

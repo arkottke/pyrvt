@@ -12,3 +12,4 @@ Contents:
    usage
    faqs
    api
+   references
