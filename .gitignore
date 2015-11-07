@@ -6,6 +6,7 @@
 /dist
 /build
 /pyRVT.egg-info
+/pyrvt.egg-info
 
 # Sphinix working directories
 /docs/_build
