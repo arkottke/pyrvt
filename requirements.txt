@@ -4,9 +4,9 @@ jinja2
 nose
 numpy
 numpydoc
-openpyxl==2.1.5
+openpyxl
 setuptools
 sphinx
 scipy
-xlrd; python_version <= '2.7'
-xlwt; python_version <= '2.7'
+xlrd
+xlwt
