@@ -35,6 +35,8 @@ sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
+import pyrvt
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -73,7 +75,7 @@ copyright = '2015, Albert R. Kottke'
 # built documents.
 #
 # The short X.Y version.
-version = '0.2'
+version = pyrvt.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 
