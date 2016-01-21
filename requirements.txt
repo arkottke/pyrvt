@@ -5,6 +5,7 @@ nose
 numpy
 numpydoc
 openpyxl
+pyprind
 setuptools
 sphinx
 scipy

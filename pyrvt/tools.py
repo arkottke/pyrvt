@@ -28,6 +28,8 @@ import sys
 
 import numpy as np
 
+import pyprind
+
 from pyrvt.peak_calculators import get_peak_calculator, get_region
 from pyrvt import motions
 
@@ -214,7 +216,7 @@ def write_events(fname, reference, reference_label, response_type,
         raise NotImplementedError
 
 
-def compute_compatible_spectra(method, periods, events, damping=0.05):
+def compute_compatible_spectra(method, periods, events, damping=0.05, verbose=True):
     """ Compute the response spectrum compatible motions.
 
     Parameters
@@ -262,6 +264,8 @@ def compute_compatible_spectra(method, periods, events, damping=0.05):
 
     damping : float, default: 0.05
         Damping ratio in decimal
+    verbose : bool, default: True
+        Print status of calculation.
 
     Returns
     -------
@@ -271,6 +275,8 @@ def compute_compatible_spectra(method, periods, events, damping=0.05):
     target_freqs = 1. / periods
 
     event_keys = ['magnitude', 'distance', 'region']
+
+    bar = pyprind.ProgPercent(len(events)) if verbose else None
 
     for e in events:
         event_kwds = {key: e[key] for key in event_keys}
@@ -293,10 +299,13 @@ def compute_compatible_spectra(method, periods, events, damping=0.05):
         e['fa'] = crm.fourier_amps
         e['psa_calc'] = crm.compute_osc_accels(target_freqs, damping)
 
+        if bar:
+            bar.update()
+
     return freqs
 
 
-def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
+def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True, verbose=True):
     """Compute the acceleration response spectrum from a Fourier amplitude
     spectrum.
 
@@ -314,10 +323,14 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
     fixed_spacing : bool, default: True
         If True, then the periods are interpolated to 301 points equally
         space in log-space from 0.01 to 10.
+    verbose : bool, default: True
+        Print status of calculation.
 
     """
 
     for filename_src in glob.iglob(src):
+        if verbose:
+            print('Processing:', filename_src)
         ext, periods, events = read_events(filename_src, 'psa_target')
 
         if fixed_spacing:
@@ -332,7 +345,7 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
 
         # Compute the FA from the PSA
         freqs = compute_compatible_spectra(method, periods, events,
-                                           damping=damping)
+                                           damping=damping, verbose=verbose)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -346,7 +359,7 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True):
                      'fa', 'FA (g-s)', events)
 
 
-def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
+def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True, verbose=True):
     """Compute the Fourier amplitude spectrum from a acceleration response
     spectrum.
 
@@ -364,6 +377,8 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
     fixed_spacing : bool, default: True
         If True, then the periods are interpolated to 301 points equally
         space in log-space from 0.01 to 10.
+    verbose : bool, default: True
+        Print status of calculation.
 
     """
 
@@ -371,12 +386,17 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
         periods = np.logspace(-2, 1, 301)
         osc_freqs = 1. / periods
 
+
     for filename_src in glob.iglob(src):
+        if verbose:
+            print('Processing:', filename_src)
         ext, freqs, events = read_events(filename_src, 'fa')
 
         if not fixed_spacing:
             osc_freq = freqs
             periods = 1. / osc_freq
+
+        bar = pyprind.ProgPercent(len(events)) if verbose else None
 
         for e in events:
             m = motions.RvtMotion(
@@ -388,6 +408,9 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True):
                                  dist=e['distance']))
             )
             e['sa'] = m.compute_osc_accels(osc_freqs, damping)
+
+            if bar:
+                bar.update()
 
         if not os.path.exists(dst):
             os.makedirs(dst)
