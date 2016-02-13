@@ -30,6 +30,9 @@ MOCK_MODULES = ['numpy', 'numpy.testing', 'scipy', 'scipy.integrate',
 
 sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
+# Import pyrvt after loading the mock modules, but before setting the relative path.
+import pyrvt
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -49,7 +52,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinxcontrib.napoleon'
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -73,7 +76,7 @@ copyright = '2015, Albert R. Kottke'
 # built documents.
 #
 # The short X.Y version.
-version = '0.2'
+version = pyrvt.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 
