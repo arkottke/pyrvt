@@ -1,0 +1,7 @@
+doc-warnings: yes
+strictness: high
+python-targets:
+    - 2
+    - 3
+ignore-paths:
+    - pyrvt/_version.py
