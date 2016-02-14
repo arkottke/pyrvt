@@ -77,7 +77,7 @@ def increasing_x(x, y=None):
         return x, y
 
 
-def log_spaced_values(min, max):
+def log_spaced_values(min_, max_):
     """Generate values with constant log-spacing.
 
     Values are generated with 512 points per decade.
@@ -96,8 +96,8 @@ def log_spaced_values(min, max):
         Log-spaced values
 
     """
-    lower = np.log10(min)
-    upper = np.log10(max)
+    lower = np.log10(min_)
+    upper = np.log10(max_)
     count = np.ceil(512 * (upper - lower))
     return np.logspace(lower, upper, count)
 
@@ -292,7 +292,7 @@ class RvtMotion(object):
                                     full_output=False)
 
     def compute_attenuation(self, min_freq, max_freq=None, full=False):
-        """Compute the site attenuation (κ) based on a log-linear fit.
+        u"""Compute the site attenuation (κ) based on a log-linear fit.
 
         This function computes the site attenuation defined by [AH84]_ as:
 
