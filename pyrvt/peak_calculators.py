@@ -129,7 +129,7 @@ class Calculator(object):
 
 
 class Vanmarcke1975(Calculator):
-    """Vanmarcke (1975) [V75]_ peak factor which includes the effects of clumping.
+    u"""Vanmarcke (1975) [V75]_ peak factor which includes the effects of clumping.
 
     The peak factor equation is from Equation (2) in [DK80]., which is based on
     Equation (29) in [V75]_.

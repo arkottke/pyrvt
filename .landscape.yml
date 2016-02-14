@@ -5,3 +5,4 @@ python-targets:
     - 3
 ignore-paths:
     - pyrvt/_version.py
+    - versioneer.py
