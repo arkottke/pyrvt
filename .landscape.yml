@@ -4,5 +4,6 @@ python-targets:
     - 2
     - 3
 ignore-paths:
+    - docs/conf.py
     - pyrvt/_version.py
     - versioneer.py
