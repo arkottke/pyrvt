@@ -1,30 +1,15 @@
-#!/usr/bin/env python3
-# encoding: utf-8
-
-# pyRVT: Seismological random vibration theory implemented with Python
-# Copyright (C) 2013-2014 Albert R. Kottke albert.kottke@gmail.com
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import os
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
+import pytest
 
-from .. import motions
-from .. import peak_calculators
-from ..tests import readers
+import pyrvt
+
+from . import readers
 
 
 def check_osc_accels(peak_calculator, fname_fs, fname_rs):
@@ -33,7 +18,7 @@ def check_osc_accels(peak_calculator, fname_fs, fname_rs):
         os.path.join(path, fname_fs))
     rs = readers.load_rvt_response_spectrum(os.path.join(path, fname_rs))
 
-    rvt_motion = motions.RvtMotion(
+    rvt_motion = pyrvt.motions.RvtMotion(
         freqs=fs['freqs'],
         fourier_amps=fs['fourier_amps'],
         duration=rs['duration'],
@@ -46,7 +31,7 @@ def check_osc_accels(peak_calculator, fname_fs, fname_rs):
 
 
 def test_boore_joyner_1984():
-    bj84 = peak_calculators.BooreJoyner1984()
+    bj84 = pyrvt.peak_calculators.BooreJoyner1984()
     check_osc_accels(
         bj84,
         'test-bj84.m6.00r0020.0_fs.col',
@@ -59,7 +44,7 @@ def test_boore_joyner_1984():
 
 def test_liu_pezeshk_1999():
     check_osc_accels(
-        peak_calculators.LiuPezeshk1999(),
+        pyrvt.peak_calculators.LiuPezeshk1999(),
         'test-lp99.m6.00r0020.0_fs.col',
         'test-lp99.m6.00r020.0_rs.rv.col',
     )
@@ -67,7 +52,7 @@ def test_liu_pezeshk_1999():
 
 def test_boore_thompson_2012_wna():
     check_osc_accels(
-        peak_calculators.BooreThompson2012('wna', 6, 20.),
+        pyrvt.peak_calculators.BooreThompson2012('wna', 6, 20.),
         'test-bt12_wna.m6.00r0020.0_fs.col',
         'test-bt12_wna.m6.00r020.0_rs.rv.col',
     )
@@ -75,20 +60,21 @@ def test_boore_thompson_2012_wna():
 
 def test_boore_thompson_2012_ena():
     check_osc_accels(
-        peak_calculators.BooreThompson2012('ena', 6, 20.),
+        pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.),
         'test-bt12_ena.m6.00r0020.0_fs.col',
         'test-bt12_ena.m6.00r020.0_rs.rv.col',
     )
 
 
-def check_formulation(method):
+@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87'])
+def test_formulations(method):
     mag = 6.5
     dist = 20
     region = 'cena'
 
-    m = motions.SourceTheoryMotion(
+    m = pyrvt.motions.SourceTheoryMotion(
         mag, dist, region,
-        peak_calculator=peak_calculators.get_peak_calculator(
+        peak_calculator=pyrvt.peak_calculators.get_peak_calculator(
             method, dict(mag=mag, dist=dist, region=region))
     )
     m.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
@@ -97,9 +83,3 @@ def check_formulation(method):
     osc_accels = m.compute_osc_accels(osc_freqs, 0.05)
 
     assert np.all(np.isreal(osc_accels))
-
-
-def test_peak_factor_formulations():
-    methods = ['V75', 'D64', 'DK85', 'TM87']
-    for method in methods:
-        yield check_formulation, method
