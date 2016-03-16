@@ -1,15 +1,23 @@
 Welcome to pyRVT's documentation!
 =================================
 
-Release v\ |version|. (:ref:`Installation <install>`)
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   install
+   readme
+   installation
    usage
    faqs
    api
-   references
+   zreferences
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+

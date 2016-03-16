@@ -1,47 +1,66 @@
-#!/usr/bin/env python3
-# encoding: utf-8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-from setuptools import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
-import versioneer
 
-config = dict(
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
+
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
+
+requirements = [
+    # TODO: put package requirements here
+]
+
+test_requirements = [
+    # TODO: put package test requirements here
+]
+
+setup(
     name='pyrvt',
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    description='Seismologic Random Vibration Theory',
-    author='Albert Kottke',
+    version='0.3.0',
+    description="Ground motion models implemented in Python.",
+    long_description=readme + '\n\n' + history,
+    author="Albert Kottke",
     author_email='albert.kottke@gmail.com',
     url='http://github.com/arkottke/pyrvt',
+    packages=[
+        'pyrvt',
+    ],
     entry_points={
         'console_scripts': [
             'rvt_operator = pyrvt.runner:main',
             ],
         },
-    packages=['pyrvt', 'pyrvt.tests'],
+    package_dir={'pyrvt':
+                 'pyrvt'},
+    include_package_data=True,
+    install_requires=requirements,
+    license="MIT",
+    zip_safe=False,
+    keywords='pyrvt'
     package_data={
         'pyrvt': ['data/*', 'tests/data/*'],
     },
-    requires=[
-        'matplotlib',
-        'nose',
-        'numpy',
-        'openpyxl',
-        'scipy',
-        'setuptools',
-    ],
-    test_suite='nose.collector',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: MIT License',
         'Environment :: Console',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python',
         'Topic :: Scientific/Engineering',
+        'Intended Audience :: Science/Research',
     ],
-    zip_safe=False,
+    test_suite='tests',
+    tests_require=test_requirements
 )
-
-setup(**config)

@@ -1,22 +1,64 @@
+=====
 pyRVT
-+++++
+=====
 
-.. image:: https://travis-ci.org/arkottke/pyrvt.svg?branch=master   
+.. image:: https://img.shields.io/pypi/v/pyrvt.svg
+    :target: https://pypi.python.org/pypi/pyrvt
+    :alt: PyPi Cheese Shop
+
+.. image:: https://img.shields.io/travis/arkottke/pyrvt.svg
     :target: https://travis-ci.org/arkottke/pyrvt
+    :alt: Build Status
 
-.. image:: https://readthedocs.org/projects/pyrvt/badge/?version=latest
-    :target: http://pyrvt.readthedocs.org/
+.. image:: https://readthedocs.org/projects/pyrvt/badge/?version=latest&style=flat
+    :target: https://pyrvt.readthedocs.org
+    :alt: Documentation Status
 
-.. image:: https://coveralls.io/repos/arkottke/pyrvt/badge.png?branch=master 
-    :target: https://coveralls.io/r/arkottke/pyrvt?branch=master
+.. image:: https://coveralls.io/repos/github/arkottke/pyrvt/badge.svg?branch=master
+    :target: https://coveralls.io/github/arkottke/pyrvt?branch=master
+    :alt: Test Coverage
 
 .. image:: https://landscape.io/github/arkottke/pyrvt/master/landscape.svg?style=flat
-    :target: https://landscape.io/github/arkottke/pyrvt
+    :target: https://landscape.io/github/arkottke/pyrvt/master
+    :alt: Code Health
+
+.. image:: https://img.shields.io/badge/license-MIT-blue.svg
 
 A Python library and command-line application for using random vibration theory
 to transform between acceleration Fourier amplitude spectrum and acceleration
 response spectrum.
 
+* Free software: MIT license
+* Documentation: https://pygmm.readthedocs.org.
+
 Information on the installation and usage can be found in the documentation_.
 
 .. _documentation: http://pyrvt.readthedocs.org/
+
+Features
+--------
+
+Peak factor implementations:
+
+* Vanmarcke (1975)
+
+* Davenport (1964)
+
+* Der Kiureghian (1985)
+
+* Toro & McGuire (1987)
+
+* Cartwright & Longuet-Higgins (1956)
+
+* Boore & Joyner (1984)
+
+* Liu & Pezeshk (1999)
+
+
+Credits
+-------
+
+This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
