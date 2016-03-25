@@ -384,7 +384,7 @@ class SourceTheoryMotion(RvtMotion):
         if freqs is None:
             self._freqs = log_spaced_values(0.05, 200.)
         else:
-            self._freqs = sort_increasing(np.asarray(freqs))
+            self._freqs, = sort_increasing(np.asarray(freqs))
 
         self._duration = self.compute_duration()
 

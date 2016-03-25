@@ -218,8 +218,9 @@ def compute_compatible_spectra(method, periods, events, damping=0.05,
     Note:
         Each event dictionary should have the following keys:
 
-         - `psa_target` (:class:`np.ndarray`): target pseudo-spectral
-           accelerations
+         - `psa` (:class:`np.ndarray`): pseudo-spectral
+           accelerations. This is the target for the
+           :class:`~.motions.CompatibleRvtMotion.`.
          - `duration` (Optional[float): duration of the ground motion
          - `magnitude` (Optional[float]): earthquake magnitude
          - `distance` (Optional[float]): earthquake distance (km)
@@ -248,7 +249,7 @@ def compute_compatible_spectra(method, periods, events, damping=0.05,
 
         crm = motions.CompatibleRvtMotion(
             target_freqs,
-            e['psa_target'],
+            e['psa'],
             duration=e['duration'],
             osc_damping=damping,
             event_kwds=event_kwds,
@@ -293,15 +294,15 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
     for filename_src in glob.iglob(src):
         if verbose:
             print('Processing:', filename_src)
-        ext, periods, events = read_events(filename_src, 'psa_target')
+        ext, periods, events = read_events(filename_src, 'psa')
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
             _periods = np.logspace(-2, 1, 301)
 
             for e in events:
-                e['psa_target'] = np.exp(np.interp(
-                    _periods, periods, np.log(e['psa_target'])))
+                e['psa'] = np.exp(np.interp(
+                    _periods, periods, np.log(e['psa'])))
 
             periods = _periods
 

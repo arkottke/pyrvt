@@ -25,7 +25,7 @@ def test_read_events(ext):
     fname = os.path.join(
         os.path.dirname(__file__),
         'data', 'test_sa' + ext)
-    ext, periods, events = pyrvt.tools.read_events(fname, 'psa_target')
+    ext, periods, events = pyrvt.tools.read_events(fname, 'psa')
 
     # Test the periods
     assert_allclose(
@@ -62,7 +62,7 @@ def test_read_events(ext):
     # Test the response values of the last event
     e = events[-1]
     assert_allclose(
-        e['psa_target'],
+        e['psa'],
         [0.072912, 0.072902, 0.072895, 0.072891, 0.072895, 0.072907,
          0.072921, 0.072937, 0.072954, 0.072973, 0.073151, 0.073831,
          0.074725, 0.075723, 0.076905, 0.078207, 0.079820, 0.081709,
@@ -89,19 +89,19 @@ def test_write_events(ext):
     src_fname = os.path.join(
         os.path.dirname(__file__),
         'data', 'test_sa' + ext)
-    ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa_target')
+    ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa')
 
     # Write the data
     handle, dst_fname = tempfile.mkstemp(suffix=ext)
     pyrvt.tools.write_events(
         dst_fname,
         periods, 'Period (s)',
-        'psa_target', 'SA (g)',
+        'psa', 'SA (g)',
         events)
     os.close(handle)
 
     # Reload the data
-    _ext, _periods, _events = pyrvt.tools.read_events(dst_fname, 'psa_target')
+    _ext, _periods, _events = pyrvt.tools.read_events(dst_fname, 'psa')
 
     # Delete the temporary file
     os.unlink(dst_fname)
@@ -120,12 +120,12 @@ def test_write_events(ext):
 def test_compute_compatible_spectra():
     src_fname = os.path.join(
         os.path.dirname(__file__), 'data', 'test_sa.csv')
-    ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa_target')
+    ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa')
 
     pyrvt.tools.compute_compatible_spectra('LP99', periods, events[:1], 0.05)
 
     # Test that the fit is within 2% of the target
-    assert_allclose(events[0]['psa_target'], events[0]['psa_calc'], rtol=0.02)
+    assert_allclose(events[0]['psa'], events[0]['psa_calc'], rtol=0.02)
 
 
 def test_operation_psa2fa():

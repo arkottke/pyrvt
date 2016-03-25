@@ -5,7 +5,7 @@ import os
 
 from numpy.testing import assert_almost_equal, assert_allclose
 
-import readers
+from . import readers
 
 
 class TestLoadFourierSpectrum:
@@ -159,5 +159,3 @@ class TestLoadRvtResponseSpectrum:
              1.752E+00, 1.486E+00, 1.279E+00, 1.115E+00, 9.823E-01, 8.738E-01,
              7.839E-01, 7.087E-01, 5.912E-01, 5.030E-01, 4.342E-01, 3.791E-01,
              3.342E-01])
-
-
