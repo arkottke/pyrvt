@@ -9,7 +9,7 @@ import pytest
 
 import pyrvt
 
-import readers
+from . import readers
 
 
 def check_osc_accels(peak_calculator, fname_fs, fname_rs):
