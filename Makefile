@@ -46,7 +46,7 @@ clean-test:
 	rm -fr htmlcov/
 
 lint:
-	flake8 pygmm tests
+	flake8 pyrvt tests
 
 test:
 	python setup.py test
@@ -55,15 +55,15 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source pygmm setup.py test
+	coverage run --source pyrvt setup.py test
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
 docs:
-	rm -f docs/pygmm.rst
+	rm -f docs/pyrvt.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ pygmm
+	sphinx-apidoc -o docs/ pyrvt
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html

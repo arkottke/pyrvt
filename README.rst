@@ -29,7 +29,7 @@ to transform between acceleration Fourier amplitude spectrum and acceleration
 response spectrum.
 
 * Free software: MIT license
-* Documentation: https://pygmm.readthedocs.org.
+* Documentation: https://pyrvt.readthedocs.org.
 
 Information on the installation and usage can be found in the documentation_.
 
