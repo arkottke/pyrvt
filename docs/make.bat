@@ -5,6 +5,9 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
+if "%SPHINXAUTOBUILD%" == "" (
+	set SPHINXAUTOBUILD=sphinx-autobuild
+)
 set BUILDDIR=_build
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% .
 set I18NSPHINXOPTS=%SPHINXOPTS% .
@@ -35,6 +38,7 @@ if "%1" == "help" (
 	echo.  changes    to make an overview over all changed/added/deprecated items
 	echo.  xml        to make Docutils-native XML files
 	echo.  pseudoxml  to make pseudoxml-XML files for display purposes
+	echo.  livehtml   to make live HTML that automaticall rebuilds
 	echo.  linkcheck  to check all external links for integrity
 	echo.  doctest    to run all doctests embedded in the documentation if enabled
 	goto end
@@ -236,6 +240,22 @@ if "%1" == "pseudoxml" (
 	if errorlevel 1 exit /b 1
 	echo.
 	echo.Build finished. The pseudo-XML files are in %BUILDDIR%/pseudoxml.
+	goto end
+)
+
+if "%1" == "livehtml" (
+	%SPHINXAUTOBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html ^
+	    --watch ../pyrvt ^
+	    -i "*___jb_*___" ^
+	    -i "*.swp" ^
+	    -i "*.swx" ^
+	    -i "*.swpx" ^
+	    -i "*~" ^
+	    -i "\.*" ^
+	    -i "*4913"
+	if errorlevel 1 exit /b 1
+	echo.
+	echo.Autobuild terminated.
 	goto end
 )
 

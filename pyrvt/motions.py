@@ -1,26 +1,9 @@
-#!/usr/bin/env python3
-# encoding: utf-8
-
-# pyRVT: Seismological random vibration theory implemented with Python
-# Copyright (C) 2013-2014 Albert R. Kottke albert.kottke@gmail.com
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """
 Classes and functions used to define random vibration theory (RVT) based
 motions.
-
 """
 
 import numpy as np
@@ -33,71 +16,45 @@ from . import peak_calculators
 DEFAULT_CALC = 'V75'
 
 
-def increasing_x(x, y=None):
-    """Check if *x* is monotonically increasing. If not, reverse it.
+def sort_increasing(*args):
+    """Sort arrays such that they are increasing.
 
-    Parameters
-    ----------
-    x : :class:`numpy.array`
-        X values, which are checked.
+    Check if the first array is is increasing, if not reverse the order. Same
+    operation is applied to additional arrays.
 
-    y : :class:`numpy.array` or ``None``, default: ``None``
-        Y values, which are reversed if *x* is reversed
-
-    Returns
-    -------
-    If *y* is not ``None``, then returns (*x*, *y*), otherwise only returns *x*.
-    x : :class:`numpy.array`
-        X values in monotonically increasing order.
-
-    y : :class:`numpy.array`
-        Y values in same order as *x*.
-
-    Raises
-    ------
-    :class:`NotImplementedError`
-        If *x* is not monotonic.
+    Args:
+        *args: `np.ndarray` to be re-ordered.
+    Returns:
+        tuple: tuple containing sorted `np.ndarray`'s.
+    Raises:
+        :class:`NotImplementedError`: if first array is not monotonic.
     """
-
-    diffs = np.diff(x)
+    diffs = np.diff(args[0])
     if np.all(0 <= diffs):
         # All increasing, do nothing
         pass
     elif np.all(diffs <= 0):
         # All decreasing, reverse
-        x = x[::-1]
-        if y is not None:
-            y = y[::-1]
+        args = [a[::-1] for a in args]
     else:
         raise NotImplementedError('Values are not regularly ordered.')
 
-    if y is None:
-        return x
-    else:
-        return x, y
+    return args
 
 
-def log_spaced_values(min_, max_):
+def log_spaced_values(lower, upper, per_decade=512):
     """Generate values with constant log-spacing.
 
-    Values are generated with 512 points per decade.
-
-    Parameters
-    ----------
-    min : float
-        Minimum value of the range.
-
-    max : float
-        Maximum value of the range.
-
-    Returns
-    -------
-    value : :class:`numpy.array`
-        Log-spaced values
-
+    Args:
+        lower (float): lower end of the range.
+        upper (float): upper end of the range.
+        per_decade (Optional[int]): number of points per decade. Default is
+            512 points per decade.
+    Returns:
+        :class:`np.ndarray`: Log-spaced values.
     """
-    lower = np.log10(min_)
-    upper = np.log10(max_)
+    lower = np.log10(lower)
+    upper = np.log10(upper)
     count = np.ceil(512 * (upper - lower))
     return np.logspace(lower, upper, count)
 
@@ -105,24 +62,15 @@ def log_spaced_values(min_, max_):
 def compute_sdof_tf(freqs, osc_freq, osc_damping):
     """Compute the single-degree-of-freedom transfer function. When applied on
     the acceleration Fourier amplitude spectrum, it provides the
-    psuedo-spectral acceleration.
+    pseudo-spectral acceleration.
 
-    Parameters
-    ----------
-    freqs : :class:`numpy.array`
-        Frequencies [Hz] at which the transfer function should be calculated
-
-    osc_freq : float
-        Frequency of the oscillator [Hz]
-
-    osc_damping : float
-        Damping ratio of the oscillator [decimal]
-
-    Returns
-    -------
-    tf : numpy.array
-        Complex valued transfer function
-
+    Args:
+        freqs (:class:`np.ndarray`): Frequencies at which the transfer
+            function should be calculated  (Hz).
+        osc_freq (float): Frequency of the oscillator (Hz).
+        osc_damping (float): Fractional damping of the oscillator (decimal).
+    Returns:
+        (:class:`np.ndarray`): Complex valued transfer function.
     """
     return (-osc_freq ** 2. /
             (freqs ** 2 - osc_freq ** 2 -
@@ -130,18 +78,13 @@ def compute_sdof_tf(freqs, osc_freq, osc_damping):
 
 
 def compute_stress_drop(magnitude):
-    """Compute the stress drop using [AB11]_ model.
+    """Compute the stress drop using Atkinson & Boore (2011,
+    :cite:`atkinson11`) model.
 
-    Parameters
-    ----------
-    magnitude : float
-        Moment magnitude of the stress drop
-
-    Returns
-    -------
-    stress_drop : float
-        Stress drop [bars]
-
+    Args:
+        magnitude (float): Moment magnitude of the stress drop.
+    Returns:
+        stress_drop (float): Stress drop (bars).
     """
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
 
@@ -149,21 +92,14 @@ def compute_stress_drop(magnitude):
 def compute_geometric_spreading(dist, coefs):
     """Compute the geometric spreading defined by piecewise linear model.
 
-    Parameters
-    ----------
-    dist : float
-        Closest distance to the rupture surface [km]
-
-    coefs : list
-        List of (slope, limit) tuples that define the attenuation. For an
-        infinite distance use None. For example, [(1, None)] would provide for
-        1/R geometric spreading to an infinite distance.
-
-    Returns
-    -------
-    geometric_spreading : float
-        Geometric spreading coefficient
-
+    Args:
+        dist (float): Closest distance to the rupture surface (km).
+        coefs (List[(float,Optional[float])]): List of (slope, limit) tuples
+            that define the attenuation. For an infinite distance use `None`.
+            For example, [(1, `None`)] would provide for 1/R geometric spreading
+            to an infinite distance.
+    Returns:
+        (float): Geometric spreading coefficient.
     """
     initial = 1
     gs = 1
@@ -184,27 +120,20 @@ class RvtMotion(object):
     """A :class:`~.motions.RvtMotion` object used to store the properties
     of an RVT motion.
 
-    Parameters
-    ----------
-    freqs : :class:`numpy.array` or ``None``, default: ``None``
-        Frequency array [Hz]
-
-    fourier_amps : :class:`numpy.array` or ``None``, default: ``None``
-        Absolute value of acceleration Fourier amplitudes.
-
-    duration : float or ``None``, default: ``None``
-        Ground motion duration [dec].
-
-    peak_calculator : str or :class:`~.peak_calculators.Calculator`, default: ``None``
-        Peak calculator to use. If ``None``, then the default peak
-        calculator is used. The peak calculator may either be specified by a
-        :class:`~.peak_calculators.Calculator` object, or by the initials of
-        the calculator.
-
-    calc_kwds : dict or ``None``, default: ``None``
-        Keywords to be passed during the creation the peak calculator. These
-        keywords are only required for some peak calculators.
-
+    Args:
+        freqs (Optional[:class:`np.ndarray`]): Frequency array (Hz).
+        fourier_amps (Optional[:class:`np.ndarray`]): Absolute value of
+            acceleration Fourier amplitudes.
+        duration (Optional[float]): Ground motion duration (sec).
+        peak_calculator (Optional[:class:`~.peak_calculators.Calculator`]):
+            Peak calculator to use. If `None`, then the default peak
+            calculator is used. The peak calculator may either be specified
+            by a :class:`~.peak_calculators.Calculator` object, or by the
+            initials of the calculator using
+            :func:`~.peak_calculators.peak_calculator`.
+        calc_kwds (Optional[Dict]): Keywords to be passed during the
+            creation the peak calculator. These keywords are only
+            required for some peak calculators.
     """
     def __init__(self, freqs=None, fourier_amps=None, duration=None,
                  peak_calculator=None, calc_kwds=None):
@@ -213,7 +142,7 @@ class RvtMotion(object):
         self._duration = duration
 
         if self._freqs is not None:
-            self._freqs, self._fourier_amps = increasing_x(
+            self._freqs, self._fourier_amps = sort_increasing(
                 self._freqs, self._fourier_amps)
 
         if isinstance(peak_calculator, peak_calculators.Calculator):
@@ -224,12 +153,12 @@ class RvtMotion(object):
 
     @property
     def freqs(self):
-        """Frequency values."""
+        """Frequency values (Hz)."""
         return self._freqs
 
     @property
     def fourier_amps(self):
-        """Acceleration Fourier amplitude values."""
+        """Acceleration Fourier amplitude values (g-sec)."""
         return self._fourier_amps
 
     @property
@@ -241,19 +170,13 @@ class RvtMotion(object):
         """Compute the pseudo-acceleration spectral response of an oscillator
         with a specific frequency and damping.
 
-        Parameters
-        ----------
-        osc_freqs : :class:`numpy.array`
-            Natural frequencies of the oscillator [Hz]
-
-        osc_damping : float, default: 0.05
-            Damping ratio of the oscillator.
-
-        Returns
-        -------
-        psa : :class:`numpy.array`
-            Peak pseudo-spectral acceleration of the oscillator
-
+        Args:
+            osc_freq (float): Frequency of the oscillator (Hz).
+            osc_damping (float): Fractional damping of the oscillator (dec). For
+                example, 0.05 for a damping ratio of 5%.
+        Returns:
+            (:class:`np.ndarray`): Peak pseudo-spectral acceleration of the
+                oscillator
         """
         def compute_spec_accel(osc_freq):
             return self.compute_peak(
@@ -267,71 +190,46 @@ class RvtMotion(object):
                      osc_damping=None):
         """Compute the peak response.
 
-        Parameters
-        ----------
-        transfer_func : :class:`numpy.array` or ``None``, default: ``None``
-            Transfer function to apply to the motion. If ``None``, then no
-            transfer function is applied.
-
-        osc_freq : float or ``None``, default: ``None``
-            Oscillator frequency for correction of RVT peak calculation.
-            Typically, both the *osc_freq* and *osc_damping* need to be
-            specified for a correction to be computed.
-
-        osc_damping : float or ``None``, default: ``None``
-            Oscillator frequency for correction of RVT peak calculation.
-
+        Args:
+            transfer_func (Optional[:class:`np.ndarray`]): Transfer function
+                to apply to the motion. If ``None``, then no transfer
+                function is applied.
+            osc_freq (float): Frequency of the oscillator (Hz).
+            osc_damping (float): Fractional damping of the oscillator (dec). For
+                example, 0.05 for a damping ratio of 5%.
         """
         if transfer_func is None:
             fourier_amps = self._fourier_amps
         else:
             fourier_amps = np.abs(transfer_func) * self._fourier_amps
 
-        return self.peak_calculator(self._duration, self._freqs, fourier_amps,
-                                    osc_freq=osc_freq, osc_damping=osc_damping,
-                                    full_output=False)
+        return self.peak_calculator(
+            self._duration, self._freqs, fourier_amps,
+            osc_freq=osc_freq, osc_damping=osc_damping)[0]
 
-    def compute_attenuation(self, min_freq, max_freq=None, full=False):
-        u"""Compute the site attenuation (κ) based on a log-linear fit.
+    def compute_attenuation(self, min_freq, max_freq=None):
+        """Compute the site attenuation (κ) based on a log-linear fit.
 
-        This function computes the site attenuation defined by [AH84]_ as:
+        This function computes the site attenuation defined by Anderson &
+        Hough (1984, :cite:`anderson84`) as:
 
         .. math::
             a(f) = A_0 \exp(-\pi \kappa f) \\text( for ) f > f_E
 
         for a single Fourier amplitude spectrum
 
+        Args:
+            min_freq (float): minimum frequency of the fit (Hz).
+            max_freq (Optional[float]): maximum frequency of the fit. If
+                ``None``, then the maximum frequency range is used.
+        Returns:
+            (tuple): tuple containing:
 
-        Parameters
-        ----------
-        min_freq : float
-            minimum frequency of the fit
-
-        max_freq : float or ``None``, default: ``None``
-            maximum frequency of the fit. If ``None``, then the maximum
-            frequency range is used.
-
-        full : bool, default: ``False``
-            If the complete output should be returned
-
-        Returns
-        -------
-        If *full* is ``False``, then only *atten* is returned. Otherwise,
-        the tuple (*atten*, *r_value*, *freqs*, *fitted*) is return.
-
-        atten : float
-            attenuation parameter
-
-        r_sqrt : float
-            sqared correlation coefficient of the fit (R²). See
-            `scipy.stats.linregress`.
-
-        freqs : :class:`numpy.array`
-            selected frequencies
-
-        fitted : :class:`numpy.array`
-            fitted values
-
+                - atten (float): attenuation parameter.
+                - r_sqr (float): squared correlation coefficient of the fit
+                    (R²). See `scipy.stats.linregress`.
+                - freqs (:class:`np.ndarray`): selected frequencies
+                - fitted (:class:`np.ndarray`): fitted values
         """
         max_freq = max_freq or self.freqs[-1]
         mask = (min_freq <= self.freqs) & (self.freqs <= max_freq)
@@ -340,54 +238,44 @@ class RvtMotion(object):
             self.freqs[mask], np.log(self.fourier_amps[mask]))
 
         atten = slope / -np.pi
-
-        if full:
-            freqs = self.freqs[mask]
-            fitted = np.exp(intercept + slope * freqs)
-            return atten, r_value ** 2, freqs, fitted
-        else:
-            return atten
+        freqs = self.freqs[mask]
+        fitted = np.exp(intercept + slope * freqs)
+        return atten, r_value ** 2, freqs, fitted
 
 
 class SourceTheoryMotion(RvtMotion):
-    """Single-corner source theory model with default parameters from [C03]_.
-
-    Parameters
-    ----------
-    magnitude : float
-        Moment magnitude of the event
-
-    distance : float
-        Epicentral distance [km]
-
-    region : {'cena', 'wna'}, str
-        Region for the parameters. Either 'cena' for Central and Eastern
-        North America, or 'wna' for Western North America.
-
-    stress_drop : float or None, default: ``None``
-        Stress drop of the event [bars]. If ``None``, then the default value is
-        used. For *region* = 'cena', the default value is computed by the
-        [AB11]_ model, while for *region* = 'wna' the default value is 100
-        bars.
-
-    depth : float, default: 8
-        Hypocenter depth [km]. The *depth* is combined with the
-        *distance* to compute the hypocentral distance.
-
-    peak_calculator : str or :class:`~.peak_calculators.Calculator`, default: ``None``
-        Peak calculator to use. If ``None``, then the default peak
-        calculator is used. The peak calculator may either be specified by a
-        :class:`~.peak_calculators.Calculator` object, or by the initials of
-        the calculator.
-
-    calc_kwds : dict or ``None``, default: ``None``
-        Keywords to be passed during the creation the peak calculator. These
-        keywords are only required for some peak calculators.
-
+    """Single-corner source theory model with default parameters from
+    Campbell (2003, :cite:`campbell03`).
     """
 
     def __init__(self, magnitude, distance, region, stress_drop=None, depth=8,
                  peak_calculator=None, calc_kwds=None):
+        """Initialize the motion.
+
+        Args:
+            magnitude (float): Moment magnitude of the event.
+            distance (float): Epicentral distance (km).
+            region (str): Region for the parameters. Either 'cena' for
+                Central and Eastern North America, or 'wna' for Western North
+                America.
+            stress_drop (Optional[float]): Stress drop of the event (bars).
+                If `None`, then the default value is used. For `region` is
+                'cena', the default value is computed by the :cite:`atkinson11`
+                model, while for `region` is 'wna' the default value is 100
+                bars.
+            depth (Optional[float]): Hypocenter depth (km). The `depth` is
+                combined with the `distance` to compute the hypocentral
+                distance.
+            peak_calculator (Optional[:class:`~.peak_calculators.Calculator`]):
+                Peak calculator to use. If `None`, then the default peak
+                calculator is used. The peak calculator may either be specified
+                by a :class:`~.peak_calculators.Calculator` object, or by the
+                initials of the calculator using
+                :func:`~.peak_calculators.peak_calculator`.
+            calc_kwds (Optional[Dict]): Keywords to be passed during the
+                creation the peak calculator. These keywords are only
+                required for some peak calculators.
+        """
         super(SourceTheoryMotion, self).__init__(
             peak_calculator=peak_calculator, calc_kwds=calc_kwds)
 
@@ -459,7 +347,6 @@ class SourceTheoryMotion(RvtMotion):
 
     def compute_duration(self):
         """Compute the duration by combination of source and path.
-
         """
         # Source component
         duration_source = 1. / self.corner_freq
@@ -486,20 +373,18 @@ class SourceTheoryMotion(RvtMotion):
 
         return duration_source + duration_path
 
-    def compute_fourier_amps(self, freqs=None):
+    def calc_fourier_amps(self, freqs=None):
         """Compute the acceleration Fourier amplitudes for a frequency range.
 
-        Parameters
-        ----------
-        freqs : :class:`numpy.array` or ``None``, default: ``None``
-            Frequency range. If no frequency range is specified then
-            `log_spaced_values(0.05, 200.)` is used.
-
+        Args:
+            freqs (Optional[:class:`np.ndarray`]) Frequency range. If no
+                frequency range is specified then
+                `log_spaced_values(0.05, 200.)` is used.
         """
         if freqs is None:
             self._freqs = log_spaced_values(0.05, 200.)
         else:
-            self._freqs = increasing_x(np.asarray(freqs))
+            self._freqs = sort_increasing(np.asarray(freqs))
 
         self._duration = self.compute_duration()
 
@@ -546,51 +431,43 @@ class CompatibleRvtMotion(RvtMotion):
     """A :class:`~.motions.CompatibleRvtMotion` object is used to compute a
     Fourier amplitude spectrum that is compatible with a target response
     spectrum.
-
-    Parameters
-    ----------
-    osc_freqs : :class:`numpy.array`
-        Frequencies of the oscillator response [Hz].
-
-    osc_accels_target : :class:`numpy.array`
-        Spectral acceleration of the oscillator at the specified frequencies
-        [g].
-
-    duration : float or None, default: None
-        Duration of the ground motion [sec]. If ``None``, then the duration is
-        computed using
-
-    osc_damping : float, default: 0.05
-        Damping ratio of the oscillator [dec].
-
-    event_kwds : dict or ``None``, default: ``None``
-        Keywords passed to :class:`~.motions.SourceTheoryMotion` and used
-        to compute the duration of the motion. Only *duration* or
-        *event_kwds* should be specified.
-
-    window_len : int or ``None``, default: ``None``
-        Window length used for smoothing the computed Fourier amplitude
-        spectrum. If ``None``, then no smoothing is applied. The smoothing is
-        applied as a moving average with a width of ``window_len``.
-
-    peak_calculator : str or :class:`~.peak_calculators.Calculator`, default: ``None``
-        Peak calculator to use. If ``None``, then the default peak
-        calculator is used. The peak calculator may either be specified by a
-        :class:`~.peak_calculators.Calculator` object, or by the initials of
-        the calculator.
-
-    calc_kwds : dict or ``None``, default: ``None``
-        Keywords to be passed during the creation the peak calculator. These
-        keywords are only required for some peak calculators.
-
     """
     def __init__(self, osc_freqs, osc_accels_target, duration=None,
                  osc_damping=0.05, event_kwds=None, window_len=None,
                  peak_calculator=None, calc_kwds=None):
+        """Initialize the motion.
+
+        Args:
+            osc_freqs (:class:`np.ndarray`): Frequencies of the oscillator
+                response (Hz).
+            osc_accels_target (:class:`np.ndarray`): Spectral acceleration of
+                the oscillator at the specified frequencies (g).
+            duration (Optional[float]): Duration of the ground motion (sec). If
+                `None`, then the duration is computed using the `event_kwds`.
+            osc_damping (Optional[float]): Fractional damping of the oscillator
+                (dec). Default value is 0.05 for a damping ratio of 5%.
+            event_kwds (Optional[Dict]): Keywords passed to
+                :class:`~.motions.SourceTheoryMotion` and used
+                to compute the duration of the motion. Either `duration` or
+                `event_kwds` should be specified.
+            window_len (Optional[int]): Window length used for smoothing the
+                computed Fourier amplitude spectrum. If `None`, then no
+                smoothing is applied. The smoothing is applied as a moving
+                average with a width of `window_len`.
+            peak_calculator (Optional[:class:`~.peak_calculators.Calculator`]):
+                Peak calculator to use. If `None`, then the default peak
+                calculator is used. The peak calculator may either be specified
+                by a :class:`~.peak_calculators.Calculator` object, or by the
+                initials of the calculator using
+                :func:`~.peak_calculators.peak_calculator`.
+            calc_kwds (Optional[Dict]): Keywords to be passed during the
+                creation the peak calculator. These keywords are only
+                required for some peak calculators.
+        """
         super(CompatibleRvtMotion, self).__init__(
             peak_calculator=peak_calculator)
 
-        osc_freqs, osc_accels_target = increasing_x(
+        osc_freqs, osc_accels_target = sort_increasing(
             np.asarray(osc_freqs), np.asarray(osc_accels_target))
 
         if duration:
@@ -696,33 +573,27 @@ class CompatibleRvtMotion(RvtMotion):
             self.iterations += 1
 
     def _estimate_fourier_amps(self, osc_freqs, osc_accels, osc_damping):
-        """Compute an estimate of the FAS using the [GV76]_ methodology.
+        """Compute an estimate of the FAS using the Gasparini & Vanmarcke
+        (1976, :cite:`gasparini76`) methodology.
 
-        Parameters
-        ----------
-        osc_freqs : :class:`numpy.array`
-            Oscillator frequencies in increasing order [Hz]
+        The response is first computed at the lowest frequency and then
+        subsequently computed at higher frequencies.
 
-        osc_accels : :class:`numpy.array`
-            Psuedo-spectral accelerations of the oscillator [g].
-
-        osc_damping : float
-            Damping ratio of the oscillator.
-
-        Returns
-        -------
-        fourier_amps : :class:`numpy.array`
-            acceleration Fourier amplitude values at the specified
-            frequencies specifed by *osc_freqs*.
+        Args:
+            osc_freqs (:class:`np.ndarray`): Oscillator frequencies in
+                increasing order (Hz).
+            osc_accels (:class:`np.ndarray`): Psuedo-spectral accelerations
+                of the oscillator (g).
+            osc_damping (float): Fractional damping of the oscillator (dec). For
+                example, 0.05 for a damping ratio of 5%.
+        Returns:
+            (:class:`np.ndarray`): acceleration Fourier amplitude values at
+            the specified frequencies specifed by `osc_freqs`.
 
         """
-
-        # Compute initial value using Vanmarcke methodology. The response is
-        # first computed at the lowest frequency and then subsequently computed
-        # at higher frequencies.
+        # Compute initial value using Vanmarcke methodology.
 
         peak_factor = 2.5
-        fa_sqr_cur = None
         fa_sqr_prev = 0.
         total = 0.
 
@@ -730,8 +601,7 @@ class CompatibleRvtMotion(RvtMotion):
 
         fourier_amps = np.empty_like(osc_freqs)
 
-        for i, (osc_freq, osc_accel) in enumerate(
-                zip(osc_freqs, osc_accels)):
+        for i, (osc_freq, osc_accel) in enumerate(zip(osc_freqs, osc_accels)):
             # TODO simplify equation and remove duration
             fa_sqr_cur = (
                 ((self.duration * osc_accel ** 2) / (2 * peak_factor ** 2) -

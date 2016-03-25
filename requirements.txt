@@ -1,13 +1,7 @@
-coverage
-coveralls
-jinja2
-nose
 numpy
-numpydoc
 openpyxl
 pyprind
 setuptools
-sphinx
 scipy
 xlrd
 xlwt

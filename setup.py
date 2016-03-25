@@ -24,9 +24,9 @@ test_requirements = [
 setup(
     name='pyrvt',
     version='0.3.0',
-    description="Ground motion models implemented in Python.",
+    description='Ground motion models implemented in Python.',
     long_description=readme + '\n\n' + history,
-    author="Albert Kottke",
+    author='Albert Kottke',
     author_email='albert.kottke@gmail.com',
     url='http://github.com/arkottke/pyrvt',
     packages=[
@@ -41,9 +41,9 @@ setup(
                  'pyrvt'},
     include_package_data=True,
     install_requires=requirements,
-    license="MIT",
+    license='MIT',
     zip_safe=False,
-    keywords='pyrvt'
+    keywords='pyrvt',
     package_data={
         'pyrvt': ['data/*', 'tests/data/*'],
     },

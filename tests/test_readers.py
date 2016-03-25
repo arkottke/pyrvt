@@ -5,7 +5,7 @@ import os
 
 from numpy.testing import assert_almost_equal, assert_allclose
 
-from . import readers
+import readers
 
 
 class TestLoadFourierSpectrum:

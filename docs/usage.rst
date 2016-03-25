@@ -7,19 +7,19 @@ pyRVT is used by executing ``rvt_operator`` with a number of arguments. These
 arguments can be found by running ``rvt_operator``, which will produce the
 following output::
 
-  C:\Users\arkottke\Documents\>rvt_operator --help
-  usage: runner.py [-h] -i INPUT [-o OUTPUT] [-d DAMPING] [-f] [-m METHOD]
+    C:\Users\arkottke\Documents\>rvt_operator --help
+    usage: runner.py [-h] -i INPUT [-o OUTPUT] [-d DAMPING] [-f] [-m METHOD]
                  {psa2fa,fa2psa}
-  
-  Compute response or Fourier amplitude spectra using RVT.
-  
-  positional arguments:
+
+    Compute response or Fourier amplitude spectra using RVT.
+
+    positional arguments:
     {psa2fa,fa2psa}       Operation to be performed. [psa2fa] converts from
                           pseudo-spectral acceleration to Fourier amplitude.
                           [fa2psa] converts from Fourier amplitude to pseudo-
                           spectral acceleration.
-  
-  optional arguments:
+
+    optional arguments:
     -h, --help            show this help message and exit
     -i INPUT, --input INPUT
                           Path containing the input file(s). Supported file
@@ -46,10 +46,11 @@ following output::
                           BT12 method is used, then the magnitude, distance and
                           region must be provided by the input files. If no
                           value is provided, then 'V75' is used as the default.
-  
+
 For example, to compute the Fourier amplitude spectra that were compatible with
-target response spectrum the following command could be used: 
-``rvt_operator psa2fa -i examples\example_targetSa.csv``
+target response spectrum the following command could be used::
+
+    $> rvt_operator psa2fa -i examples\example_targetSa.csv
 
 The required format for the events is best understood by looking at one of the
 example event files. The name of the input file should include an underscore

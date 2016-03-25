@@ -9,7 +9,7 @@ import pytest
 
 import pyrvt
 
-from . import readers
+import readers
 
 
 def check_osc_accels(peak_calculator, fname_fs, fname_rs):
@@ -77,7 +77,7 @@ def test_formulations(method):
         peak_calculator=pyrvt.peak_calculators.get_peak_calculator(
             method, dict(mag=mag, dist=dist, region=region))
     )
-    m.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
+    m.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels = m.compute_osc_accels(osc_freqs, 0.05)

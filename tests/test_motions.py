@@ -9,17 +9,9 @@ import pyrvt
 
 def test_compute_attenuation():
     m = pyrvt.motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
-    m.compute_fourier_amps()
+    m.calc_fourier_amps()
 
-    atten = m.compute_attenuation(50)
-    assert_allclose(0.006, atten, rtol=0.01)
-
-
-def test_compute_attenuation_full():
-    m = pyrvt.motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
-    m.compute_fourier_amps()
-
-    atten, r_value, freqs, fitted = m.compute_attenuation(50, full=True)
+    atten, r_value, freqs, fitted = m.compute_attenuation(50)
 
     assert_allclose(0.006, atten, rtol=0.01)
     assert_allclose(1.0, r_value, rtol=0.01)
@@ -40,7 +32,7 @@ def test_compatible_rvt_motion():
     target = pyrvt.motions.SourceTheoryMotion(
         6., 20., 'wna',
         peak_calculator=pyrvt.peak_calculators.DerKiureghian1985())
-    target.compute_fourier_amps(np.logspace(-1.5, 2, 1024))
+    target.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels_target = target.compute_osc_accels(osc_freqs, 0.05)
