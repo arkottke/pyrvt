@@ -14,19 +14,23 @@ from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 
 
-def compute_moments(freqs, fourier_amps, orders):
+def calc_moments(freqs, fourier_amps, orders):
     """Compute the spectral moments.
 
     The spectral moment is computed using the squared Fourier amplitude
     spectrum.
 
-    Args:
-        freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-            spectrum (Hz)
-        fourier_amps (:class:`np.ndarray`): Amplitude of the Fourier
-            amplitude spectrum.
-    Returns:
-        List[float]: List of computed spectral moments.
+    Parameters
+    ----------
+    freqs : array_like
+        Frequency of the Fourier amplitude spectrum (Hz)
+    fourier_amps : array_like
+        Amplitude of the Fourier amplitude spectrum.
+
+    Returns
+    -------
+    moments : tuple
+        Computed spectral moments.
     """
     squared_fa = np.square(fourier_amps)
 
@@ -121,26 +125,33 @@ class Vanmarcke1975(Calculator):
                  **kwargs):
         """Compute the peak response.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-                spectrum (Hz).
-            fourier_amps (:class:`np.ndarray`):  Amplitude of the Fourier
-                amplitude spectrum with a single degree of freedom oscillator
-                already applied if being used. Units are not important.
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-        Returns:
-            (tuple): tuple containing:
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
 
-                - max_resp (float): expected maximum response.
-                - peak_factor (float): associated peak factor.
+        Returns
+        -------
+        max_resp : float
+            expected maximum response.
+        peak_factor : float
+            associated peak factor.
         """
 
-        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / duration)
@@ -189,22 +200,27 @@ class Davenport1964(Calculator):
     def __call__(self, duration, freqs, fourier_amps, **kwargs):
         """Compute the peak response.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-                spectrum (Hz).
-            fourier_amps (:class:`np.ndarray`):  Amplitude of the Fourier
-                amplitude spectrum with a single degree of freedom oscillator
-                already applied if being used. Units are not important.
-        Returns:
-            tuple: tuple containing:
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
 
-                - max_resp (float): expected maximum response.
-                - peak_factor (float): associated peak factor.
+        Returns
+        -------
+        max_resp : float
+        	expected maximum response.
+        peak_factor : float
+        	associated peak factor.
         """
-        m0, m2 = compute_moments(freqs, fourier_amps, [0, 2])
+        m0, m2 = calc_moments(freqs, fourier_amps, [0, 2])
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / duration)
@@ -221,10 +237,15 @@ class Davenport1964(Calculator):
     def asymtotic_approx(self, zero_crossings):
         """Compute the peak factor from the asymptotic approximation.
 
-        Args:
-            zero_crossings (float): Number of zero crossing.
-        Returns:
-            (float): calculated peak factor
+        Parameters
+        ----------
+            zero_crossings : float
+                Number of zero crossing.
+
+        Returns
+        -------
+            approx_peak_factor : float
+                Calculated peak factor.
         """
         x = np.sqrt(2 * np.log(zero_crossings))
         return x + 0.5772 / x
@@ -245,23 +266,28 @@ class DerKiureghian1985(Davenport1964):
     def __call__(self, duration, freqs, fourier_amps, **kwargs):
         """Compute the peak response.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-                spectrum (Hz).
-            fourier_amps (:class:`np.ndarray`):  Amplitude of the Fourier
-                amplitude spectrum with a single degree of freedom oscillator
-                already applied if being used. Units are not important.
-        Returns:
-            tuple: tuple containing:
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
 
-                - max_resp (float): expected maximum response.
-                - peak_factor (float): associated peak factor.
+        Returns
+        -------
+        max_resp : float
+            expected maximum response.
+        peak_factor : float
+            associated peak factor.
         """
 
-        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the root-mean-squared response
         resp_rms = np.sqrt(m0 / duration)
@@ -301,26 +327,28 @@ class ToroMcGuire1987(Davenport1964):
                  osc_damping=None, **kwargs):
         """Compute the peak response.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-                spectrum (Hz).
-            fourier_amps (:class:`np.ndarray`):  Amplitude of the Fourier
-                amplitude spectrum with a single degree of freedom oscillator
-                already applied if being used. Units are not important.
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-        Returns:
-            tuple: tuple containing:
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
 
-                - max_resp (float): expected maximum response.
-                - peak_factor (float): associated peak factor.
+        Returns
+        -------
+        max_resp : float
+            expected maximum response.
+        peak_factor : float
+            associated peak factor.
         """
 
-        m0, m1, m2 = compute_moments(freqs, fourier_amps, [0, 1, 2])
+        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Vanmarcke's (1976) bandwidth measure and central frequency
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
@@ -357,25 +385,27 @@ class CartwrightLonguetHiggins1956(Calculator):
                  osc_damping=None, **kwargs):
         """Compute the peak response.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            freqs (:class:`np.ndarray`): Frequency of the Fourier amplitude
-                spectrum (Hz).
-            fourier_amps (:class:`np.ndarray`):  Amplitude of the Fourier
-                amplitude spectrum with a single degree of freedom oscillator
-                already applied if being used. Units are not important.
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-        Returns:
-            tuple: tuple containing:
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
 
-                - max_resp (float): expected maximum response.
-                - peak_factor (float): associated peak factor.
+        Returns
+        -------
+        max_resp : float
+            expected maximum response.
+        peak_factor : float
+            associated peak factor.
         """
-        m0, m1, m2, m4 = compute_moments(freqs, fourier_amps, [0, 1, 2, 4])
+        m0, m1, m2, m4 = calc_moments(freqs, fourier_amps, [0, 1, 2, 4])
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
         num_extrema = max(2., np.sqrt(m4 / m2) * duration / np.pi)
@@ -388,7 +418,7 @@ class CartwrightLonguetHiggins1956(Calculator):
         # Compute the root-mean-squared response -- correcting for the RMS
         # duration.
         if osc_freq and osc_damping:
-            rms_duration = self.compute_duration_rms(
+            rms_duration = self.calc_duration_rms(
                 duration, osc_freq, osc_damping, m0, m1, m2)
         else:
             rms_duration = duration
@@ -397,24 +427,33 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         return peak_factor * resp_rms, peak_factor
 
-    def compute_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the RMS duration.
 
         Not used by :class:`.CartwrightLonguetHiggins1956`.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-            m0 (float): Zero-th moment of the Fourier amplitude spectrum.
-            m1 (float): First moment of the Fourier amplitude spectrum.
-            m2 (float): Second moment of the Fourier amplitude spectrum
-        Returns:
-            (float): Duration of the root-mean-squared oscillator response
-                (sec).
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
+        m0 : float
+            Zero-th moment of the Fourier amplitude spectrum.
+        m1 : float
+            First moment of the Fourier amplitude spectrum.
+        m2 : float
+            Second moment of the Fourier amplitude spectrum
+
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
         """
         del (osc_freq, osc_damping, m0, m1, m2)
         return duration
@@ -436,25 +475,33 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     def __init__(self, **kwargs):
         super(BooreJoyner1984, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
         Based on  :cite:`boore84`.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-            m0 (float): Zero-th moment of the Fourier amplitude spectrum.
-            m1 (float): First moment of the Fourier amplitude spectrum.
-            m2 (float): Second moment of the Fourier amplitude spectrum
-        Returns:
-            (float): Duration of the root-mean-squared oscillator response
-                (sec).
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
+        m0 : float
+            Zero-th moment of the Fourier amplitude spectrum.
+        m1 : float
+            First moment of the Fourier amplitude spectrum.
+        m2 : float
+            Second moment of the Fourier amplitude spectrum
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
         """
         del (m0, m1, m2)
 
@@ -482,25 +529,32 @@ class LiuPezeshk1999(BooreJoyner1984):
     def __init__(self, **kwargs):
         super(LiuPezeshk1999, self).__init__(**kwargs)
 
-    def compute_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the oscillator duration used in the calculation of the
         root-mean-squared response.
 
         Based on :cite:`liu99`.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-            m0 (float): Zero-th moment of the Fourier amplitude spectrum.
-            m1 (float): First moment of the Fourier amplitude spectrum.
-            m2 (float): Second moment of the Fourier amplitude spectrum
-        Returns:
-            (float): Duration of the root-mean-squared oscillator response
-                (sec).
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for a
+            damping ratio of 5%.
+        m0 : float
+            Zero-th moment of the Fourier amplitude spectrum.
+        m1 : float
+            First moment of the Fourier amplitude spectrum.
+        m2 : float
+            Second moment of the Fourier amplitude spectrum
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
         """
         power = 2.
         coef = np.sqrt(2 * np.pi * (1. - (m1 * m1) / (m0 * m2)))
@@ -518,12 +572,17 @@ def _load_bt12_data(region):
     """Load data from the Boore & Thompson (2012, :cite:`boore12`) parameter
     files.
 
-    Args:
-        region (str): Region for which the parameters were developed. Valid
-            options: 'wna' for Western North America (active tectonic), or
-            'cena' for Eastern North America (stable tectonic).
-    Returns:
-        (np.recarray): Parameters for the region.
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed. Valid options: 'wna'
+        for Western North America (active tectonic), or 'cena' for Eastern
+        North America (stable tectonic).
+
+    Returns
+    -------
+    params : np.recarray
+        Parameters for the region.
     """
     fname = os.path.join(
         os.path.dirname(__file__), 'data',
@@ -565,37 +624,48 @@ class BooreThompson2012(BooreJoyner1984):
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the model and interpolate the coefficients.
 
-        Args:
-            region (str): Region for which the parameters were developed.
-                Valid options are: 'wna' for Western North America (active
-                tectonic), and 'cena' for Central and Eastern North America (
-                stable tectonic).
-            mag (float): Magnitude of the event.
-            dist (float): Distance of the event in (km).
+        Parameters
+        ----------
+        region : str
+            Region for which the parameters were developed.  Valid options
+            are: 'wna' for Western North America (active tectonic), and 'cena'
+            for Central and Eastern North America ( stable tectonic).
+        mag : float
+            Magnitude of the event.
+        dist : float
+            Distance of the event in (km).
         """
         super(BooreThompson2012, self).__init__(**kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
-    def compute_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the RMS duration.
 
         Based on :cite:`boore12`.
 
-        Args:
-            duration (float): Duration of the stationary portion of the
-                ground motion. Typically defined as the duration between the 5%
-                and 75% normalized AriasA intensity (sec).
-            osc_freq (float): Frequency of the oscillator (Hz).
-            osc_damping (float): Fractional damping of the oscillator (dec). For
-                example, 0.05 for a damping ratio of 5%.
-            m0 (float): Zero-th moment of the Fourier amplitude spectrum.
-            m1 (float): First moment of the Fourier amplitude spectrum.
-            m2 (float): Second moment of the Fourier amplitude spectrum
-        Returns:
-            (float): Duration of the root-mean-squared oscillator response
-                (sec).
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
+        m0 : float
+            Zero-th moment of the Fourier amplitude spectrum.
+        m1 : float
+            First moment of the Fourier amplitude spectrum.
+        m2 : float
+            Second moment of the Fourier amplitude spectrum
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
         """
         del (m0, m1, m2)
 
@@ -612,11 +682,16 @@ class BooreThompson2012(BooreJoyner1984):
 def get_peak_calculator(method, calc_kwds):
     """Select a peak calculator based on a string.
 
-    Args:
-        method (str): Name of the peak calculation method
-        calc_kwds (Dict): Keywords passed to the calculator
-    Returns:
-        (calculator): :class:`.Calculator`
+    Parameters
+    ----------
+    method : str
+        Name of the peak calculation method
+    calc_kwds : dict
+        Keywords passed to the calculator
+    Returns
+    -------
+    calc : calculator
+        :class:`.Calculator`
     """
     calc_kwds = calc_kwds or dict()
 
@@ -641,10 +716,15 @@ def get_peak_calculator(method, calc_kwds):
 def get_region(region):
     """Return the region naming used in this package.
 
-    Args:
-        region (str): Regional synonym.
-    Returns:
-        (str): Region either 'cena' or 'wna'.
+    Parameters
+    ----------
+    region : str
+        Regional synonym.
+
+    Returns
+    -------
+    region : str
+        Region either 'cena' or 'wna'.
     """
     region = region.lower()
     if region in ['cena', 'ena', 'ceus', 'eus']:

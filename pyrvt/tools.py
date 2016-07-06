@@ -11,7 +11,6 @@ import os
 import sys
 
 import numpy as np
-
 import pyprind
 
 from pyrvt.peak_calculators import get_peak_calculator, get_region
@@ -46,21 +45,25 @@ PARAMETER_NAMES = [
 def read_events(fname, response_type):
     """Read data from the file an Excel work book.
 
-    Args:
-        fname (str): Filename of the input file.
-        response_type (Optional[str]): Type of response. Valid options are:
-            'psa' for psuedo-spectral acceleration, or 'fa' for Fourier
-            amplitude.
-    Returns:
-        tuple: tuple containing:
+    Parameters
+    ----------
+    fname : str
+        Filename of the input file.
+    response_type : str
+        Type of response. Valid options are: 'psa' for psuedo-spectral
+        acceleration, or 'fa' for Fourier amplitude.
 
-            - ext (str): Extension of input file
-            - reference (:class:`np.ndarray`): Reference of the response. This
-              is either period (sec) for response_type 'psa' or frequency (Hz)
-              for response_type 'fa'
-            - events (List[dict]): List of events read from the file. See
-              ``Note`` in :func:`.compute_compatible_spectra` for more
-              information on structure of the dictionaries.
+    Returns
+    -------
+    ext : str
+        Extension of input file
+    reference : :class:`numpy.ndarray`
+        Reference of the response. This is either period (sec) for
+        response_type 'psa' or frequency (Hz) for response_type 'fa'
+    events : List[dict]
+        List of events read from the file. See ``Note`` in
+        :func:`.calc_compatible_spectra` for more information on structure of
+        the dictionaries.
     """
     assert response_type in ['psa', 'fa']
 
@@ -122,22 +125,28 @@ def write_events(fname, reference, reference_label, response_type,
                  response_label, events):
     """Write the events to a file.
 
-    Args:
-        fname (str): Save the events to this file. The directory is created
-            if needed.
-        reference (:class:`np.array`): Value of the reference (e.g.,
-            frequency values).
-        reference_label (str): Label of the reference (e.g., 'Frequency (Hz)').
-        response_type (str): Type of response. Valid options: `psa` for
-            pseudo-spectral accleration, or `fa` for Fourier amplitude.
-        response_label (str): Label of the response type (e.g., 'Fourier
-            Ampl. (g/sec)')
-        events (List[dict]): Events to write to file. See ``Note`` in
-            :func:`.compute_compatible_spectra` for more information.
-    Raises:
-        (NotImplementedError): If extension is not supported
-    """
+    Parameters
+    ----------
+    fname : str
+        Save the events to this file. The directory is created if needed.
+    reference : array_like
+        Periods of the oscillator response shared across all events.
+    reference_label : str
+        Label of the reference (e.g., 'Frequency (Hz)').
+    response_type : str
+        Type of response. Valid options: `psa` for pseudo-spectral
+        accleration, or `fa` for Fourier amplitude.
+    response_label : str
+        Label of the response type (e.g., 'Fourier Ampl. (g/sec)')
+    events : List[dict]
+        Events to write to file. See ``Note`` in
+        :func:`.compute_compatible_spectra` for more information.
 
+    Raises
+    ------
+    NotImplementedError:
+        If extension is not supported
+    """
     # Create the rows of output
     rows = []
     # Output the parameters
@@ -165,78 +174,76 @@ def write_events(fname, reference, reference_label, response_type,
             fp = open(fname, 'wt')
         else:
             fp = open(fname, 'wt', newline='')
-
         writer = csv.writer(fp)
         writer.writerows(rows)
-
         fp.close()
     elif ext == '.xls':
         if xlwt is None:
             raise RuntimeError('xlwt is required to open an xls file')
-
         wb = xlwt.Workbook()
         ws = wb.add_sheet('Sheet 1')
-
         for i, row in enumerate(rows):
             for j, cell in enumerate(row):
                 ws.write(i, j, cell)
-
         wb.save(fname)
     elif ext == '.xlsx':
         if openpyxl is None:
             raise RuntimeError('openpyxl is required to open an xlsx file')
-
         wb = openpyxl.Workbook()
         ws = wb.worksheets[0]
-
         for row in rows:
             ws.append(row)
-
         wb.save(fname)
     else:
         raise NotImplementedError
 
 
-def compute_compatible_spectra(method, periods, events, damping=0.05,
-                               verbose=True):
+def calc_compatible_spectra(method, periods, events, damping=0.05,
+                            verbose=True):
     """Compute the response spectrum compatible motions.
 
-    Args:
-        method (str): RVT peak factor method, see
-            :func:`~.peak_calculators.get_peak_calculator`.
-        periods (:class:`np.ndarray`): Periods of the oscillator response
-            shared across all events.
-        events (List[dict]): All events to consider. See ``Note``.
-        damping (Optional[float]): Fractional damping of the oscillator (
-            decimal). Default value of 0.05 for a damping ratio of 5%.
-        verbose (Optional[bool]): Print status of calculation. Default is
-            `True`.
-    Returns:
-        :class:`np.ndarray`: Frequency of the computed Fourier amplitude
-            spectra.
+    Parameters
+    ----------
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    periods : array_like
+        Periods of the oscillator response shared across all events.
+    events : List[dict]
+        All events to consider. See ``Note``.
+    damping : float, optional
+        Fractional damping of the oscillator (decimal). Default value of 0.05
+        for a damping ratio of 5%.
+    verbose : bool, optional
+        Print status of calculation. Default is `True`.
 
-    Note:
-        Each event dictionary should have the following keys:
+    Returns
+    -------
+    :class:`numpy.ndarray`
+        Frequency of the computed Fourier amplitude spectra.
 
-         - `psa` (:class:`np.ndarray`): pseudo-spectral
-           accelerations. This is the target for the
-           :class:`~.motions.CompatibleRvtMotion.`.
-         - `duration` (Optional[float): duration of the ground motion
-         - `magnitude` (Optional[float]): earthquake magnitude
-         - `distance` (Optional[float]): earthquake distance (km)
-         - `region` (Optional[str]): earthquake source region, see
-           :func:`~.peak_calculators.get_region`
-        If no duration is provided one is estimated from the magnitude,
-        distance, and region.
+    Note
+    ----
+    Each event dictionary should have the following keys:
 
-        The `events` dictionary is modified by this function and adds the
-        following keys:
-         - `duration` (float): duration of the ground motion if one was not
-           specified
-         - `fa` (:class:`np.ndarray`): Fourier amplitude spectra in units of
-           g/sec
-         - `psa_calc` (:class:`np.ndarray`): Pseudo-spectral acceleration
-           calculated from `fa`. This will differ slightly from `psa_target`.
+    - **psa** : :class:`numpy.ndarray` -- pseudo-spectral accelerations. This
+      is the target for the :class:`~.motions.CompatibleRvtMotion`.
+    - **duration** : float, optional -- duration of the ground motion
+    - **magnitude** : float, optional -- earthquake magnitude
+    - **distance** : float, optional -- earthquake distance (km)
+    - **region** : str, optional -- earthquake source region, see
+      :func:`~.peak_calculators.get_region` If no duration is provided one
+      is estimated from the magnitude, distance, and region.
+
+    The `events` dictionary is modified by this function and adds the
+    following keys:
+
+    - **duration** : float -- duration of the ground motion if one was not
+      specified
+    - **fa** : :class:`numpy.ndarray` -- Fourier amplitude spectra in units of
+      g/sec
+    - **psa_calc** : :class:`numpy.ndarray` -- Pseudo-spectral acceleration
+      calculated from `fa`. This will differ slightly from `psa_target`.
     """
     target_freqs = 1. / periods
 
@@ -263,7 +270,7 @@ def compute_compatible_spectra(method, periods, events, damping=0.05,
             e['duration'] = crm.duration
 
         e['fa'] = crm.fourier_amps
-        e['psa_calc'] = crm.compute_osc_accels(target_freqs, damping)
+        e['psa_calc'] = crm.calc_osc_accels(target_freqs, damping)
 
         if bar:
             bar.update()
@@ -276,21 +283,25 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
     """Compute the acceleration response spectrum from a Fourier amplitude
     spectrum.
 
-    Args:
-        src (str): Source for the pseudo-spectral accelerations (PSA). This
-            can be a filename or pattern used in :func:`glob.glob`.
-        dst (str): Destination directory for the output PSA. The directory is
-            created if it does not exist.
-        damping (float): Fractional damping of the oscillator ( decimal).
-        method (str): RVT peak factor method, see
-            :func:`~.peak_calculators.get_peak_calculator`.
-        fixed_spacing (Optional[bool]): If `True`, then the periods are
-            interpolated to 301 points equally space in log-space from 0.01
-            to 10.
-        verbose (Optional[bool]): Print status of calculation.
-
+    Parameters
+    ----------
+    src : str
+        Source for the pseudo-spectral accelerations (PSA). This can be a
+        filename or pattern used in :func:`glob.glob`.
+    dst : str
+        Destination directory for the output PSA. The directory is created if
+        it does not exist.
+    damping : float
+        Fractional damping of the oscillator ( decimal).
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    fixed_spacing : bool, optional
+        If `True`, then the periods are interpolated to 301 points equally
+        space in log-space from 0.01 to 10.
+    verbose : bool, optional
+        Print status of calculation.
     """
-
     for filename_src in glob.iglob(src):
         if verbose:
             print('Processing:', filename_src)
@@ -307,8 +318,8 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = compute_compatible_spectra(method, periods, events,
-                                           damping=damping, verbose=verbose)
+        freqs = calc_compatible_spectra(method, periods, events,
+                                        damping=damping, verbose=verbose)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -327,20 +338,25 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
     """Compute the Fourier amplitude spectrum from a acceleration response
     spectrum.
 
-    Args:
-        src (str): Source for the Fourier amplitudes. This can be a filename
-            or pattern used in :func:`glob.glob`.
-        dst (str): Destination directory for the output PSA. The directory is
-            created if it does not exist.
-        damping (float): Fractional damping of the oscillator (decimal).
-        method (str): RVT peak factor method, see
-            :func:`~.peak_calculators.get_peak_calculator`.
-        fixed_spacing (Optional[bool]): If `True`, then the periods are
-            interpolated to 301 points equally space in log-space from 0.01
-            to 10.
-        verbose (Optional[bool]): Print status of calculation.
+    Parameters
+    ----------
+    src : str
+        Source for the Fourier amplitudes. This can be a filename or pattern
+        used in :func:`glob.glob`.
+    dst : str
+        Destination directory for the output PSA. The directory is created if
+        it does not exist.
+    damping : float
+        Fractional damping of the oscillator (decimal).
+    method : str
+        RVT peak factor method, see
+        :func:`~.peak_calculators.get_peak_calculator`.
+    fixed_spacing : bool, optional
+        If `True`, then the periods are interpolated to 301 points equally
+        space in log-space from 0.01 to 10.
+    verbose : bool, optional
+        Print status of calculation.
     """
-
     if fixed_spacing:
         periods = np.logspace(-2, 1, 301)
         osc_freqs = 1. / periods
@@ -365,7 +381,7 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
                     method, dict(region=e['region'], mag=e['magnitude'],
                                  dist=e['distance']))
             )
-            e['psa'] = m.compute_osc_accels(osc_freqs, damping)
+            e['psa'] = m.calc_osc_accels(osc_freqs, damping)
 
             if bar:
                 bar.update()

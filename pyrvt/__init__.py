@@ -3,6 +3,8 @@
 
 from . import tools, motions, peak_calculators
 
+from pkg_resources import get_distribution
+
 __all__ = [
     'tools',
     'motions',
@@ -12,5 +14,5 @@ __all__ = [
 __author__ = 'Albert Kottke'
 __copyright__ = 'Copyright 2016 Albert Kottke'
 __license__ = 'MIT'
-__title__ = 'pyRVT'
-__version__ = '0.4.0'
+__title__ = 'pyrvt'
+__version__ = get_distribution('pyrvt').version
