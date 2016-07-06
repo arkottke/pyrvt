@@ -23,6 +23,11 @@ pyRVT
     :alt: Code Health
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
+    :alt: License
+    
+.. image:: https://zenodo.org/badge/21452/arkottke/pyrvt.svg
+   :target: https://zenodo.org/badge/latestdoi/21452/arkottke/pyrvt
+   :alt: DOI Information
 
 A Python library and command-line application for using random vibration theory
 to transform between acceleration Fourier amplitude spectrum and acceleration
@@ -55,10 +60,10 @@ Peak factor implementations:
 * Liu & Pezeshk (1999)
 
 
-Credits
--------
+Citation
+--------
+Please cite this software using the following DOI:
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+.. image:: https://zenodo.org/badge/21452/arkottke/pyrvt.svg
+   :target: https://zenodo.org/badge/latestdoi/21452/arkottke/pyrvt
+   :alt: DOI Information
