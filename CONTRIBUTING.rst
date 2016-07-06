@@ -40,7 +40,10 @@ Write Documentation
 
 pyRVT could always use more documentation, whether as part of the
 official pyRVT docs, in docstrings, or even on the web in blog posts,
-articles, and such.
+articles, and such. Docstrings should be formatted using the 
+`NumPy conventions`_.
+
+.. _NumPy conventions: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
 Submit Feedback
 ~~~~~~~~~~~~~~~

@@ -51,9 +51,6 @@ lint:
 test:
 	python setup.py test
 
-test-all:
-	tox
-
 coverage:
 	coverage run --source pyrvt setup.py test
 	coverage report -m

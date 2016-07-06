@@ -200,7 +200,8 @@ class RvtMotion(object):
         """Duration of the ground motion for RVT analysis."""
         return self._duration
 
-    def calc_osc_accels(self, osc_freqs, osc_damping=0.05):
+    def calc_osc_accels(self, osc_freqs, osc_damping=0.05,
+                        trans_func=None):
         """Compute the pseudo-acceleration spectral response of an oscillator
         with a specific frequency and damping.
 
@@ -211,15 +212,22 @@ class RvtMotion(object):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a
             damping ratio of 5%.
+        trans_func : array_like, optional
+            Transfer function to be applied to motion prior calculation of the
+            oscillator response.
 
         Returns
         -------
         spec_accels : :class:`numpy.ndarray`
             Peak pseudo-spectral acceleration of the oscillator
         """
+        if trans_func is None:
+            trans_func = np.ones_like(self.freqs)
+        else:
+            trans_func = np.asarray
         resp = np.array([
             self.calc_peak(
-                calc_sdof_tf(self._freqs, of, osc_damping),
+                trans_func * calc_sdof_tf(self.freqs, of, osc_damping),
                 of, osc_damping)
             for of in osc_freqs])
         return resp

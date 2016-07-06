@@ -14,16 +14,27 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'numpy',
+    'openpyxl',
+    'pyprind',
+    'setuptools',
+    'scipy',
+    'xlrd',
+    'xlwt',
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'coveralls',
+    'flake8',
+    'pytest',
+    'pytest-cov',
+    'pytest-flake8',
+    'pytest-runner'
 ]
 
 setup(
     name='pyrvt',
-    version='0.4.0',
+    version='0.5.0',
     description='Ground motion models implemented in Python.',
     long_description=readme + '\n\n' + history,
     author='Albert Kottke',
