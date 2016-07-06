@@ -5,7 +5,7 @@ import os
 import tempfile
 import shutil
 
-from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_string_equal
 import pytest
 
 import pyrvt
@@ -19,9 +19,8 @@ exts = ['.csv', '.xlsx']
 if xlwt:
     exts.append('.xls')
 
-
 @pytest.mark.parametrize('ext', exts)
-def test_read_events(ext):
+def check_read_events(ext):
     fname = os.path.join(
         os.path.dirname(__file__),
         'data', 'test_sa' + ext)
@@ -46,18 +45,17 @@ def test_read_events(ext):
          2.310130, 2.477076, 2.656088, 2.848036, 3.053856, 3.274549,
          3.511192, 3.764936, 4.037017, 4.328761, 4.641589, 4.977024,
          5.336699, 5.722368, 6.135907, 6.579332, 7.054802, 7.564633,
-         8.111308, 8.697490, 9.326033, 10.000000],
-        atol=6)
+         8.111308, 8.697490, 9.326033, 10.000000]
+    )
 
-    # Test the characteristics of the event
+    # Test the characteristics of an event
     e = events[0]
-    keys = ['magnitude', 'distance', 'vs30', 'kappa', 'duration', 'region']
-    values = [5, 5, 760, 0.039447, 1.361042, 'wna']
-    for k, v in zip(keys, values):
-        if k in ['region']:
-            assert_equal(e[k], v)
-        else:
-            assert_almost_equal(e[k], v, decimal=6)
+    assert e['magnitude'] == 5
+    assert e['distance'] == 5
+    assert e['vs30'] == 760
+    assert_allclose(e['kappa'], 0.039447)
+    assert_allclose(e['duration'], 1.361042)
+    assert_allclose(e['region'], 'wna')
 
     # Test the response values of the last event
     e = events[-1]
@@ -80,11 +78,11 @@ def test_read_events(ext):
          0.015141, 0.013817, 0.012545, 0.011336, 0.010203, 0.009155,
          0.008209, 0.007338, 0.006551, 0.005838, 0.005193, 0.004609,
          0.004082, 0.003605, 0.003173, 0.002780],
-        atol=6)
+    )
 
 
 @pytest.mark.parametrize('ext', exts)
-def test_write_events(ext):
+def check_write_events(ext):
     # Load the original data
     src_fname = os.path.join(
         os.path.dirname(__file__),
@@ -106,23 +104,23 @@ def test_write_events(ext):
     # Delete the temporary file
     os.unlink(dst_fname)
 
-    assert_equal(ext, _ext)
-    assert_almost_equal(periods, _periods)
+    assert ext == _ext
+    assert_allclose(periods, _periods)
 
     for event, _event in zip(events, _events):
         for key in event:
             if key == 'region':
-                assert_equal(event[key], _event[key])
+                assert event[key] == _event[key]
             else:
-                assert_almost_equal(event[key], _event[key])
+                assert_allclose(event[key], _event[key])
 
 
-def test_compute_compatible_spectra():
+def test_calc_compatible_spectra():
     src_fname = os.path.join(
         os.path.dirname(__file__), 'data', 'test_sa.csv')
     ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa')
 
-    pyrvt.tools.compute_compatible_spectra('LP99', periods, events[:1], 0.05)
+    pyrvt.tools.calc_compatible_spectra('LP99', periods, events[:1], 0.05)
 
     # Test that the fit is within 2% of the target
     assert_allclose(events[0]['psa'], events[0]['psa_calc'], rtol=0.02)
@@ -134,7 +132,7 @@ def test_operation_psa2fa():
     dest_dirname = tempfile.mkdtemp()
 
     # Do not need to check the output as it is checked in
-    # test_compute_compatible_spectra
+    # test_calc_compatible_spectra
     pyrvt.tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
     shutil.rmtree(dest_dirname)
 

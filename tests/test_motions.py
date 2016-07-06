@@ -7,11 +7,11 @@ from numpy.testing import assert_allclose
 import pyrvt
 
 
-def test_compute_attenuation():
+def test_calc_attenuation():
     m = pyrvt.motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
     m.calc_fourier_amps()
 
-    atten, r_value, freqs, fitted = m.compute_attenuation(50)
+    atten, r_value, freqs, fitted = m.calc_attenuation(50)
 
     assert_allclose(0.006, atten, rtol=0.01)
     assert_allclose(1.0, r_value, rtol=0.01)
@@ -35,14 +35,14 @@ def test_compatible_rvt_motion():
     target.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)
-    osc_accels_target = target.compute_osc_accels(osc_freqs, 0.05)
+    osc_accels_target = target.calc_osc_accels(osc_freqs, 0.05)
 
     compat = pyrvt.motions.CompatibleRvtMotion(
         osc_freqs, osc_accels_target,
         duration=target.duration, osc_damping=0.05,
         peak_calculator=pyrvt.peak_calculators.DerKiureghian1985())
 
-    osc_accels_compat = compat.compute_osc_accels(osc_freqs, 0.05)
+    osc_accels_compat = compat.calc_osc_accels(osc_freqs, 0.05)
 
     # Might be off by a few percent because of difficulties with the inversion.
     assert_allclose(osc_accels_target, osc_accels_compat, rtol=0.03, atol=0.05)
