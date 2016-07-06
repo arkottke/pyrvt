@@ -60,7 +60,7 @@ target/
 
 # Vim files
 *.swp
-/tags
+/tags*
 
 # PyCharm
 .idea/
