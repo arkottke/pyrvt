@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from numpy.testing import assert_allclose, assert_string_equal
-
 import pyrvt.runner
 
 
@@ -14,7 +12,7 @@ def test_args_short():
     assert args.input == 'input'
     assert args.output == 'output'
     assert args.damping == 0.05
-    assert args.fixed_spacing == True
+    assert args.fixed_spacing is True
     assert args.method == 'BJ84'
 
 
@@ -27,4 +25,3 @@ def test_args_long():
     assert args.output == 'output'
     assert args.damping == 0.05
     assert args.method == 'BT12'
-

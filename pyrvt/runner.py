@@ -43,12 +43,12 @@ parser.add_argument(
 parser.add_argument(
     '-m', '--method', default=DEFAULT_CALC,
     help='''Specify the peak factor calculation method. Possible options are:
-    [BJ84] Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [DK85] Der
-    Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro and McGuire
-    (1987), and [V75] Vanmarcke (1975).  If the BT12 method is used, then the
-    magnitude, distance and region must be provided by the input files. If no
-    value is provided, then '%(default)s' is used as the default.'''.format(
-    default=DEFAULT_CALC)
+    [BJ84] Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [DK85]
+    Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro and
+    McGuire (1987), and [V75] Vanmarcke (1975).  If the BT12 method is used,
+    then the magnitude, distance and region must be provided by the input
+    files. If no value is provided, then '%(default)s' is used as the
+    default.'''.format(default=DEFAULT_CALC)
 )
 
 

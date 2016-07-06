@@ -38,7 +38,7 @@ def sort_increasing(*args):
         If first array is not monotonic.
     """
     diffs = np.diff(args[0])
-    if np.all(0 <= diffs):
+    if np.all(diffs >= 0):
         # All increasing, do nothing
         pass
     elif np.all(diffs <= 0):
@@ -69,7 +69,7 @@ def log_spaced_values(lower, upper, per_decade=512):
     """
     lower = np.log10(lower)
     upper = np.log10(upper)
-    count = np.ceil(512 * (upper - lower))
+    count = np.ceil(per_decade * (upper - lower))
     return np.logspace(lower, upper, count)
 
 
@@ -115,17 +115,17 @@ def calc_stress_drop(magnitude):
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
 
 
-def calc_geometric_spreading(dist, coefs):
-    """Compute the geometric spreading defined by piecewise linear model.
+def calc_geometric_spreading(dist, params):
+    """Compute the geometric spreading defined by piece-wise linear model.
 
     Parameters
     ----------
     dist : float
         Closest distance to the rupture surface (km).
-    coefs : List[(float,Optional[float])]
-        List of (slope, limit) tuples that define the attenuation. For an infinite
-        distance use `None`.  For example, [(1, `None`)] would provide for 1/R
-        geometric spreading to an infinite distance.
+    params : List[(float,Optional[float])]
+        List of (slope, limit) tuples that define the attenuation. For an
+        infinite distance use `None`.  For example, [(1, `None`)] would provide
+        for 1/R geometric spreading to an infinite distance.
 
     Returns
     -------
@@ -133,18 +133,17 @@ def calc_geometric_spreading(dist, coefs):
         Geometric spreading coefficient.
     """
     initial = 1
-    gs = 1
-    for slope, limit in coefs:
+    coeff = 1
+    for slope, limit in params:
         # Compute the distance limited by the maximum distance of the slope.
         _dist = min(dist, limit) if limit else dist
-        gs *= (initial / _dist) ** slope
-
+        coeff *= (initial / _dist) ** slope
         if _dist < dist:
             initial = _dist
         else:
             break
 
-    return gs
+    return coeff
 
 
 class RvtMotion(object):
@@ -218,23 +217,22 @@ class RvtMotion(object):
         spec_accels : :class:`numpy.ndarray`
             Peak pseudo-spectral acceleration of the oscillator
         """
-        def calc_spec_accel(osc_freq):
-            return self.calc_peak(
-                calc_sdof_tf(self._freqs, osc_freq, osc_damping),
-                osc_freq, osc_damping)
-
-        resp = np.array([calc_spec_accel(of) for of in osc_freqs])
+        resp = np.array([
+            self.calc_peak(
+                calc_sdof_tf(self._freqs, of, osc_damping),
+                of, osc_damping)
+            for of in osc_freqs])
         return resp
 
     def calc_peak(self, transfer_func=None, osc_freq=None,
-                     osc_damping=None):
+                  osc_damping=None):
         """Compute the peak response.
 
         Parameters
         ----------
         transfer_func : array_like, optional
-            Transfer function to apply to the motion. If ``None``, then no transfer
-            function is applied.
+            Transfer function to apply to the motion. If ``None``, then no
+            transfer function is applied.
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
@@ -258,8 +256,8 @@ class RvtMotion(object):
         min_freq : float
             minimum frequency of the fit (Hz).
         max_freq : float, optional
-            maximum frequency of the fit. If ``None``, then the maximum frequency
-            range is used.
+            maximum frequency of the fit. If ``None``, then the maximum
+            frequency range is used.
 
         Returns
         -------
@@ -315,21 +313,21 @@ class SourceTheoryMotion(RvtMotion):
         Central and Eastern North America, or 'wna' for Western North
         America.
         stress_drop : float, optional
-            Stress drop of the event (bars).  If `None`, then the default value is
-            used. For `region` is 'cena', the default value is computed by the
-            :cite:`atkinson11` model, while for `region` is 'wna' the default value is
-            100 bars.
+            Stress drop of the event (bars).  If `None`, then the default value
+            is used. For `region` is 'cena', the default value is computed by
+            the :cite:`atkinson11` model, while for `region` is 'wna' the
+            default value is 100 bars.
         depth : float, optional
-            Hypocenter depth (km). The `depth` is combined with the `distance` to
-            compute the hypocentral distance.
+            Hypocenter depth (km). The `depth` is combined with the `distance`
+            to compute the hypocentral distance.
         peak_calculator : :class:`~.peak_calculators.Calculator`, optional
-            Peak calculator to use. If `None`, then the default peak calculator is
-            used. The peak calculator may either be specified by a
-            :class:`~.peak_calculators.Calculator` object, or by the initials of the
-            calculator using :func:`~.peak_calculators.peak_calculator`.
+            Peak calculator to use. If `None`, then the default peak calculator
+            is used. The peak calculator may either be specified by a
+            :class:`~.peak_calculators.Calculator` object, or by the initials
+            of the calculator using :func:`~.peak_calculators.peak_calculator`.
         calc_kwds : dict, optional
-            Keywords to be passed during the creation the peak calculator. These
-            keywords are only required for some peak calculators.
+            Keywords to be passed during the creation the peak calculator.
+            These keywords are only required for some peak calculators.
         """
         super(SourceTheoryMotion, self).__init__(
             peak_calculator=peak_calculator, calc_kwds=calc_kwds)
@@ -411,16 +409,13 @@ class SourceTheoryMotion(RvtMotion):
             duration_path = 0.05 * self.hypo_distance
         elif self.region == 'cena':
             duration_path = 0.
-
-            if 10 < self.hypo_distance:
+            if self.hypo_distance > 10:
                 # 10 < R <= 70 km
                 duration_path += 0.16 * (min(self.hypo_distance, 70) - 10.)
-
-            if 70 < self.hypo_distance:
+            if self.hypo_distance > 70:
                 # 70 < R <= 130 km
                 duration_path += -0.03 * (min(self.hypo_distance, 130) - 70.)
-
-            if 130 < self.hypo_distance:
+            if self.hypo_distance > 130:
                 # 130 km < R
                 duration_path += 0.04 * (self.hypo_distance - 130.)
         else:
@@ -561,17 +556,16 @@ class CompatibleRvtMotion(RvtMotion):
             log_freqs[first:last], log_osc_freqs, np.log(fourier_amps)))
 
         def extrapolate():
-            # Extrapolate the first and last value of Fourier amplitude
-            # spectrum.
+            """Extrapolate the first and last value of Fourier amplitude
+            spectrum.
+            """
             def _extrap(freq, freqs, fourier_amps, max_slope=None):
                 # Extrapolation is performed in log-space using the first and
                 # last two points
                 xi = np.log(freq)
                 x = np.log(freqs)
                 y = np.log(fourier_amps)
-
                 slope = (y[1] - y[0]) / (x[1] - x[0])
-
                 if max_slope:
                     slope = min(slope, max_slope)
 
@@ -656,15 +650,11 @@ class CompatibleRvtMotion(RvtMotion):
 
         """
         # Compute initial value using Vanmarcke methodology.
-
         peak_factor = 2.5
         fa_sqr_prev = 0.
         total = 0.
-
         sdof_factor = np.pi / (4. * osc_damping) - 1.
-
         fourier_amps = np.empty_like(osc_freqs)
-
         for i, (osc_freq, osc_accel) in enumerate(zip(osc_freqs, osc_accels)):
             # TODO simplify equation and remove duration
             fa_sqr_cur = (
@@ -682,5 +672,4 @@ class CompatibleRvtMotion(RvtMotion):
             else:
                 total += ((fa_sqr_cur - fa_sqr_prev) /
                           2 * (osc_freq - osc_freqs[i-1]))
-
         return fourier_amps

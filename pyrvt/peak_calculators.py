@@ -216,9 +216,9 @@ class Davenport1964(Calculator):
         Returns
         -------
         max_resp : float
-        	expected maximum response.
+            expected maximum response.
         peak_factor : float
-        	associated peak factor.
+            associated peak factor.
         """
         m0, m2 = calc_moments(freqs, fourier_amps, [0, 2])
 
@@ -538,8 +538,9 @@ class LiuPezeshk1999(BooreJoyner1984):
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float

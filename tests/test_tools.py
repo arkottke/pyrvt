@@ -5,7 +5,7 @@ import os
 import tempfile
 import shutil
 
-from numpy.testing import assert_allclose, assert_string_equal
+from numpy.testing import assert_allclose
 import pytest
 
 import pyrvt
@@ -18,6 +18,7 @@ except ImportError:
 exts = ['.csv', '.xlsx']
 if xlwt:
     exts.append('.xls')
+
 
 @pytest.mark.parametrize('ext', exts)
 def check_read_events(ext):

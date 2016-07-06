@@ -4,13 +4,13 @@
 import os
 
 import numpy as np
-import pytest
-
 from numpy.testing import assert_allclose, assert_string_equal
+import pytest
 
 import pyrvt
 
 from . import readers
+
 
 @pytest.mark.parametrize(
     'peak_calculator,abbrev',
@@ -71,6 +71,3 @@ def test_formulations(method):
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels = m.calc_osc_accels(osc_freqs, 0.05)
     assert np.all(np.isreal(osc_accels))
-
-
-
