@@ -2,7 +2,7 @@
 deploy:
   true:
     condition: $TRAVIS_PYTHON_VERSION == "3.5"
-    repo: arkottke/pygmm
+    repo: arkottke/pyrvt
     tags: true
   user: arkottke
   distributions: sdist bdist_wheel
