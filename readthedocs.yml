@@ -1,0 +1,8 @@
+requirements_file: requirements_rtfd.txt
+
+conda:
+    file: environment.yml
+
+python:
+    version: 3
+    pip_install: true
