@@ -9,5 +9,6 @@ pytest-flake8
 pytest-runner
 sphinx
 sphinxcontrib-bibtex
+sphinx_rtd_theme
 watchdog
 wheel
