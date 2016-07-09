@@ -2,6 +2,11 @@
 History
 =======
 
+0.5.4 (2016-07-09)
+------------------
+
+* Fixed building the documentation on RTFD
+
 0.5.1 (2016-07-06)
 ------------------
 
