@@ -33,23 +33,20 @@ test_requirements = [
 ]
 
 setup(
-    name='pyrvt',
-    version='0.5.1',
+    name='pyRVT',
+    version='0.5.5',
     description='Ground motion models implemented in Python.',
     long_description=readme + '\n\n' + history,
     author='Albert Kottke',
     author_email='albert.kottke@gmail.com',
     url='http://github.com/arkottke/pyrvt',
-    packages=[
-        'pyrvt',
-    ],
+    packages=['pyrvt'],
     entry_points={
         'console_scripts': [
             'rvt_operator = pyrvt.runner:main',
             ],
         },
-    package_dir={'pyrvt':
-                 'pyrvt'},
+    package_dir={'pyrvt': 'pyrvt'},
     include_package_data=True,
     install_requires=requirements,
     license='MIT',

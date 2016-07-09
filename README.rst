@@ -1,5 +1,5 @@
 =====
-pyRVT
+pyrvt
 =====
 
 .. image:: https://img.shields.io/pypi/v/pyrvt.svg
