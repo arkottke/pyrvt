@@ -55,9 +55,7 @@ setup(
     license='MIT',
     zip_safe=False,
     keywords='pyrvt',
-    package_data={
-        'pyrvt': ['data/*', 'tests/data/*'],
-    },
+    package_data={'pyrvt': ['data/*'],},
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Environment :: Console',

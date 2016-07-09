@@ -3,5 +3,5 @@ matplotlib
 numpy
 pyprind
 sphinx
-sphinxcontrib-bibtex
 sphinx_rtd_theme
+sphinxcontrib-bibtex
