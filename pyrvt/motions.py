@@ -224,7 +224,7 @@ class RvtMotion(object):
         if trans_func is None:
             trans_func = np.ones_like(self.freqs)
         else:
-            trans_func = np.asarray
+            trans_func = np.asarray(trans_func)
         resp = np.array([
             self.calc_peak(
                 trans_func * calc_sdof_tf(self.freqs, of, osc_damping),
