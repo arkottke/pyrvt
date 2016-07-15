@@ -34,7 +34,7 @@ test_requirements = [
 
 setup(
     name='pyRVT',
-    version='0.5.5',
+    version='0.5.7',
     description='Ground motion models implemented in Python.',
     long_description=readme + '\n\n' + history,
     author='Albert Kottke',
