@@ -2,6 +2,16 @@
 History
 =======
 
+0.5.6 (2016-07-14)
+------------------
+
+* Fixed manifest to include data directory.
+
+0.5.5 (2016-07-11)
+------------------
+
+* Updated Travis build scripts.
+
 0.5.4 (2016-07-09)
 ------------------
 
