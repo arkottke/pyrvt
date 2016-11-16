@@ -127,21 +127,27 @@ def test_calc_compatible_spectra():
     assert_allclose(events[0]['psa'], events[0]['psa_calc'], rtol=0.02)
 
 
-def test_operation_psa2fa():
+@pytest.mark.parametrize('fixed_spacing', [[True, False]])
+def test_operation_psa2fa(fixed_spacing):
     src_fname = os.path.join(
         os.path.dirname(__file__), 'data', 'test_sa.csv')
     dest_dirname = tempfile.mkdtemp()
 
     # Do not need to check the output as it is checked in
     # test_calc_compatible_spectra
-    pyrvt.tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99', True)
+    pyrvt.tools.operation_psa2fa(src_fname, dest_dirname, 0.05, 'LP99',
+                                 fixed_spacing)
     shutil.rmtree(dest_dirname)
 
 
-def test_operation_fa2psa():
+@pytest.mark.parametrize('fixed_spacing', [[True, False]])
+def test_operation_fa2psa(fixed_spacing):
     src_fname = os.path.join(
         os.path.dirname(__file__), 'data', 'test_fa.csv')
     dest_dirname = tempfile.mkdtemp()
 
-    pyrvt.tools.operation_fa2psa(src_fname, dest_dirname, 0.05, 'LP99', True)
+    # Do not need to check the output as it is checked in
+    # test_calc_compatible_spectra
+    pyrvt.tools.operation_fa2psa(src_fname, dest_dirname, 0.05, 'LP99',
+                                 fixed_spacing)
     shutil.rmtree(dest_dirname)
