@@ -367,8 +367,8 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
         ext, freqs, events = read_events(filename_src, 'fa')
 
         if not fixed_spacing:
-            osc_freq = freqs
-            periods = 1. / osc_freq
+            osc_freqs = freqs
+            periods = 1. / osc_freqs
 
         bar = pyprind.ProgPercent(len(events)) if verbose else None
 
