@@ -2,6 +2,12 @@
 History
 =======
 
+0.5.8 (2016-11-16)
+------------------
+
+* Fixed: osc_freqs typo in tools.py
+* Added: test cases for tools.py
+
 0.5.7 (2016-07-14)
 ------------------
 
