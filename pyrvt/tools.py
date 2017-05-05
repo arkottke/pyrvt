@@ -200,7 +200,7 @@ def write_events(fname, reference, reference_label, response_type,
         raise NotImplementedError
 
 
-def _calc_fa(bar, target_freqs, damping, method, event):
+def _calc_fa(target_freqs, damping, method, event):
     """Calculate the fourier amplitudes for an event.
     
     Note that this is intended as a helper function to be called by 
@@ -214,17 +214,13 @@ def _calc_fa(bar, target_freqs, damping, method, event):
         duration=event['duration'],
         osc_damping=damping,
         event_kwds=event_kwds,
-        peak_calculator=get_peak_calculator(
-            method, event_kwds)
+        peak_calculator=get_peak_calculator(method, event_kwds)
     )
     psa_calc = crm.calc_osc_accels(target_freqs, damping)
-    if bar:
-        bar.update()
     return crm, psa_calc
 
 
-def calc_compatible_spectra(method, periods, events, damping=0.05,
-                            verbose=True):
+def calc_compatible_spectra(method, periods, events, damping=0.05):
     """Compute the response spectrum compatible motions.
 
     Parameters
@@ -239,8 +235,6 @@ def calc_compatible_spectra(method, periods, events, damping=0.05,
     damping : float, optional
         Fractional damping of the oscillator (decimal). Default value of 0.05
         for a damping ratio of 5%.
-    verbose : bool, optional
-        Print status of calculation. Default is `True`.
 
     Returns
     -------
@@ -270,11 +264,10 @@ def calc_compatible_spectra(method, periods, events, damping=0.05,
     - **psa_calc** : :class:`numpy.ndarray` -- Pseudo-spectral acceleration
       calculated from `fa`. This will differ slightly from `psa_target`.
     """
-    bar = pyprind.ProgPercent(len(events)) if verbose else None
     target_freqs = 1. / periods
     with multiprocessing.Pool() as pool:
         results = pool.map(
-            functools.partial(_calc_fa, bar, target_freqs, damping, method),
+            functools.partial(_calc_fa, target_freqs, damping, method),
             events)
 
     # Copy values back into the dictionary
@@ -329,8 +322,8 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = calc_compatible_spectra(method, periods, events,
-                                        damping=damping, verbose=verbose)
+        freqs = calc_compatible_spectra(
+            method, periods, events, damping=damping)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -344,7 +337,7 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
                      'fa', 'FA (g-s)', events)
 
 
-def _calc_psa(bar, osc_freqs, damping, method, freqs, event):
+def _calc_psa(osc_freqs, damping, method, freqs, event):
     """Calculate the response spectra for an event.
 
     Note that this is intended as a helper function to be called by 
@@ -359,8 +352,6 @@ def _calc_psa(bar, osc_freqs, damping, method, freqs, event):
                          dist=event['distance']))
     )
     psa = m.calc_osc_accels(osc_freqs, damping)
-    if bar:
-        bar.update()
     return psa
 
 
@@ -385,8 +376,6 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
     fixed_spacing : bool, optional
         If `True`, then the periods are interpolated to 301 points equally
         space in log-space from 0.01 to 10.
-    verbose : bool, optional
-        Print status of calculation.
     """
     if fixed_spacing:
         periods = np.logspace(-2, 1, 301)
@@ -401,10 +390,9 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
             osc_freqs = freqs
             periods = 1. / osc_freqs
 
-        bar = pyprind.ProgPercent(len(events)) if verbose else None
         with multiprocessing.Pool() as pool:
             psas = pool.map(
-                functools.partial(_calc_psa, bar, osc_freqs, damping, method, freqs),
+                functools.partial(_calc_psa, osc_freqs, damping, method, freqs),
                 events
             )
 

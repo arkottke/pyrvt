@@ -20,6 +20,8 @@ install:
 script:
 - py.test --flake8 --cov-report html --cov pyrvt tests/
 - pyrvt --version
+- pyrvt psa2fa -i examples/example_targetSa.csv -m V75
+- pyrvt fa2psa -i output/example_fa.csv -m V75
 after_success:
 - coveralls
 deploy:

@@ -8,7 +8,7 @@ with open('README.rst') as readme_file:
 
 setup(
     name='pyRVT',
-    version='0.6',
+    version='0.6.1',
     packages=find_packages(exclude=['.*tests.*']),
     entry_points={
         'console_scripts': [
@@ -18,7 +18,6 @@ setup(
     install_requires=[
         'numpy',
         'numba',
-        'pyprind',
         'setuptools',
         'scipy',
     ],
