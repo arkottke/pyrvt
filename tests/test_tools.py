@@ -10,14 +10,20 @@ import pytest
 
 import pyrvt
 
+exts = ['.csv']
+
 try:
     import xlwt
-except ImportError:
-    xlwt = None
-
-exts = ['.csv', '.xlsx']
-if xlwt:
+    import xlrd
     exts.append('.xls')
+except ImportError:
+    pass
+
+try:
+    import openpyxl
+    exts.append('.xlsx')
+except ImportError:
+    pass
 
 
 @pytest.mark.parametrize('ext', exts)
