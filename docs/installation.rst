@@ -11,6 +11,8 @@ addition to Python, the following packages need to be installed:
 
 - `numpy` -- fast vector operations
 
+- `numba` -- compiled functions for increased speed
+
 - `scipy` -- indefinite integration
 
 - `pytest` -- required for the unit tests
@@ -39,8 +41,8 @@ terminal. On Windows, this is best accomplished with ``Windows Key + r``, enter
 ``cmd``. Next enter the following command:
 
 ::
- 
-  conda install --yes setuptools numpy scipy matplotlib nose openpyxl xlrd xlwt pip
+
+  conda install --yes setuptools numpy scipy matplotlib numba openpyxl xlrd xlwt pip
 
 On Windows, the text can copied and pasted if "Quick Edit" mode is enabled. To
 enable this feature, right click on the icon in the upper left portion of the
