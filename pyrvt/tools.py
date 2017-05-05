@@ -274,7 +274,8 @@ def calc_compatible_spectra(method, periods, events, damping=0.05,
     target_freqs = 1. / periods
     with multiprocessing.Pool() as pool:
         results = pool.map(
-            functools.partial(_calc_fa, bar, target_freqs, damping, method), events)
+            functools.partial(_calc_fa, bar, target_freqs, damping, method),
+            events)
 
     # Copy values back into the dictionary
     for event, (crm, psa_calc) in zip(events, results):
@@ -361,6 +362,7 @@ def _calc_psa(bar, osc_freqs, damping, method, freqs, event):
     if bar:
         bar.update()
     return psa
+
 
 def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
                      verbose=True):
