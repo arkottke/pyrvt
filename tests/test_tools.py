@@ -16,12 +16,14 @@ try:
     import xlwt
     import xlrd
     exts.append('.xls')
+    del xlwt, xlrd
 except ImportError:
     pass
 
 try:
     import openpyxl
     exts.append('.xlsx')
+    del openpyxl
 except ImportError:
     pass
 
