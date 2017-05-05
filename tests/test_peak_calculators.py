@@ -12,15 +12,12 @@ import pyrvt
 from . import readers
 
 
-@pytest.mark.parametrize(
-    'peak_calculator,abbrev',
-    [
-        (pyrvt.peak_calculators.BooreJoyner1984(), 'bj84'),
-        (pyrvt.peak_calculators.LiuPezeshk1999(), 'lp99'),
-        (pyrvt.peak_calculators.BooreThompson2012('wna', 6, 20.), 'bt12_wna'),
-        (pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.), 'bt12_ena'),
-    ]
-)
+@pytest.mark.parametrize('peak_calculator,abbrev', [
+    (pyrvt.peak_calculators.BooreJoyner1984(), 'bj84'),
+    (pyrvt.peak_calculators.LiuPezeshk1999(), 'lp99'),
+    (pyrvt.peak_calculators.BooreThompson2012('wna', 6, 20.), 'bt12_wna'),
+    (pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.), 'bt12_ena'),
+])
 def test_osc_accels(peak_calculator, abbrev):
     path = os.path.join(os.path.dirname(__file__), 'data')
     fs = readers.load_fourier_spectrum(
@@ -53,19 +50,18 @@ def test_abbrev(bj84_pc):
     assert_string_equal(bj84_pc.abbrev, 'BJ84')
 
 
-@pytest.mark.parametrize(
-    'method', ['V75', 'D64', 'DK85', 'TM87']
-)
+@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87'])
 def test_formulations(method):
     mag = 6.5
     dist = 20
     region = 'cena'
 
     m = pyrvt.motions.SourceTheoryMotion(
-        mag, dist, region,
+        mag,
+        dist,
+        region,
         peak_calculator=pyrvt.peak_calculators.get_peak_calculator(
-            method, dict(mag=mag, dist=dist, region=region))
-    )
+            method, dict(mag=mag, dist=dist, region=region)))
     m.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)

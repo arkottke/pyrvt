@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """Scripts for loading test case data."""
 
 import numpy as np
@@ -26,8 +25,7 @@ def load_fourier_spectrum(fname):
         mag=rows[0, 0],
         dist=rows[0, 1],
         freqs=rows[:, 4],
-        fourier_amps=rows[:, 8],
-    )
+        fourier_amps=rows[:, 8], )
 
 
 def load_rvt_response_spectrum(fname):
@@ -52,5 +50,4 @@ def load_rvt_response_spectrum(fname):
         dist=rows[0, 4],
         duration=rows[0, 16],
         freqs=rows[:, 2],
-        spec_accels=rows[:, 11]
-    )
+        spec_accels=rows[:, 11])

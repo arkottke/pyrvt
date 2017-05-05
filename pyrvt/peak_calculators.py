@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """
 Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
@@ -39,12 +38,15 @@ def trapz(x, y):
 
     return total
 
+
 # From: https://github.com/scipy/scipy/issues/4831#issuecomment-258501648
 # Set the signature of the future types function
 # The second argument must be a pointer or it won't work right,
 # but this will cause problems because of the bug in scipy
 # because scipy looks for a double instead of a pointer
-c_sig = numba.types.double(numba.types.intc, numba.types.CPointer(numba.types.double))
+c_sig = numba.types.double(numba.types.intc,
+                           numba.types.CPointer(numba.types.double))
+
 
 # Turn the integrand function into a ctypes function
 @numba.cfunc(c_sig)
@@ -73,12 +75,13 @@ def _calc_vanmarcke1975_ccdf(n, a):
 
     return (1 - (1 - np.exp(-x ** 2 / 2)) *
             np.exp(-1 * num_zero_crossings *
-                   (1 - np.exp(-1 * np.sqrt(np.pi / 2) *
-                               bandwidth_eff * x)) /
+                   (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x)) /
                    (np.exp(x ** 2 / 2) - 1)))
+
 
 # Force the argtypes to be what quad expects
 _calc_vanmarcke1975_ccdf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
+
 
 @numba.cfunc(c_sig)
 def _calc_cartwright_pf(n, a):
@@ -105,6 +108,7 @@ def _calc_cartwright_pf(n, a):
     bandwidth = args[2]
     return 1. - (1. - bandwidth * np.exp(-x * x)) ** num_extrema
 
+
 # Force the argtypes to be what quad expects
 _calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
@@ -130,8 +134,10 @@ def calc_moments(freqs, fourier_amps, orders):
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
-    moments = [2. * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa)
-               for o in orders]
+    moments = [
+        2. * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa)
+        for o in orders
+    ]
 
     return moments
 
@@ -256,19 +262,22 @@ class Vanmarcke1975(Calculator):
         num_zero_crossings = self.limited_num_zero_crossings(
             duration * np.sqrt(m2 / m0) / np.pi)
         # The expected peak factor is computed as the integral of the complementary CDF (1 - CDF(x)).
-        peak_factor = quad(_calc_vanmarcke1975_ccdf.ctypes, 0, np.inf,
-                           args=(num_zero_crossings, bandwidth_eff))[0]
+        peak_factor = quad(
+            _calc_vanmarcke1975_ccdf.ctypes,
+            0,
+            np.inf,
+            args=(num_zero_crossings, bandwidth_eff))[0]
 
         if osc_freq and osc_damping:
-            peak_factor *= self.nonstationarity_factor(
-                osc_damping, osc_freq, duration)
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq,
+                                                       duration)
 
         return peak_factor * resp_rms, peak_factor
 
     @classmethod
-    def nonstationarity_factor(cls, osc_damping, osc_freq,  duration):
-        return np.sqrt(
-            1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration))
+    def nonstationarity_factor(cls, osc_damping, osc_freq, duration):
+        return np.sqrt(1 - np.exp(
+            -4 * np.pi * osc_damping * osc_freq * duration))
 
 
 class Davenport1964(Calculator):
@@ -408,8 +417,13 @@ class ToroMcGuire1987(Davenport1964):
     def __init__(self, **kwargs):
         super(ToroMcGuire1987, self).__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
+    def __call__(self,
+                 duration,
+                 freqs,
+                 fourier_amps,
+                 osc_freq=None,
+                 osc_damping=None,
+                 **kwargs):
         """Compute the peak response.
 
         Parameters
@@ -466,8 +480,13 @@ class CartwrightLonguetHiggins1956(Calculator):
     def __init__(self, **kwargs):
         super(CartwrightLonguetHiggins1956, self).__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
+    def __call__(self,
+                 duration,
+                 freqs,
+                 fourier_amps,
+                 osc_freq=None,
+                 osc_damping=None,
+                 **kwargs):
         """Compute the peak response.
 
         Parameters
@@ -496,12 +515,15 @@ class CartwrightLonguetHiggins1956(Calculator):
         num_extrema = max(2., np.sqrt(m4 / m2) * duration / np.pi)
         # Compute the peak factor by the indefinite integral.
         peak_factor = np.sqrt(2.) * quad(
-            _calc_cartwright_pf.ctypes, 0, np.inf, args=(num_extrema, bandwidth))[0]
+            _calc_cartwright_pf.ctypes,
+            0,
+            np.inf,
+            args=(num_extrema, bandwidth))[0]
         # Compute the root-mean-squared response -- correcting for the RMS
         # duration.
         if osc_freq and osc_damping:
-            rms_duration = self.calc_duration_rms(
-                duration, osc_freq, osc_damping, m0, m1, m2)
+            rms_duration = self.calc_duration_rms(duration, osc_freq,
+                                                  osc_damping, m0, m1, m2)
         else:
             rms_duration = duration
 
@@ -668,20 +690,19 @@ def _load_bt12_data(region):
         Parameters for the region.
     """
     fname = os.path.join(
-        os.path.dirname(__file__), 'data',
-        region + '_bt12_trms4osc.pars')
+        os.path.dirname(__file__), 'data', region + '_bt12_trms4osc.pars')
 
     return np.rec.fromrecords(
         np.loadtxt(fname, skiprows=4, usecols=range(9)),
         names='mag,dist,c1,c2,c3,c4,c5,c6,c7')
 
+
 # Load coefficient interpolators for Boore and Thompson (2012)
 _BT12_INTERPS = {}
 for region in ['wna', 'cena']:
     d = _load_bt12_data(region)
-    i = LinearNDInterpolator(
-        np.c_[d.mag, np.log(d.dist)],
-        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
+    i = LinearNDInterpolator(np.c_[d.mag, np.log(d.dist)],
+                             np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
     _BT12_INTERPS[region] = i
 
 
@@ -793,7 +814,7 @@ def get_peak_calculator(method, calc_kwds):
         if method in [calculator.NAME, calculator.ABBREV]:
             return calculator(**calc_kwds)
 
-    raise NotImplementedError(f'No calculator for: {method}')
+    raise NotImplementedError('No calculator for: %s', method)
 
 
 def get_region(region):
