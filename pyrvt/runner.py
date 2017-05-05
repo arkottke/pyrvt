@@ -12,6 +12,7 @@ from .tools import operation_psa2fa, operation_fa2psa
 from .motions import DEFAULT_CALC
 
 parser = argparse.ArgumentParser(
+    prog='pyrvt',
     description='Compute response or Fourier amplitude spectra using RVT.')
 parser.add_argument(
     'operation',
