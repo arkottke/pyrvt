@@ -15,7 +15,8 @@ parser = argparse.ArgumentParser(
     prog='pyrvt',
     description='Compute response or Fourier amplitude spectra using RVT.')
 parser.add_argument(
-    '--version', action='version', version='%(prog)s version %s' % __version__)
+    '--version', action='version',
+    version='%(prog)s version ' + str(__version__))
 parser.add_argument(
     'operation',
     help='''Operation to be performed: [psa2fa] converts from 
