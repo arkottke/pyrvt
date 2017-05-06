@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""pyRVT module."""
+
 from . import tools, motions, peak_calculators
 
 from pkg_resources import get_distribution

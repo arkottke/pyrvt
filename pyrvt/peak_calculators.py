@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
+Peak factor models.
+
 Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
 """
@@ -18,18 +20,19 @@ from scipy.interpolate import LinearNDInterpolator
 @numba.jit
 def trapz(x, y):
     """Trapezoidal integration written in numba.
-    
+
     Parameters
     ----------
     x : array_like
         sample points to corresponding to the `y` values.
     y : array_like
         Input array to integrate
-    
+
     Returns
     -------
     total : float
         Definite integral as approximated by the trapezoidal rule.
+
     """
     n = x.shape[0]
     total = 0
@@ -52,31 +55,31 @@ c_sig = numba.types.double(numba.types.intc,
 @numba.cfunc(c_sig)
 def _calc_vanmarcke1975_ccdf(n, a):
     """Calculate the Vanmarcke (1975) complementary CDF.
-    
+
     Parameters
     ----------
     n : int
         Length of arguments
     a : list of floats
-        Arguments specifying: 
+        Arguments specifying:
             - function value `x`
             - number of zero crossing
             - effective bandwdith
-    
+
     Returns
     -------
     ccdf : float
         Complementary CDF value
+
     """
     args = numba.carray(a, n)
     x = args[0]
     num_zero_crossings = args[1]
     bandwidth_eff = args[2]
 
-    return (1 - (1 - np.exp(-x ** 2 / 2)) *
-            np.exp(-1 * num_zero_crossings *
-                   (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x)) /
-                   (np.exp(x ** 2 / 2) - 1)))
+    return (1 - (1 - np.exp(-x ** 2 / 2)) * np.exp(-1 * num_zero_crossings * (
+        1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x)) /
+                                                   (np.exp(x ** 2 / 2) - 1)))
 
 
 # Force the argtypes to be what quad expects
@@ -86,21 +89,22 @@ _calc_vanmarcke1975_ccdf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 @numba.cfunc(c_sig)
 def _calc_cartwright_pf(n, a):
     """Integrand for the Cartwright and Longuet-Higgins peak factor.
-        
+
     Parameters
     ----------
     n : int
         Length of arguments
     a : list of floats
-        Arguments specifying: 
+        Arguments specifying:
             - function value `x`
             - number of extrema
             - bandwdith
-    
+
     Returns
     -------
     dpf : float
         Portion of the peak factor
+
     """
     args = numba.carray(a, n)
     x = args[0]
@@ -130,6 +134,7 @@ def calc_moments(freqs, fourier_amps, orders):
     -------
     moments : tuple
         Computed spectral moments.
+
     """
     squared_fa = np.square(fourier_amps)
 
@@ -143,9 +148,7 @@ def calc_moments(freqs, fourier_amps, orders):
 
 
 class Calculator(object):
-    """:class:`Calculator` is a base class used for all peak calculator
-    classes.
-    """
+    """Base class used for all peak calculator classes."""
 
     NAME = ''
     ABBREV = ''
@@ -153,7 +156,8 @@ class Calculator(object):
     _MIN_ZERO_CROSSINGS = 1.33
 
     def __init__(self, **kwds):
-        pass
+        """Initialize the object."""
+        super().__init__()
 
     @property
     def name(self):
@@ -177,49 +181,52 @@ class Calculator(object):
 
 
 class Vanmarcke1975(Calculator):
-    """Vanmarcke (1975, :cite:`vanmarcke75`) peak factor which includes the
-    effects of clumping.
+    r"""Vanmarcke (1975) peak factor.
 
-    The peak factor equation is from Equation (2) in Der Kiureghian (1980,
-    :cite:`derkiureghian80`), which is based on Equation (29) in
-    :cite:`vanmarcke75`.
+    The Vanmarcke (1975, :cite:`vanmarcke75`) peak factor, which includes the
+    effects of clumping.  The peak factor equation is from Equation (2) in Der
+    Kiureghian (1980, :cite:`derkiureghian80`), which is based on Equation (29)
+    in :cite:`vanmarcke75`.
 
     The cumulative density function (CDF) of the peak is defined as:
 
     .. math::
-        F_x(x) = \\left[1 - \\exp\\left(-x^2/2\\right)\\right]
-        \\exp\\left[-N_z \\frac{1 -
-            \\exp\\left(-\\sqrt{\\pi/2} \\delta_e x\\right)}{\\exp(x^2 / 2) -
-            1 }\\right]
+        F_x(x) = \left[1 - \exp\left(-x^2/2\right)\right]
+        \exp\left[-N_z \frac{1 -
+            \exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) -
+            1 }\right]
 
     where :math:`N_z` is the number of zero crossings, :math:`\delta_e` is the
     effective bandwidth (:math:`\delta^{1.2}`).
 
     Typically, the expected value of the peak factor is calculated by
     integrating over the probability density function (i.e., :math:`f_x(x) =
-    \\frac{d}{dx} F_x( x)`):
+    \frac{d}{dx} F_x( x)`):
 
     .. math::
-        E[x] = \\int_0^\\infty x f_x(x) dx
+        E[x] = \int_0^\infty x f_x(x) dx
 
     However, because of the properties of :math:`F_x(x)`, specifically that it
     has non-zero probabilities for only positive values, :math:`E[x]` can be
     computed directly from :math:`F_x(x)`.
 
     .. math::
-        E[x] = \\int_0^\\infty 1 - F_x(x) dx.
+        E[x] = \int_0^\infty 1 - F_x(x) dx.
 
     This is based on the following sources [#]_ and [#]_.
 
+    .. # noqa
     .. [#] http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
     .. [#] http://stats.stackexchange.com/a/13377/48461
 
     """
+
     NAME = 'Vanmarcke (1975)'
     ABBREV = 'V75'
 
     def __init__(self, **kwargs):
-        super(Vanmarcke1975, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def __call__(self, duration, freqs, fourier_amps, osc_freq, osc_damping,
                  **kwargs):
@@ -249,8 +256,8 @@ class Vanmarcke1975(Calculator):
             expected maximum response.
         peak_factor : float
             associated peak factor.
-        """
 
+        """
         m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the root-mean-squared response
@@ -261,7 +268,8 @@ class Vanmarcke1975(Calculator):
 
         num_zero_crossings = self.limited_num_zero_crossings(
             duration * np.sqrt(m2 / m0) / np.pi)
-        # The expected peak factor is computed as the integral of the complementary CDF (1 - CDF(x)).
+        # The expected peak factor is computed as the integral of the
+        # complementary CDF (1 - CDF(x)).
         peak_factor = quad(
             _calc_vanmarcke1975_ccdf.ctypes,
             0,
@@ -276,12 +284,31 @@ class Vanmarcke1975(Calculator):
 
     @classmethod
     def nonstationarity_factor(cls, osc_damping, osc_freq, duration):
-        return np.sqrt(1 - np.exp(
-            -4 * np.pi * osc_damping * osc_freq * duration))
+        """Compute nonstationarity factor to modify duration.
+
+        Parameters
+        ----------
+        osc_damping : float
+            Oscillator damping (decimal).
+        osc_freq : float
+            Oscillator frequency (Hz).
+        duration : float
+            Duration of the stationary portion of the ground motion
+
+        Returns
+        -------
+        float
+            Nonstationarity factor.
+
+        """
+        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq *
+                                  duration))
 
 
 class Davenport1964(Calculator):
-    """RVT calculation using the asymptotic solution proposed by
+    """Davenport (1964) peak factor.
+
+    RVT calculation using the asymptotic solution proposed by
     Davenport (1964, :cite:`davenport64`).
     """
 
@@ -289,7 +316,8 @@ class Davenport1964(Calculator):
     ABBREV = 'D64'
 
     def __init__(self, **kwargs):
-        super(Davenport1964, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def __call__(self, duration, freqs, fourier_amps, **kwargs):
         """Compute the peak response.
@@ -313,6 +341,7 @@ class Davenport1964(Calculator):
             expected maximum response.
         peak_factor : float
             associated peak factor.
+
         """
         m0, m2 = calc_moments(freqs, fourier_amps, [0, 2])
 
@@ -333,20 +362,23 @@ class Davenport1964(Calculator):
 
         Parameters
         ----------
-            zero_crossings : float
-                Number of zero crossing.
+        zero_crossings : float
+            Number of zero crossing.
 
         Returns
         -------
-            approx_peak_factor : float
-                Calculated peak factor.
+        approx_peak_factor : float
+            Calculated peak factor.
+
         """
         x = np.sqrt(2 * np.log(zero_crossings))
         return x + 0.5772 / x
 
 
 class DerKiureghian1985(Davenport1964):
-    """RVT calculation using peak factor derived by Davenport (1964,
+    """Der Kiureghian (1985) peak factor.
+
+    RVT calculation using peak factor derived by Davenport (1964,
     :cite:`davenport64`) with limits suggested by Igusa & Der Kiureghian
     (1985, :cite:`igusa85`).
     """
@@ -355,7 +387,8 @@ class DerKiureghian1985(Davenport1964):
     ABBREV = 'DK85'
 
     def __init__(self, **kwargs):
-        super(DerKiureghian1985, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def __call__(self, duration, freqs, fourier_amps, **kwargs):
         """Compute the peak response.
@@ -379,8 +412,8 @@ class DerKiureghian1985(Davenport1964):
             expected maximum response.
         peak_factor : float
             associated peak factor.
-        """
 
+        """
         m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Compute the root-mean-squared response
@@ -406,16 +439,19 @@ class DerKiureghian1985(Davenport1964):
 
 
 class ToroMcGuire1987(Davenport1964):
-    """RVT calculation using asymptotic solution proposed by Davenport
-    (1964, :cite:`davenport64`) with modifications proposed by Toro & McGuire
-    (1987, :cite:`toro87`).
+    """Toro and McGuire (1987) peak factor.
+
+    Peak factor equation using asymptotic solution proposed by Davenport (1964,
+    :cite:`davenport64`) with modifications proposed by Toro & McGuire (1987,
+    :cite:`toro87`).
     """
 
     NAME = 'Toro & McGuire (1987)'
     ABBREV = 'TM87'
 
     def __init__(self, **kwargs):
-        super(ToroMcGuire1987, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def __call__(self,
                  duration,
@@ -445,8 +481,8 @@ class ToroMcGuire1987(Davenport1964):
             expected maximum response.
         peak_factor : float
             associated peak factor.
-        """
 
+        """
         m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
 
         # Vanmarcke's (1976) bandwidth measure and central frequency
@@ -469,7 +505,9 @@ class ToroMcGuire1987(Davenport1964):
 
 
 class CartwrightLonguetHiggins1956(Calculator):
-    """RVT calculation based on the peak factor definition by Cartwright and
+    """Cartwight and Longuet-Higgins (1956) peak factor.
+
+    RVT calculation based on the peak factor definition by Cartwright and
     Longuet-Higgins (1956, :cite:`cartwright56`) using the
     integral provided by Boore (2003, :cite:`boore03`).
     """
@@ -478,7 +516,8 @@ class CartwrightLonguetHiggins1956(Calculator):
     ABBREV = 'CLH56'
 
     def __init__(self, **kwargs):
-        super(CartwrightLonguetHiggins1956, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def __call__(self,
                  duration,
@@ -508,6 +547,7 @@ class CartwrightLonguetHiggins1956(Calculator):
             expected maximum response.
         peak_factor : float
             associated peak factor.
+
         """
         m0, m1, m2, m4 = calc_moments(freqs, fourier_amps, [0, 1, 2, 4])
 
@@ -558,13 +598,16 @@ class CartwrightLonguetHiggins1956(Calculator):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
+
         """
         del (osc_freq, osc_damping, m0, m1, m2)
         return duration
 
 
 class BooreJoyner1984(CartwrightLonguetHiggins1956):
-    """RVT calculation based on the peak factor definition by Cartwright &
+    """Boore and Joyner (1984) peak factor.
+
+    RVT calculation based on the peak factor definition by Cartwright &
     Longuet-Higgins (1956, :cite:`cartwright56`) and along with the
     root-mean-squared duration correction proposed by Boore & Joyner (1984,
     :cite:`boore84`).
@@ -577,13 +620,14 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     ABBREV = 'BJ84'
 
     def __init__(self, **kwargs):
-        super(BooreJoyner1984, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
-        """Compute the oscillator duration used in the calculation of the
-        root-mean-squared response.
+        """Compute the oscillator duration.
 
-        Based on  :cite:`boore84`.
+        Oscillator duration is used in the calculation of the root-mean-squared
+        response and based on  :cite:`boore84`.
 
         Parameters
         ----------
@@ -606,6 +650,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
+
         """
         del (m0, m1, m2)
 
@@ -621,7 +666,9 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
 
 
 class LiuPezeshk1999(BooreJoyner1984):
-    """RVT calculation based on the peak factor definition by Cartwright &
+    """Liu and Pezeshk (1999) peak factor.
+
+    RVT calculation based on the peak factor definition by Cartwright &
     Longuet-Higgins (1956, :cite:`cartwright56`) along with the
     root-mean-squared duration correction proposed by Liu & Pezeshk
     (1999, :cite:`liu99`).
@@ -631,13 +678,14 @@ class LiuPezeshk1999(BooreJoyner1984):
     ABBREV = 'LP99'
 
     def __init__(self, **kwargs):
-        super(LiuPezeshk1999, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
     def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
-        """Compute the oscillator duration used in the calculation of the
-        root-mean-squared response.
+        """Compute the oscillator duration.
 
-        Based on :cite:`liu99`.
+        Oscillator duration is used in the calculation of the root-mean-squared
+        response and based on :cite:`liu99`.
 
         Parameters
         ----------
@@ -660,6 +708,7 @@ class LiuPezeshk1999(BooreJoyner1984):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
+
         """
         power = 2.
         coef = np.sqrt(2 * np.pi * (1. - (m1 * m1) / (m0 * m2)))
@@ -674,8 +723,7 @@ class LiuPezeshk1999(BooreJoyner1984):
 
 
 def _load_bt12_data(region):
-    """Load data from the Boore & Thompson (2012, :cite:`boore12`) parameter
-    files.
+    """Load data from the Boore & Thompson (2012) parameter files.
 
     Parameters
     ----------
@@ -686,8 +734,9 @@ def _load_bt12_data(region):
 
     Returns
     -------
-    params : np.recarray
+    params : :class:`np.recarray`
         Parameters for the region.
+
     """
     fname = os.path.join(
         os.path.dirname(__file__), 'data', region + '_bt12_trms4osc.pars')
@@ -707,47 +756,49 @@ for region in ['wna', 'cena']:
 
 
 class BooreThompson2012(BooreJoyner1984):
-    """:class:`BooreThompson2012` is an RVT calculator based on the peak factor
-    definition by Cartwright & Longuet-Higgins (1956, :cite:`cartwright56`
-    along with the root-mean-squared duration correction proposed by Boore &
-    Thompson (2012, :cite:`boore12`).
+    """Boore and Thompson (2012) peak factor.
+
+    Peak calculation based on the peak factor definition by Cartwright &
+    Longuet-Higgins (1956, :cite:`cartwright56` along with the
+    root-mean-squared duration correction proposed by Boore & Thompson (2012,
+    :cite:`boore12`).
 
     The duration ratio is defined by Equation (10) in :cite:`boore12`.
     Magnitude and distance is interpolated using Qhulls.
 
-    Notes:
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed.  Valid options
+        are: 'wna' for Western North America (active tectonic), and 'cena'
+        for Central and Eastern North America ( stable tectonic).
+    mag : float
+        Magnitude of the event.
+    dist : float
+        Distance of the event in (km).
+
+    Notes
+    -----
         The interpolant is constructed by triangulating the input data with
         Qhull [#]_, and on each triangle performing linear barycentric
         interpolation.
 
     .. [#] http://www.qhull.org/
+
     """
+
     NAME = 'Boore & Thompson (2012)'
     ABBREV = 'BT12'
 
     def __init__(self, region, mag, dist, **kwargs):
-        """Initialize the model and interpolate the coefficients.
-
-        Parameters
-        ----------
-        region : str
-            Region for which the parameters were developed.  Valid options
-            are: 'wna' for Western North America (active tectonic), and 'cena'
-            for Central and Eastern North America ( stable tectonic).
-        mag : float
-            Magnitude of the event.
-        dist : float
-            Distance of the event in (km).
-        """
-        super(BooreThompson2012, self).__init__(**kwargs)
+        """Initialize the class."""
+        super().__init__(**kwargs)
 
         region = get_region(region)
         self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
 
     def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
         """Compute the RMS duration.
-
-        Based on :cite:`boore12`.
 
         Parameters
         ----------
@@ -770,6 +821,7 @@ class BooreThompson2012(BooreJoyner1984):
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
+
         """
         del (m0, m1, m2)
 
@@ -796,6 +848,7 @@ def get_peak_calculator(method, calc_kwds):
     -------
     calc : calculator
         :class:`.Calculator`
+
     """
     calc_kwds = calc_kwds or dict()
 
@@ -813,8 +866,8 @@ def get_peak_calculator(method, calc_kwds):
     for calculator in calculators:
         if method in [calculator.NAME, calculator.ABBREV]:
             return calculator(**calc_kwds)
-
-    raise NotImplementedError('No calculator for: %s', method)
+    else:
+        raise NotImplementedError('No calculator for: %s', method)
 
 
 def get_region(region):
@@ -829,6 +882,7 @@ def get_region(region):
     -------
     region : str
         Region either 'cena' or 'wna'.
+
     """
     region = region.lower()
     if region in ['cena', 'ena', 'ceus', 'eus']:
@@ -836,4 +890,4 @@ def get_region(region):
     elif region in ['wna', 'wus']:
         return 'wna'
     else:
-        raise NotImplementedError
+        raise NotImplementedError('No recognized region for: %s', region)

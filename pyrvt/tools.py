@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Tools for reading/writing of files and performing operations.
-"""
+
+"""Tools for reading/writing of files and performing operations."""
 
 import csv
 import functools
@@ -64,6 +63,7 @@ def read_events(fname, response_type):
         List of events read from the file. See ``Note`` in
         :func:`.calc_compatible_spectra` for more information on structure of
         the dictionaries.
+
     """
     assert response_type in ['psa', 'fa']
 
@@ -149,6 +149,7 @@ def write_events(fname, reference, reference_label, response_type,
     ------
     NotImplementedError:
         If extension is not supported
+
     """
     # Create the rows of output
     rows = []
@@ -201,8 +202,8 @@ def write_events(fname, reference, reference_label, response_type,
 
 def _calc_fa(target_freqs, damping, method, event):
     """Calculate the fourier amplitudes for an event.
-    
-    Note that this is intended as a helper function to be called by 
+
+    Note that this is intended as a helper function to be called by
     multiprocessing.Pool.
     """
     event_keys = ['magnitude', 'distance', 'region']
@@ -261,6 +262,7 @@ def calc_compatible_spectra(method, periods, events, damping=0.05):
       g/sec
     - **psa_calc** : :class:`numpy.ndarray` -- Pseudo-spectral acceleration
       calculated from `fa`. This will differ slightly from `psa_target`.
+
     """
     target_freqs = 1. / periods
     with multiprocessing.Pool() as pool:
@@ -285,8 +287,7 @@ def operation_psa2fa(src,
                      method='LP99',
                      fixed_spacing=True,
                      verbose=True):
-    """Compute the acceleration response spectrum from a Fourier amplitude
-    spectrum.
+    """Compute the accel. response spectrum from a Fourier amplitude spectrum.
 
     Parameters
     ----------
@@ -306,6 +307,7 @@ def operation_psa2fa(src,
         space in log-space from 0.01 to 10.
     verbose : bool, optional
         Print status of calculation.
+
     """
     for filename_src in glob.iglob(src):
         if verbose:
@@ -341,7 +343,7 @@ def operation_psa2fa(src,
 def _calc_psa(osc_freqs, damping, method, freqs, event):
     """Calculate the response spectra for an event.
 
-    Note that this is intended as a helper function to be called by 
+    Note that this is intended as a helper function to be called by
     multiprocessing.Pool.
     """
     m = motions.RvtMotion(
@@ -363,8 +365,7 @@ def operation_fa2psa(src,
                      method='LP99',
                      fixed_spacing=True,
                      verbose=True):
-    """Compute the Fourier amplitude spectrum from a acceleration response
-    spectrum.
+    """Compute the Fourier amplitude spectrum from a accel. response spectrum.
 
     Parameters
     ----------
@@ -382,6 +383,7 @@ def operation_fa2psa(src,
     fixed_spacing : bool, optional
         If `True`, then the periods are interpolated to 301 points equally
         space in log-space from 0.01 to 10.
+
     """
     if fixed_spacing:
         periods = np.logspace(-2, 1, 301)

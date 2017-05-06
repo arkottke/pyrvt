@@ -33,8 +33,7 @@ setup(
     test_suite='tests',
     author='Albert Kottke',
     author_email='albert.kottke@gmail.com',
-    description=
-    'Random vibration theory for ground motions implemented in Python.',
+    description='Random vibration theory for earthquake ground motions.',
     license='MIT',
     long_description=readme,
     url='http://github.com/arkottke/pyrvt',

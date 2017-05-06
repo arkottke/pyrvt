@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Classes and functions used to define random vibration theory (RVT) based
-motions.
-"""
+"""Random vibration theory (RVT) based motions."""
 
 import numpy as np
 
@@ -35,6 +32,7 @@ def sort_increasing(*args):
     ------
     :class:`NotImplementedError`
         If first array is not monotonic.
+
     """
     diffs = np.diff(args[0])
     if np.all(diffs >= 0):
@@ -65,6 +63,7 @@ def log_spaced_values(lower, upper, per_decade=512):
     -------
     values : :class:`numpy.ndarray`
         Log-spaced values.
+
     """
     lower = np.log10(lower)
     upper = np.log10(upper)
@@ -73,9 +72,10 @@ def log_spaced_values(lower, upper, per_decade=512):
 
 
 def calc_sdof_tf(freqs, osc_freq, osc_damping):
-    """Compute the single-degree-of-freedom transfer function. When applied on
-    the acceleration Fourier amplitude spectrum, it provides the
-    pseudo-spectral acceleration.
+    """Single-degree-of-freedom transfer function.
+
+    When applied on the acceleration Fourier amplitude spectrum, it provides
+    the pseudo-spectral acceleration.
 
     Parameters
     ----------
@@ -90,6 +90,7 @@ def calc_sdof_tf(freqs, osc_freq, osc_damping):
     -------
     :class:`numpy.ndarray`
         Complex valued transfer function.
+
     """
     freqs = np.asarray(freqs)
     return (
@@ -98,8 +99,7 @@ def calc_sdof_tf(freqs, osc_freq, osc_damping):
 
 
 def calc_stress_drop(magnitude):
-    """Compute the stress drop using Atkinson & Boore (2011,
-    :cite:`atkinson11`) model.
+    """Stress drop using Atkinson & Boore (2011, :cite:`atkinson11`) model.
 
     Parameters
     ----------
@@ -110,12 +110,13 @@ def calc_stress_drop(magnitude):
     -------
     stress_drop : float
         Stress drop (bars).
+
     """
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
 
 
 def calc_geometric_spreading(dist, params):
-    """Compute the geometric spreading defined by piece-wise linear model.
+    """Geometric spreading defined by piece-wise linear model.
 
     Parameters
     ----------
@@ -130,6 +131,7 @@ def calc_geometric_spreading(dist, params):
     -------
     coeff : float
         Geometric spreading coefficient.
+
     """
     initial = 1
     coeff = 1
@@ -146,8 +148,26 @@ def calc_geometric_spreading(dist, params):
 
 
 class RvtMotion(object):
-    """A :class:`~.motions.RvtMotion` object used to store the properties
-    of an RVT motion.
+    """Random vibration theory motion.
+
+    Parameters
+    ----------
+    freqs : array_like, optional
+        Frequency array (Hz).
+    fourier_amps : array_like, optional
+        Absolute value of acceleration Fourier amplitudes.
+    duration : float, optional
+        Ground motion duration (sec).
+    peak_calculator : :class:`~.peak_calculators.Calculator`, optional
+        Peak calculator to use. If `None`, then the default peak
+        calculator is used.  The peak calculator may either be specified
+        by a :class:`~.peak_calculators.Calculator` object, or by the
+        initials of the calculator using
+        :func:`~.peak_calculators.peak_calculator`.
+    calc_kwds : dict, optional
+        Keywords to be passed during the creation the peak calculator.
+        These keywords are only required for some peak calculators.
+
     """
 
     def __init__(self,
@@ -156,25 +176,7 @@ class RvtMotion(object):
                  duration=None,
                  peak_calculator=None,
                  calc_kwds=None):
-        """
-        Parameters
-        ----------
-        freqs : array_like, optional
-            Frequency array (Hz).
-        fourier_amps : array_like, optional
-            Absolute value of acceleration Fourier amplitudes.
-        duration : float, optional
-            Ground motion duration (sec).
-        peak_calculator : :class:`~.peak_calculators.Calculator`, optional
-            Peak calculator to use. If `None`, then the default peak
-            calculator is used.  The peak calculator may either be specified
-            by a :class:`~.peak_calculators.Calculator` object, or by the
-            initials of the calculator using
-            :func:`~.peak_calculators.peak_calculator`.
-        calc_kwds : dict, optional
-            Keywords to be passed during the creation the peak calculator.
-            These keywords are only required for some peak calculators.
-        """
+        """Initialize the class."""
         self._freqs = freqs
         self._fourier_amps = fourier_amps
         self._duration = duration
@@ -205,8 +207,7 @@ class RvtMotion(object):
         return self._duration
 
     def calc_osc_accels(self, osc_freqs, osc_damping=0.05, trans_func=None):
-        """Compute the pseudo-acceleration spectral response of an oscillator
-        with a specific frequency and damping.
+        """Pseudo-acceleration spectral response of an oscillator.
 
         Parameters
         ----------
@@ -223,15 +224,16 @@ class RvtMotion(object):
         -------
         spec_accels : :class:`numpy.ndarray`
             Peak pseudo-spectral acceleration of the oscillator
+
         """
         if trans_func is None:
             trans_func = np.ones_like(self.freqs)
         else:
             trans_func = np.asarray(trans_func)
         resp = np.array([
-            self.calc_peak(
-                trans_func * calc_sdof_tf(self.freqs, of, osc_damping), of,
-                osc_damping) for of in osc_freqs
+            self.calc_peak(trans_func *
+                           calc_sdof_tf(self.freqs, of, osc_damping), of,
+                           osc_damping) for of in osc_freqs
         ])
         return resp
 
@@ -248,6 +250,12 @@ class RvtMotion(object):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a
             damping ratio of 5%.
+
+        Returns
+        -------
+        peak : float
+            Calculated peak
+
         """
         if transfer_func is None:
             fourier_amps = self._fourier_amps
@@ -262,7 +270,7 @@ class RvtMotion(object):
             osc_damping=osc_damping)[0]
 
     def calc_attenuation(self, min_freq, max_freq=None):
-        """Compute the site attenuation (κ) based on a log-linear fit.
+        r"""Compute the site attenuation (κ) based on a log-linear fit.
 
         Parameters
         ----------
@@ -289,7 +297,7 @@ class RvtMotion(object):
         This function computes the site attenuation defined by Anderson &
         Hough (1984, :cite:`anderson84`) as:
 
-        .. math:: a(f) = A_0 \exp(-\pi \kappa f) \\text( for ) f > f_E
+        .. math:: a(f) = A_0 \exp(-\pi \kappa f) \text( for ) f > f_E
 
         for a single Fourier amplitude spectrum
 
@@ -307,8 +315,10 @@ class RvtMotion(object):
 
 
 class SourceTheoryMotion(RvtMotion):
-    """Single-corner source theory model with default parameters from
-    Campbell (2003, :cite:`campbell03`).
+    """Single-corner source theory model.
+
+    The single-corner source theory model uses default parameters from Campbell
+    (2003, :cite:`campbell03`).
     """
 
     def __init__(self,
@@ -347,9 +357,9 @@ class SourceTheoryMotion(RvtMotion):
         calc_kwds : dict, optional
             Keywords to be passed during the creation the peak calculator.
             These keywords are only required for some peak calculators.
+
         """
-        super(SourceTheoryMotion, self).__init__(
-            peak_calculator=peak_calculator, calc_kwds=calc_kwds)
+        super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
 
         self.magnitude = magnitude
         self.distance = distance
@@ -420,11 +430,17 @@ class SourceTheoryMotion(RvtMotion):
         # Constants
         self.seismic_moment = 10. ** (1.5 * (self.magnitude + 10.7))
         self.corner_freq = (4.9e6 * self.shear_velocity *
-                            (self.stress_drop / self.seismic_moment) **
-                            (1. / 3.))
+                            (self.stress_drop / self.seismic_moment)
+                            ** (1. / 3.))
 
     def calc_duration(self):
         """Compute the duration by combination of source and path.
+
+        Returns
+        -------
+        duration : float
+            Computed duration
+
         """
         # Source component
         duration_source = 1. / self.corner_freq
@@ -456,6 +472,12 @@ class SourceTheoryMotion(RvtMotion):
         freqs : array_like, optional
             Frequency range. If no frequency range is specified then
             :func:`log_spaced_values(0.05, 200.)` is used.
+
+        Returns
+        -------
+        fourier_amps : :class:`np.ndarray`
+            acceleration Fourier amplitudes
+
         """
         if freqs is None:
             self._freqs = log_spaced_values(0.05, 200.)
@@ -465,14 +487,14 @@ class SourceTheoryMotion(RvtMotion):
         self._duration = self.calc_duration()
 
         # Model component
-        const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density * self.
-                               shear_velocity ** 3.)
+        const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density *
+                               self.shear_velocity ** 3.)
         source_comp = (const * self.seismic_moment /
                        (1. + (self._freqs / self.corner_freq) ** 2.))
 
         # Path component
-        path_atten = (
-            self.path_atten_coeff * self._freqs ** self.path_atten_power)
+        path_atten = (self.path_atten_coeff * self._freqs
+                      ** self.path_atten_power)
         geo_atten = calc_geometric_spreading(self.hypo_distance,
                                              self.geometric_spreading)
 
@@ -499,14 +521,17 @@ class SourceTheoryMotion(RvtMotion):
         conv = 1.e-20 / 980.7
         # Combine the three components and convert from displacement to
         # acceleration
-        self._fourier_amps = (conv * (2. * np.pi * self._freqs) ** 2. *
-                              source_comp * path_comp * site_comp)
+        self._fourier_amps = (conv * (2. * np.pi * self._freqs)
+                              ** 2. * source_comp * path_comp * site_comp)
 
 
 class CompatibleRvtMotion(RvtMotion):
-    """A :class:`~.motions.CompatibleRvtMotion` object is used to compute a
+    """Response spectrum compatible RVT motion.
+
+    A :class:`~.motions.CompatibleRvtMotion` object is used to compute a
     Fourier amplitude spectrum that is compatible with a target response
     spectrum.
+
     """
 
     def __init__(self,
@@ -550,9 +575,9 @@ class CompatibleRvtMotion(RvtMotion):
         calc_kwds : dict, optional
             Keywords to be passed during the creation the peak calculator.
             These keywords are only required for some peak calculators.
+
         """
-        super(CompatibleRvtMotion,
-              self).__init__(peak_calculator=peak_calculator)
+        super().__init__(peak_calculator=peak_calculator)
 
         osc_freqs, osc_accels_target = sort_increasing(
             np.asarray(osc_freqs), np.asarray(osc_accels_target))
@@ -588,10 +613,7 @@ class CompatibleRvtMotion(RvtMotion):
                       np.log(fourier_amps)))
 
         def extrapolate():
-            """Extrapolate the first and last value of Fourier amplitude
-            spectrum.
-            """
-
+            """Extrapolate the first and last value of FAS."""
             def _extrap(freq, freqs, fourier_amps, max_slope=None):
                 # Extrapolation is performed in log-space using the first and
                 # last two points
@@ -632,7 +654,7 @@ class CompatibleRvtMotion(RvtMotion):
 
         while self.iterations < max_iterations and tolerance < self.rmse:
             # Correct the FAS by the ratio of the target to computed
-            # osciallator response. The ratio is applied over the same
+            # oscillator response. The ratio is applied over the same
             # frequency range. The first and last points in the FAS are
             # determined through extrapolation.
 
@@ -657,11 +679,12 @@ class CompatibleRvtMotion(RvtMotion):
             self.iterations += 1
 
     def _estimate_fourier_amps(self, osc_freqs, osc_accels, osc_damping):
-        """Compute an estimate of the FAS using the Gasparini & Vanmarcke
-        (1976, :cite:`gasparini76`) methodology.
+        """Estimate the Fourier amplitudes.
 
-        The response is first computed at the lowest frequency and then
-        subsequently computed at higher frequencies.
+        Compute an estimate of the FAS using the Gasparini & Vanmarcke (1976,
+        :cite:`gasparini76`) methodology.  The response is first computed at
+        the lowest frequency and then subsequently computed at higher
+        frequencies.
 
         Parameters
         ----------
@@ -672,6 +695,7 @@ class CompatibleRvtMotion(RvtMotion):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a
             damping ratio of 5%.
+
         Returns
         -------
         :class:`numpy.ndarray`

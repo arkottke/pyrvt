@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Provides a command line interface for performing RVT calculations. See
-:doc:`usage`.
+"""The command line interface for calling pyRVT.
+
+See :doc:`usage` for more details.
 """
 
 import argparse
@@ -15,12 +15,13 @@ parser = argparse.ArgumentParser(
     prog='pyrvt',
     description='Compute response or Fourier amplitude spectra using RVT.')
 parser.add_argument(
-    '--version', action='version',
+    '--version',
+    action='version',
     version='%(prog)s version ' + str(__version__))
 parser.add_argument(
     'operation',
-    help='''Operation to be performed: [psa2fa] converts from 
-    pseudo-spectral acceleration to Fourier amplitude, and [fa2psa] converts 
+    help='''Operation to be performed: [psa2fa] converts from
+    pseudo-spectral acceleration to Fourier amplitude, and [fa2psa] converts
     from Fourier amplitude to pseudo-spectral acceleration.''',
     choices=['psa2fa', 'fa2psa'])
 parser.add_argument(
@@ -56,16 +57,17 @@ parser.add_argument(
     '--method',
     default=DEFAULT_CALC,
     choices=['BJ84', 'BT12', 'DK85', 'LP99', 'TM87', 'V75'],
-    help='''Specify the peak factor calculation method. Possible options 
-    are: [BJ84] Boore and Joyner (1984), [BT12] Boore and Thompson (2012), 
-    [DK85] Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro 
-    and McGuire (1987), and [V75] Vanmarcke (1975). If the BT12 method is used, 
-    then the magnitude, distance and region must be provided by the input 
-    files. If no value is provided, then '%(default)s' is used as the 
+    help='''Specify the peak factor calculation method. Possible options
+    are: [BJ84] Boore and Joyner (1984), [BT12] Boore and Thompson (2012),
+    [DK85] Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro
+    and McGuire (1987), and [V75] Vanmarcke (1975). If the BT12 method is used,
+    then the magnitude, distance and region must be provided by the input
+    files. If no value is provided, then '%(default)s' is used as the
     default.''')
 
 
 def main():
+    """Perform the command line operations."""
     args = parser.parse_args()
 
     if args.operation == 'psa2fa':
