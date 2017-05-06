@@ -7,8 +7,8 @@ pyRVT is used by executing ``rvt_operator`` with a number of arguments. These
 arguments can be found by running ``rvt_operator``, which will produce the
 following output::
 
-    C:\Users\arkottke\Documents\>rvt_operator --help
-    usage: runner.py [-h] -i INPUT [-o OUTPUT] [-d DAMPING] [-f] [-m METHOD]
+    C:\Users\arkottke\Documents\>pyrvt --help
+    usage: pyrvt [-h] -i INPUT [-o OUTPUT] [-d DAMPING] [-f] [-m METHOD]
                  {psa2fa,fa2psa}
 
     Compute response or Fourier amplitude spectra using RVT.

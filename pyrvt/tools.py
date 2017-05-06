@@ -1,17 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """
 Tools for reading/writing of files and performing operations.
 """
 
 import csv
+import functools
+import multiprocessing
 import glob
 import os
 import sys
 
 import numpy as np
-import pyprind
 
 from pyrvt.peak_calculators import get_peak_calculator, get_region
 from pyrvt import motions
@@ -70,6 +70,7 @@ def read_events(fname, response_type):
     ext = os.path.splitext(fname)[1].lower()
     # Load the file depending on the format
     if ext == '.csv':
+
         def parse(s):
             try:
                 return float(s)
@@ -98,8 +99,10 @@ def read_events(fname, response_type):
     else:
         raise NotImplementedError
 
-    parameters = {key: rows[i][1:]
-                  for i, (key, label) in enumerate(PARAMETER_NAMES)}
+    parameters = {
+        key: rows[i][1:]
+        for i, (key, label) in enumerate(PARAMETER_NAMES)
+    }
 
     event_row = len(parameters) + 1
     event_count = len(rows[0]) - 1
@@ -153,13 +156,11 @@ def write_events(fname, reference, reference_label, response_type,
     for key, label in PARAMETER_NAMES:
         rows.append([label] + [e[key] for e in events])
 
-    rows.append(
-        [reference_label] + len(events) * [response_label])
+    rows.append([reference_label] + len(events) * [response_label])
 
     # Output the response spectra
     for i in range(len(reference)):
-        rows.append(
-            [reference[i]] + [e[response_type][i] for e in events])
+        rows.append([reference[i]] + [e[response_type][i] for e in events])
 
     # Create the directory
     dirname = os.path.dirname(fname)
@@ -198,8 +199,26 @@ def write_events(fname, reference, reference_label, response_type,
         raise NotImplementedError
 
 
-def calc_compatible_spectra(method, periods, events, damping=0.05,
-                            verbose=True):
+def _calc_fa(target_freqs, damping, method, event):
+    """Calculate the fourier amplitudes for an event.
+    
+    Note that this is intended as a helper function to be called by 
+    multiprocessing.Pool.
+    """
+    event_keys = ['magnitude', 'distance', 'region']
+    event_kwds = {key: event[key] for key in event_keys}
+    crm = motions.CompatibleRvtMotion(
+        target_freqs,
+        event['psa'],
+        duration=event['duration'],
+        osc_damping=damping,
+        event_kwds=event_kwds,
+        peak_calculator=get_peak_calculator(method, event_kwds))
+    psa_calc = crm.calc_osc_accels(target_freqs, damping)
+    return crm, psa_calc
+
+
+def calc_compatible_spectra(method, periods, events, damping=0.05):
     """Compute the response spectrum compatible motions.
 
     Parameters
@@ -214,8 +233,6 @@ def calc_compatible_spectra(method, periods, events, damping=0.05,
     damping : float, optional
         Fractional damping of the oscillator (decimal). Default value of 0.05
         for a damping ratio of 5%.
-    verbose : bool, optional
-        Print status of calculation. Default is `True`.
 
     Returns
     -------
@@ -246,39 +263,27 @@ def calc_compatible_spectra(method, periods, events, damping=0.05,
       calculated from `fa`. This will differ slightly from `psa_target`.
     """
     target_freqs = 1. / periods
+    with multiprocessing.Pool() as pool:
+        results = pool.map(
+            functools.partial(_calc_fa, target_freqs, damping, method), events)
 
-    event_keys = ['magnitude', 'distance', 'region']
+    # Copy values back into the dictionary
+    for event, (crm, psa_calc) in zip(events, results):
+        if not event['duration']:
+            event['duration'] = crm.duration
+        event['fa'] = crm.fourier_amps
+        event['psa_calc'] = psa_calc
 
-    bar = pyprind.ProgPercent(len(events)) if verbose else None
-
-    for e in events:
-        event_kwds = {key: e[key] for key in event_keys}
-
-        crm = motions.CompatibleRvtMotion(
-            target_freqs,
-            e['psa'],
-            duration=e['duration'],
-            osc_damping=damping,
-            event_kwds=event_kwds,
-            peak_calculator=get_peak_calculator(
-                method, event_kwds)
-        )
-
-        freqs = crm.freqs
-
-        if not e['duration']:
-            e['duration'] = crm.duration
-
-        e['fa'] = crm.fourier_amps
-        e['psa_calc'] = crm.calc_osc_accels(target_freqs, damping)
-
-        if bar:
-            bar.update()
-
+    # Return the frequency from one of the computed motions.
+    freqs = results[0][0].freqs
     return freqs
 
 
-def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
+def operation_psa2fa(src,
+                     dst,
+                     damping,
+                     method='LP99',
+                     fixed_spacing=True,
                      verbose=True):
     """Compute the acceleration response spectrum from a Fourier amplitude
     spectrum.
@@ -312,14 +317,14 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
             _periods = np.logspace(-2, 1, 301)
 
             for e in events:
-                e['psa'] = np.exp(np.interp(
-                    _periods, periods, np.log(e['psa'])))
+                e['psa'] = np.exp(
+                    np.interp(_periods, periods, np.log(e['psa'])))
 
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = calc_compatible_spectra(method, periods, events,
-                                        damping=damping, verbose=verbose)
+        freqs = calc_compatible_spectra(
+            method, periods, events, damping=damping)
 
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -329,11 +334,34 @@ def operation_psa2fa(src, dst, damping, method='LP99', fixed_spacing=True,
 
         write_events(pathname_dst + '_sa' + ext, periods, 'Period (s)',
                      'psa_calc', 'Sa (g)', events)
-        write_events(pathname_dst + '_fa' + ext, freqs, 'Frequency (Hz)',
-                     'fa', 'FA (g-s)', events)
+        write_events(pathname_dst + '_fa' + ext, freqs, 'Frequency (Hz)', 'fa',
+                     'FA (g-s)', events)
 
 
-def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
+def _calc_psa(osc_freqs, damping, method, freqs, event):
+    """Calculate the response spectra for an event.
+
+    Note that this is intended as a helper function to be called by 
+    multiprocessing.Pool.
+    """
+    m = motions.RvtMotion(
+        freqs=freqs,
+        fourier_amps=event['fa'],
+        duration=event['duration'],
+        peak_calculator=get_peak_calculator(method,
+                                            dict(
+                                                region=event['region'],
+                                                mag=event['magnitude'],
+                                                dist=event['distance'])))
+    psa = m.calc_osc_accels(osc_freqs, damping)
+    return psa
+
+
+def operation_fa2psa(src,
+                     dst,
+                     damping,
+                     method='LP99',
+                     fixed_spacing=True,
                      verbose=True):
     """Compute the Fourier amplitude spectrum from a acceleration response
     spectrum.
@@ -354,8 +382,6 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
     fixed_spacing : bool, optional
         If `True`, then the periods are interpolated to 301 points equally
         space in log-space from 0.01 to 10.
-    verbose : bool, optional
-        Print status of calculation.
     """
     if fixed_spacing:
         periods = np.logspace(-2, 1, 301)
@@ -370,21 +396,13 @@ def operation_fa2psa(src, dst, damping, method='LP99', fixed_spacing=True,
             osc_freqs = freqs
             periods = 1. / osc_freqs
 
-        bar = pyprind.ProgPercent(len(events)) if verbose else None
+        with multiprocessing.Pool() as pool:
+            psas = pool.map(
+                functools.partial(_calc_psa, osc_freqs, damping, method,
+                                  freqs), events)
 
-        for e in events:
-            m = motions.RvtMotion(
-                freqs=freqs,
-                fourier_amps=e['fa'],
-                duration=e['duration'],
-                peak_calculator=get_peak_calculator(
-                    method, dict(region=e['region'], mag=e['magnitude'],
-                                 dist=e['distance']))
-            )
-            e['psa'] = m.calc_osc_accels(osc_freqs, damping)
-
-            if bar:
-                bar.update()
+        for event, psa in zip(events, psas):
+            event['psa'] = psa
 
         if not os.path.exists(dst):
             os.makedirs(dst)

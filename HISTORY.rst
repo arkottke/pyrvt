@@ -2,6 +2,17 @@
 History
 =======
 
+0.6.0 (2017-05-05)
+------------------
+
+* Removed pyprind require and progress bars.
+
+0.6.0 (2017-05-05)
+------------------
+
+* Improved performance with multiprocessing and numba.
+* Changed CLI name from `rvt_operator` to `pyrvt`
+
 0.5.8 (2016-11-16)
 ------------------
 

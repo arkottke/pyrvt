@@ -1,17 +1,116 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """
 Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
 """
 
 import os
+import ctypes
 
 import numpy as np
+import numba
 
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
+
+
+@numba.jit
+def trapz(x, y):
+    """Trapezoidal integration written in numba.
+    
+    Parameters
+    ----------
+    x : array_like
+        sample points to corresponding to the `y` values.
+    y : array_like
+        Input array to integrate
+    
+    Returns
+    -------
+    total : float
+        Definite integral as approximated by the trapezoidal rule.
+    """
+    n = x.shape[0]
+    total = 0
+    for i in range(n - 1):
+        total += 0.5 * (y[i] + y[i + 1]) * (x[i + 1] - x[i])
+
+    return total
+
+
+# From: https://github.com/scipy/scipy/issues/4831#issuecomment-258501648
+# Set the signature of the future types function
+# The second argument must be a pointer or it won't work right,
+# but this will cause problems because of the bug in scipy
+# because scipy looks for a double instead of a pointer
+c_sig = numba.types.double(numba.types.intc,
+                           numba.types.CPointer(numba.types.double))
+
+
+# Turn the integrand function into a ctypes function
+@numba.cfunc(c_sig)
+def _calc_vanmarcke1975_ccdf(n, a):
+    """Calculate the Vanmarcke (1975) complementary CDF.
+    
+    Parameters
+    ----------
+    n : int
+        Length of arguments
+    a : list of floats
+        Arguments specifying: 
+            - function value `x`
+            - number of zero crossing
+            - effective bandwdith
+    
+    Returns
+    -------
+    ccdf : float
+        Complementary CDF value
+    """
+    args = numba.carray(a, n)
+    x = args[0]
+    num_zero_crossings = args[1]
+    bandwidth_eff = args[2]
+
+    return (1 - (1 - np.exp(-x ** 2 / 2)) *
+            np.exp(-1 * num_zero_crossings *
+                   (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x)) /
+                   (np.exp(x ** 2 / 2) - 1)))
+
+
+# Force the argtypes to be what quad expects
+_calc_vanmarcke1975_ccdf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
+
+
+@numba.cfunc(c_sig)
+def _calc_cartwright_pf(n, a):
+    """Integrand for the Cartwright and Longuet-Higgins peak factor.
+        
+    Parameters
+    ----------
+    n : int
+        Length of arguments
+    a : list of floats
+        Arguments specifying: 
+            - function value `x`
+            - number of extrema
+            - bandwdith
+    
+    Returns
+    -------
+    dpf : float
+        Portion of the peak factor
+    """
+    args = numba.carray(a, n)
+    x = args[0]
+    num_extrema = args[1]
+    bandwidth = args[2]
+    return 1. - (1. - bandwidth * np.exp(-x * x)) ** num_extrema
+
+
+# Force the argtypes to be what quad expects
+_calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
 def calc_moments(freqs, fourier_amps, orders):
@@ -35,9 +134,10 @@ def calc_moments(freqs, fourier_amps, orders):
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
-    moments = [2. * np.trapz(
-        np.power(2 * np.pi * freqs, o) * squared_fa, freqs)
-        for o in orders]
+    moments = [
+        2. * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa)
+        for o in orders
+    ]
 
     return moments
 
@@ -161,29 +261,23 @@ class Vanmarcke1975(Calculator):
 
         num_zero_crossings = self.limited_num_zero_crossings(
             duration * np.sqrt(m2 / m0) / np.pi)
-
-        def ccdf(x):
-            """ The expected peak factor is computed as the integral of the
-            complementary CDF (1 - CDF(x)).
-            """
-            return (1 - (1 - np.exp(-x ** 2 / 2)) *
-                    np.exp(-1 * num_zero_crossings *
-                           (1 - np.exp(-1 * np.sqrt(np.pi / 2) *
-                                       bandwidth_eff * x)) /
-                           (np.exp(x ** 2 / 2) - 1)))
-
-        peak_factor = quad(ccdf, 0, np.inf)[0]
+        # The expected peak factor is computed as the integral of the complementary CDF (1 - CDF(x)).
+        peak_factor = quad(
+            _calc_vanmarcke1975_ccdf.ctypes,
+            0,
+            np.inf,
+            args=(num_zero_crossings, bandwidth_eff))[0]
 
         if osc_freq and osc_damping:
-            peak_factor *= self.nonstationarity_factor(
-                osc_damping, osc_freq, duration)
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq,
+                                                       duration)
 
         return peak_factor * resp_rms, peak_factor
 
     @classmethod
-    def nonstationarity_factor(cls, osc_damping, osc_freq,  duration):
-        return np.sqrt(
-            1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration))
+    def nonstationarity_factor(cls, osc_damping, osc_freq, duration):
+        return np.sqrt(1 - np.exp(
+            -4 * np.pi * osc_damping * osc_freq * duration))
 
 
 class Davenport1964(Calculator):
@@ -323,8 +417,13 @@ class ToroMcGuire1987(Davenport1964):
     def __init__(self, **kwargs):
         super(ToroMcGuire1987, self).__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
+    def __call__(self,
+                 duration,
+                 freqs,
+                 fourier_amps,
+                 osc_freq=None,
+                 osc_damping=None,
+                 **kwargs):
         """Compute the peak response.
 
         Parameters
@@ -381,8 +480,13 @@ class CartwrightLonguetHiggins1956(Calculator):
     def __init__(self, **kwargs):
         super(CartwrightLonguetHiggins1956, self).__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, osc_freq=None,
-                 osc_damping=None, **kwargs):
+    def __call__(self,
+                 duration,
+                 freqs,
+                 fourier_amps,
+                 osc_freq=None,
+                 osc_damping=None,
+                 **kwargs):
         """Compute the peak response.
 
         Parameters
@@ -409,17 +513,17 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
         num_extrema = max(2., np.sqrt(m4 / m2) * duration / np.pi)
-
         # Compute the peak factor by the indefinite integral.
         peak_factor = np.sqrt(2.) * quad(
-            lambda z: 1. - (1. - bandwidth * np.exp(-z * z)) ** num_extrema,
-            0, np.inf)[0]
-
+            _calc_cartwright_pf.ctypes,
+            0,
+            np.inf,
+            args=(num_extrema, bandwidth))[0]
         # Compute the root-mean-squared response -- correcting for the RMS
         # duration.
         if osc_freq and osc_damping:
-            rms_duration = self.calc_duration_rms(
-                duration, osc_freq, osc_damping, m0, m1, m2)
+            rms_duration = self.calc_duration_rms(duration, osc_freq,
+                                                  osc_damping, m0, m1, m2)
         else:
             rms_duration = duration
 
@@ -586,20 +690,19 @@ def _load_bt12_data(region):
         Parameters for the region.
     """
     fname = os.path.join(
-        os.path.dirname(__file__), 'data',
-        region + '_bt12_trms4osc.pars')
+        os.path.dirname(__file__), 'data', region + '_bt12_trms4osc.pars')
 
     return np.rec.fromrecords(
         np.loadtxt(fname, skiprows=4, usecols=range(9)),
         names='mag,dist,c1,c2,c3,c4,c5,c6,c7')
 
+
 # Load coefficient interpolators for Boore and Thompson (2012)
 _BT12_INTERPS = {}
 for region in ['wna', 'cena']:
     d = _load_bt12_data(region)
-    i = LinearNDInterpolator(
-        np.c_[d.mag, np.log(d.dist)],
-        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
+    i = LinearNDInterpolator(np.c_[d.mag, np.log(d.dist)],
+                             np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
     _BT12_INTERPS[region] = i
 
 
