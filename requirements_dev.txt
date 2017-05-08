@@ -4,8 +4,8 @@
 coveralls
 cryptography
 flake8
-flake8_docstrings
 pre-commit
+pydocstyle
 pytest-cov
 pytest-flake8
 pytest-runner

@@ -47,6 +47,7 @@ clean-test:
 
 lint:
 	flake8 pyrvt tests
+	pydocstyle pyrvt/*.py
 
 test:
 	python setup.py test
