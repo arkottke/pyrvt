@@ -6,6 +6,7 @@ History
 ------------------
 
 * Add scripts for profiling
+* Add numba to the requirements
 
 0.6.2 (2017-05-07)
 ------------------
