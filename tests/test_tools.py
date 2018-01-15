@@ -10,28 +10,15 @@ import pytest
 
 import pyrvt
 
-exts = ['.csv']
+from . import get_relpath
 
-try:
-    import xlwt
-    import xlrd
-    exts.append('.xls')
-    del xlwt, xlrd
-except ImportError:
-    pass
-
-try:
-    import openpyxl
-    exts.append('.xlsx')
-    del openpyxl
-except ImportError:
-    pass
+exts = ['.csv', '.xls', '.xlsx', '.ods']
 
 
 @pytest.mark.parametrize('ext', exts)
 def check_read_events(ext):
-    fname = os.path.join(os.path.dirname(__file__), 'data', 'test_sa' + ext)
-    ext, periods, events = pyrvt.tools.read_events(fname, 'psa')
+    fpath = get_relpath('data', 'test_sa' + ext)
+    ext, periods, events = pyrvt.tools.read_events(fpath, 'psa')
 
     # Test the periods
     assert_allclose(periods, [
@@ -89,9 +76,8 @@ def check_read_events(ext):
 @pytest.mark.parametrize('ext', exts)
 def check_write_events(ext):
     # Load the original data
-    src_fname = os.path.join(
-        os.path.dirname(__file__), 'data', 'test_sa' + ext)
-    ext, periods, events = pyrvt.tools.read_events(src_fname, 'psa')
+    fpath = get_relpath('data', 'test_sa' + ext)
+    ext, periods, events = pyrvt.tools.read_events(fpath, 'psa')
 
     # Write the data
     handle, dst_fname = tempfile.mkstemp(suffix=ext)

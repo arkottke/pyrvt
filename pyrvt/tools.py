@@ -7,29 +7,14 @@ import csv
 import functools
 import multiprocessing
 import glob
-import os
+import pathlib
 import sys
 
 import numpy as np
+import pyexcel
 
 from pyrvt.peak_calculators import get_peak_calculator, get_region
 from pyrvt import motions
-
-# Try to load the modules required for reading/writing files
-try:
-    import xlrd
-except ImportError:
-    xlrd = None
-
-try:
-    import xlwt
-except ImportError:
-    xlwt = None
-
-try:
-    import openpyxl
-except ImportError:
-    openpyxl = None
 
 PARAMETER_NAMES = [
     ('magnitude', 'Magnitude'),
@@ -41,12 +26,19 @@ PARAMETER_NAMES = [
 ]
 
 
-def read_events(fname, response_type):
+def get_fpaths(s):
+    if '*' in s:
+        return pathlib.Path('.').glob(s)
+    else:
+        return [pathlib.Path(s), ]
+
+
+def read_events(fpath, response_type):
     """Read data from the file an Excel work book.
 
     Parameters
     ----------
-    fname : str
+    fpath : str or `pathlib.Path`
         Filename of the input file.
     response_type : str
         Type of response. Valid options are: 'psa' for psuedo-spectral
@@ -66,52 +58,24 @@ def read_events(fname, response_type):
 
     """
     assert response_type in ['psa', 'fa']
+    fpath = pathlib.Path(fpath)
 
-    ext = os.path.splitext(fname)[1].lower()
-    # Load the file depending on the format
-    if ext == '.csv':
-
-        def parse(s):
-            try:
-                return float(s)
-            except ValueError:
-                return s
-
-        with open(fname) as fp:
-            reader = csv.reader(fp)
-            rows = [[parse(r) for r in row] for row in reader]
-    elif ext == '.xls':
-        if xlrd is None:
-            raise RuntimeError('xlrd is required to open an xls file')
-        wb = xlrd.open_workbook(fname)
-        ws = wb.sheet_by_index(0)
-        rows = [ws.row_values(i) for i in range(ws.nrows)]
-    elif ext == '.xlsx':
-        if openpyxl is None:
-            raise RuntimeError('openpyxl is required to open an xlsx file')
-        wb = openpyxl.load_workbook(fname, read_only=True)
-        ws = wb.worksheets[0]
-        rows = [[r.value for r in row] for row in ws.rows]
-        # Close the file so that it may be deleted if needed. This is only
-        # important so that in the test cases the temporary .xlsx file can be
-        # deleted.
-        wb._archive.close()
-    else:
-        raise NotImplementedError
+    data = pyexcel.get_array(file_name=str(fpath))
+    ext = fpath.suffix
 
     parameters = {
-        key: rows[i][1:]
+        key: data[i][1:]
         for i, (key, label) in enumerate(PARAMETER_NAMES)
     }
 
     event_row = len(parameters) + 1
-    event_count = len(rows[0]) - 1
+    event_count = len(data[0]) - 1
 
-    reference = np.array([row[0] for row in rows[event_row:]])
+    reference = np.array([row[0] for row in data[event_row:]])
 
     events = []
     for i in range(event_count):
-        resps = np.array([row[i + 1] for row in rows[event_row:]])
+        resps = np.array([row[i + 1] for row in data[event_row:]])
         # Extract the appropriate attributes
         e = {k: v[i] for k, v in parameters.items()}
         e[response_type] = resps
@@ -163,41 +127,12 @@ def write_events(fname, reference, reference_label, response_type,
     for i in range(len(reference)):
         rows.append([reference[i]] + [e[response_type][i] for e in events])
 
-    # Create the directory
-    dirname = os.path.dirname(fname)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
+    # Create the parent directory
+    fpath = pathlib.Path(fname)
+    fpath.parent.mkdir(parents=True, exist_ok=True)
 
     # Write the file
-    ext = os.path.splitext(fname)[1].lower()
-
-    if ext == '.csv':
-        if sys.version_info < (3, 1):
-            fp = open(fname, 'wt')
-        else:
-            fp = open(fname, 'wt', newline='')
-        writer = csv.writer(fp)
-        writer.writerows(rows)
-        fp.close()
-    elif ext == '.xls':
-        if xlwt is None:
-            raise RuntimeError('xlwt is required to open an xls file')
-        wb = xlwt.Workbook()
-        ws = wb.add_sheet('Sheet 1')
-        for i, row in enumerate(rows):
-            for j, cell in enumerate(row):
-                ws.write(i, j, cell)
-        wb.save(fname)
-    elif ext == '.xlsx':
-        if openpyxl is None:
-            raise RuntimeError('openpyxl is required to open an xlsx file')
-        wb = openpyxl.Workbook()
-        ws = wb.worksheets[0]
-        for row in rows:
-            ws.append(row)
-        wb.save(fname)
-    else:
-        raise NotImplementedError
+    pyexcel.save_as(array=rows, dest_file_name=str(fpath))
 
 
 def _calc_fa(target_freqs, damping, method, event):
@@ -309,10 +244,14 @@ def operation_psa2fa(src,
         Print status of calculation.
 
     """
-    for filename_src in glob.iglob(src):
+
+    dst = pathlib.Path(dst)
+    dst.mkdir(parents=True, exist_ok=True)
+
+    for fpath in get_fpaths(src):
         if verbose:
-            print('Processing:', filename_src)
-        ext, periods, events = read_events(filename_src, 'psa')
+            print('Processing:', fpath)
+        ext, periods, events = read_events(fpath, 'psa')
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
@@ -328,16 +267,16 @@ def operation_psa2fa(src,
         freqs = calc_compatible_spectra(
             method, periods, events, damping=damping)
 
-        if not os.path.exists(dst):
-            os.makedirs(dst)
+        basename = fpath.stem.rsplit('_', 1)[0]
 
-        basename = os.path.basename(filename_src)
-        pathname_dst = os.path.join(dst, basename.rsplit('_', 1)[0])
-
-        write_events(pathname_dst + '_sa' + ext, periods, 'Period (s)',
-                     'psa_calc', 'Sa (g)', events)
-        write_events(pathname_dst + '_fa' + ext, freqs, 'Frequency (Hz)', 'fa',
-                     'FA (g-s)', events)
+        write_events(
+            dst / (basename + '_sa' + ext),
+            periods, 'Period (s)', 'psa_calc', 'Sa (g)', events
+        )
+        write_events(
+            dst / (basename + '_fa' + ext),
+            freqs, 'Frequency (Hz)', 'fa', 'FA (g-s)', events
+        )
 
 
 def _calc_psa(osc_freqs, damping, method, freqs, event):
@@ -389,10 +328,13 @@ def operation_fa2psa(src,
         periods = np.logspace(-2, 1, 301)
         osc_freqs = 1. / periods
 
-    for filename_src in glob.iglob(src):
+    dst = pathlib.Path(dst)
+    dst.mkdir(parents=True, exist_ok=True)
+
+    for fpath in get_fpaths(src):
         if verbose:
-            print('Processing:', filename_src)
-        ext, freqs, events = read_events(filename_src, 'fa')
+            print('Processing:', fpath)
+        ext, freqs, events = read_events(fpath, 'fa')
 
         if not fixed_spacing:
             osc_freqs = freqs
@@ -406,12 +348,8 @@ def operation_fa2psa(src,
         for event, psa in zip(events, psas):
             event['psa'] = psa
 
-        if not os.path.exists(dst):
-            os.makedirs(dst)
-
-        basename = os.path.basename(filename_src)
-
-        pathname_dst = os.path.join(dst, basename.rsplit('_', 1)[0])
-
-        write_events(pathname_dst + '_sa' + ext, periods, 'Period (s)', 'psa',
-                     'PSA (g)', events)
+        basename = fpath.stem.rsplit('_', 1)[0]
+        write_events(
+            dst / (basename + '_sa' + ext),
+            periods, 'Period (s)', 'psa', 'Sa (g)', events
+        )
