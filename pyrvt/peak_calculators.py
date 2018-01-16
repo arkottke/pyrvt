@@ -903,30 +903,16 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
         BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
-        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
+        Vanmarcke1975.__init__(
+            self, use_nonstationarity_factor=False, **kwargs)
 
 
-class WangRathje2018(BooreThompson, Vanmarcke1975):
+class WangRathje2018(Vanmarcke1975):
     """Wang & Rathje (2018) peak factor.
 
-    Peak calculation based on the peak factor definition by Vanmarcke
-    (1975, :cite:`vanmarcke75`) along with the root-mean-squared duration
-    correction proposed by Boore & Thompson (2015, :cite:`boore15`) and
-    correction for site amplification as described in Wang & Rathje (2018,
-    :cite:`rathje18`).
-
-
-    Parameters
-    ----------
-    region : str
-        Region for which the parameters were developed.  Valid options
-        are: 'wna' for Western North America (active tectonic), and 'cena'
-        for Central and Eastern North America ( stable tectonic).
-    mag : float
-        Magnitude of the event.
-    dist : float
-        Distance of the event in (km).
-
+    Peak calculation based on the peak factor definition by Vanmarcke (1975,
+    :cite:`vanmarcke75`) along with correction for oscillator duration and site
+    amplification as described in Wang & Rathje (2018, :cite:`rathje18`).
     """
 
     NAME = 'Wang & Rathje (2018) '
@@ -935,15 +921,15 @@ class WangRathje2018(BooreThompson, Vanmarcke1975):
     # Coefficients from Table 2, and paragraph after Equation (8)
     COEFS = np.rec.fromrecords(
         [(1,  0.2688,  0.0030,  1.8380, -0.0198, 0.091),
-        (2,  0.2555, -0.0002,  1.2154, -0.0183, 0.081),
-        (3,  0.2287, -0.0014,  0.9404, -0.0130, 0.056)],
+         (2,  0.2555, -0.0002,  1.2154, -0.0183, 0.081),
+         (3,  0.2287, -0.0014,  0.9404, -0.0130, 0.056)],
         names='mode,a,b,d,e,sd',
     )
 
-    def __init__(self, region, mag, dist, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the class."""
-        BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
-        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
+        Vanmarcke1975.__init__(
+            self, use_nonstationarity_factor=False, **kwargs)
 
     def _calc_duration_rms(self, duration, **kwargs):
         """Compute the RMS duration.
@@ -969,36 +955,66 @@ class WangRathje2018(BooreThompson, Vanmarcke1975):
 
         """
         duration_gm = duration
-        # Apply BT15 duration correction
-        duration = BooreThompson2015._calc_duration_rms(
-            self, duration, **kwargs)
+        osc_freq = kwargs.get('osc_freq', None)
+
+        if osc_freq and 0.1 <= osc_freq:
+            # Apply oscillator correction for rock
+
+            # Equation 4a
+            f_lim = 5.274 * duration_gm ** -0.640
+
+            if osc_freq >= f_lim:
+                # Equation 2
+                ratio = 1
+            else:
+                # Equation 4b
+                dur_o = 31.858 * duration_gm ** -0.849
+                # Equation 4c
+                dur_min = 1.009 * duration_gm / (3.583 + duration_gm)
+
+                # Equation 3b
+                b = 1 / (dur_o - dur_min)
+                # Equation 3a
+                a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
+                # Equation 2
+                ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
+            duration_rms = ratio * duration_gm
 
         site_tf = kwargs.get('site_tf', None)
         if site_tf is not None:
-            freqs = kwargs['freqs']
+            # Modify duration for site effects
 
-            # find the indices of the relative maxima use. Here an order of 3
+            # Find the indices of the relative maxima use. Here an order of 3
             # is used to increase the stability of the algorithm
             site_tf = np.abs(site_tf)
-            indices = argrelmax(site_tf, order=3)[:3]
+            indices = argrelmax(site_tf)[0][:3]
 
-            f_modes = freqs[indices]
-            amp_modes = site_tf[indices]
+            freqs = kwargs['freqs']
+            modes_f = freqs[indices]
+            modes_a = site_tf[indices]
 
+            # print(modes_f)
+            # print(modes_a)
             # Amplitude / frequency ratio of the first mode
-            amp_fs = (amp_modes[0] / f_modes[0])
+            af_ratio = modes_a[0] / modes_f[0]
+            # print(af_ratio)
 
-            incr = 0
-            for C, f_mode in zip(self.COEFS, f_modes):
-                c = C.a * amp_fs + C.b * amp_fs ** 2
-                m = C.d * amp_fs + C.e * amp_fs ** 2
-                a = C.c * np.exp(-duration_gm / m)
-                incr += a * np.exp(
-                    -np.log(freqs / f_mode) ** 2 / (2 * c.sd) ** 2)
+            c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio ** 2
+            # print(c)
+            m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio ** 2
+            # print(m)
+            a = c * np.exp(-duration_gm / m)
+            # print(a)
 
-            duration += incr
+            incr = a * np.exp(
+                -np.log(osc_freq / modes_f) ** 2 /
+                (2 * self.COEFS.sd ** 2)
+            )
+            # print(incr)
+            # raise SystemExit
+            duration_rms += incr.sum()
 
-        return duration
+        return duration_rms
 
 
 def get_peak_calculator(method, calc_kwds):

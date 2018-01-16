@@ -227,17 +227,20 @@ class RvtMotion(object):
 
         """
         if trans_func is None:
-            trans_func = np.ones_like(self.freqs)
+            tf = np.ones_like(self.freqs)
         else:
-            trans_func = np.asarray(trans_func)
+            tf = np.asarray(trans_func)
         resp = np.array([
-            self.calc_peak(trans_func *
-                           calc_sdof_tf(self.freqs, of, osc_damping), of,
-                           osc_damping) for of in osc_freqs
+            self.calc_peak(
+                tf * calc_sdof_tf(self.freqs, of, osc_damping),
+                osc_freq=of, osc_damping=osc_damping,
+                site_tf=trans_func
+            )
+            for of in osc_freqs
         ])
         return resp
 
-    def calc_peak(self, transfer_func=None, osc_freq=None, osc_damping=None):
+    def calc_peak(self, transfer_func=None, **kwds):
         """Compute the peak response.
 
         Parameters
@@ -245,11 +248,6 @@ class RvtMotion(object):
         transfer_func : array_like, optional
             Transfer function to apply to the motion. If ``None``, then no
             transfer function is applied.
-        osc_freq : float
-            Frequency of the oscillator (Hz).
-        osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a
-            damping ratio of 5%.
 
         Returns
         -------
@@ -266,8 +264,7 @@ class RvtMotion(object):
             self._duration,
             self._freqs,
             fourier_amps,
-            osc_freq=osc_freq,
-            osc_damping=osc_damping)[0]
+            **kwds)[0]
 
     def calc_attenuation(self, min_freq, max_freq=None):
         r"""Compute the site attenuation (κ) based on a log-linear fit.
