@@ -50,7 +50,8 @@ def test_abbrev(bj84_pc):
     assert_string_equal(bj84_pc.abbrev, 'BJ84')
 
 
-@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87'])
+@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87', 'BT12',
+                                    'BT15'])
 def test_formulations(method):
     mag = 6.5
     dist = 20

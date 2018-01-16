@@ -10,14 +10,14 @@ import pytest
 
 import pyrvt
 
-from . import get_relpath
+from . import make_relpath
 
 exts = ['.csv', '.xls', '.xlsx', '.ods']
 
 
 @pytest.mark.parametrize('ext', exts)
 def check_read_events(ext):
-    fpath = get_relpath('data', 'test_sa' + ext)
+    fpath = make_relpath('data', 'test_sa' + ext)
     ext, periods, events = pyrvt.tools.read_events(fpath, 'psa')
 
     # Test the periods
@@ -76,7 +76,7 @@ def check_read_events(ext):
 @pytest.mark.parametrize('ext', exts)
 def check_write_events(ext):
     # Load the original data
-    fpath = get_relpath('data', 'test_sa' + ext)
+    fpath = make_relpath('data', 'test_sa' + ext)
     ext, periods, events = pyrvt.tools.read_events(fpath, 'psa')
 
     # Write the data
