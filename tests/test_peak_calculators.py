@@ -59,7 +59,7 @@ def test_abbrev(bj84_pc):
 
 
 @pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87', 'BT12',
-                                    'BT15'])
+                                    'BT15', 'WR18'])
 def test_formulations(method):
     mag = 6.5
     dist = 20

@@ -16,6 +16,7 @@ import numba
 
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
+from scipy.signal import argrelmax
 
 
 @numba.jit
@@ -237,7 +238,7 @@ class Calculator(object):
 
         peak_factor = self._calc_peak_factor(duration, **kwargs)
 
-        duration_rms = self._calc_duration_rms(duration, **kwargs)
+        duration_rms = self._calc_duration_rms(duration, freqs=freqs, **kwargs)
         # Compute the root-mean-squared response.
         resp_rms = np.sqrt(self._spectrum.moment(0) / duration_rms)
 
@@ -905,6 +906,101 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
         Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
 
 
+class WangRathje2018(BooreThompson, Vanmarcke1975):
+    """Wang & Rathje (2018) peak factor.
+
+    Peak calculation based on the peak factor definition by Vanmarcke
+    (1975, :cite:`vanmarcke75`) along with the root-mean-squared duration
+    correction proposed by Boore & Thompson (2015, :cite:`boore15`) and
+    correction for site amplification as described in Wang & Rathje (2018,
+    :cite:`rathje18`).
+
+
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed.  Valid options
+        are: 'wna' for Western North America (active tectonic), and 'cena'
+        for Central and Eastern North America ( stable tectonic).
+    mag : float
+        Magnitude of the event.
+    dist : float
+        Distance of the event in (km).
+
+    """
+
+    NAME = 'Wang & Rathje (2018) '
+    ABBREV = 'WR18'
+
+    # Coefficients from Table 2, and paragraph after Equation (8)
+    COEFS = np.rec.fromrecords(
+        [(1,  0.2688,  0.0030,  1.8380, -0.0198, 0.091),
+        (2,  0.2555, -0.0002,  1.2154, -0.0183, 0.081),
+        (3,  0.2287, -0.0014,  0.9404, -0.0130, 0.056)],
+        names='mode,a,b,d,e,sd',
+    )
+
+    def __init__(self, region, mag, dist, **kwargs):
+        """Initialize the class."""
+        BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
+        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
+
+    def _calc_duration_rms(self, duration, **kwargs):
+        """Compute the RMS duration.
+
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
+        site_tf : array_like
+            Transfer function for applied to compute site effects.
+
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
+
+        """
+        duration_gm = duration
+        # Apply BT15 duration correction
+        duration = BooreThompson2015._calc_duration_rms(
+            self, duration, **kwargs)
+
+        site_tf = kwargs.get('site_tf', None)
+        if site_tf is not None:
+            freqs = kwargs['freqs']
+
+            # find the indices of the relative maxima use. Here an order of 3
+            # is used to increase the stability of the algorithm
+            site_tf = np.abs(site_tf)
+            indices = argrelmax(site_tf, order=3)[:3]
+
+            f_modes = freqs[indices]
+            amp_modes = site_tf[indices]
+
+            # Amplitude / frequency ratio of the first mode
+            amp_fs = (amp_modes[0] / f_modes[0])
+
+            incr = 0
+            for C, f_mode in zip(self.COEFS, f_modes):
+                c = C.a * amp_fs + C.b * amp_fs ** 2
+                m = C.d * amp_fs + C.e * amp_fs ** 2
+                a = C.c * np.exp(-duration_gm / m)
+                incr += a * np.exp(
+                    -np.log(freqs / f_mode) ** 2 / (2 * c.sd) ** 2)
+
+            duration += incr
+
+        return duration
+
+
 def get_peak_calculator(method, calc_kwds):
     """Select a peak calculator based on a string.
 
@@ -932,6 +1028,7 @@ def get_peak_calculator(method, calc_kwds):
         LiuPezeshk1999,
         ToroMcGuire1987,
         Vanmarcke1975,
+        WangRathje2018,
     ]
 
     for calculator in calculators:
