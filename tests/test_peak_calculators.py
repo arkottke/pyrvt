@@ -19,10 +19,10 @@ from . import readers
      'bt12_wna', 'm6.00r020.0'),
     (pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.),
      'bt12_ena', 'm6.00r020.0'),
-    # (pyrvt.peak_calculators.BooreThompson2015('wna', 6, 21.3),
-    #  'bt15_wna', 'm6.00rps021.3'),
-    # (pyrvt.peak_calculators.BooreThompson2015('ena', 6, 20.8),
-    #  'bt15_ena', 'm6.00rps020.8'),
+    (pyrvt.peak_calculators.BooreThompson2015('wna', 6, 21.3),
+     'bt15_wna', 'm6.00rps021.3'),
+    (pyrvt.peak_calculators.BooreThompson2015('ena', 6, 20.8),
+     'bt15_ena', 'm6.00rps020.8'),
 ])
 def test_osc_accels(peak_calculator, abbrev, suffix):
     fpath = pathlib.Path(__file__).parent / 'data'

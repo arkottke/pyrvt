@@ -902,7 +902,7 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
         BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
-        Vanmarcke1975.__init__(self, **kwargs)
+        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
 
 
 def get_peak_calculator(method, calc_kwds):
