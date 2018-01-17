@@ -11,6 +11,8 @@ import pyrvt
 
 from . import readers
 
+fpath_data = pathlib.Path(__file__).parent / 'data'
+
 
 @pytest.mark.parametrize('peak_calculator,abbrev,suffix', [
     (pyrvt.peak_calculators.BooreJoyner1984(), 'bj84', 'm6.00r020.0'),
@@ -25,12 +27,11 @@ from . import readers
      'bt15_ena', 'm6.00rps020.8'),
 ])
 def test_osc_accels(peak_calculator, abbrev, suffix):
-    fpath = pathlib.Path(__file__).parent / 'data'
     fs = readers.load_fourier_spectrum(
-        str(fpath / f'test-{abbrev}.{suffix}_fs.col')
+        str(fpath_data / f'test-{abbrev}.{suffix}_fs.col')
     )
     rs = readers.load_rvt_response_spectrum(
-        str(fpath / f'test-{abbrev}.{suffix}_rs.rv.col')
+        str(fpath_data / f'test-{abbrev}.{suffix}_rs.rv.col')
     )
 
     rvt_motion = pyrvt.motions.RvtMotion(
@@ -76,3 +77,25 @@ def test_formulations(method):
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels = m.calc_osc_accels(osc_freqs, 0.05)
     assert np.all(np.isreal(osc_accels))
+
+
+def test_wang_rathje():
+    def load(fname):
+        return np.loadtxt(str(fpath_data / fname), skiprows=1, unpack=True)
+
+    freqs, site_tf = load(
+        'TF_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+
+    # Actual duration RMS
+    periods, actual = load(
+        'DurSiteMod_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+
+    pc = pyrvt.peak_calculators.WangRathje2018()
+    duration_gm = 9.75
+
+    calc = np.array([
+        pc._calc_duration_rms(
+            duration_gm, osc_freq=(1 / period), freqs=freqs, site_tf=site_tf)
+        for period in periods
+    ])
+    assert_allclose(actual, calc, rtol=5E-4)

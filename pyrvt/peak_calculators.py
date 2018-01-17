@@ -955,6 +955,7 @@ class WangRathje2018(Vanmarcke1975):
 
         """
         duration_gm = duration
+        duration_rms = duration
         osc_freq = kwargs.get('osc_freq', None)
 
         if osc_freq and 0.1 <= osc_freq:
@@ -978,7 +979,7 @@ class WangRathje2018(Vanmarcke1975):
                 a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
                 # Equation 2
                 ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
-            duration_rms = ratio * duration_gm
+            duration_rms *= ratio
 
         site_tf = kwargs.get('site_tf', None)
         if site_tf is not None:
@@ -1010,8 +1011,6 @@ class WangRathje2018(Vanmarcke1975):
                 -np.log(osc_freq / modes_f) ** 2 /
                 (2 * self.COEFS.sd ** 2)
             )
-            # print(incr)
-            # raise SystemExit
             duration_rms += incr.sum()
 
         return duration_rms
