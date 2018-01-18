@@ -206,7 +206,7 @@ class RvtMotion(object):
         """Duration of the ground motion for RVT analysis."""
         return self._duration
 
-    def calc_osc_accels(self, osc_freqs, osc_damping=0.05, trans_func=None):
+    def calc_osc_accels(self, osc_freqs, osc_damping=0.05, trans_func=[]):
         """Pseudo-acceleration spectral response of an oscillator.
 
         Parameters
@@ -226,10 +226,10 @@ class RvtMotion(object):
             Peak pseudo-spectral acceleration of the oscillator
 
         """
-        if trans_func is None:
-            tf = np.ones_like(self.freqs)
-        else:
+        if trans_func:
             tf = np.asarray(trans_func)
+        else:
+            tf = np.ones_like(self.freqs)
         resp = np.array([
             self.calc_peak(
                 tf * calc_sdof_tf(self.freqs, of, osc_damping),

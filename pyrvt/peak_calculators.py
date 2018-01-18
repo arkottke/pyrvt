@@ -981,13 +981,12 @@ class WangRathje2018(Vanmarcke1975):
                 ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
             duration_rms *= ratio
 
-        site_tf = kwargs.get('site_tf', None)
-        if site_tf is not None:
+        site_tf = np.abs(kwargs.get('site_tf', []))
+        if np.any(site_tf > 1):
             # Modify duration for site effects
 
             # Find the indices of the relative maxima use. Here an order of 3
             # is used to increase the stability of the algorithm
-            site_tf = np.abs(site_tf)
             indices = argrelmax(site_tf)[0][:3]
 
             freqs = kwargs['freqs']
