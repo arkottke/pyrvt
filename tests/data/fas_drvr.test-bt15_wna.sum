@@ -1,0 +1,126 @@
+ 
+   ***************** SMSIM, Version  6.000 ************************
+ 
+                                                                                
+ output file: fas_drvr.test-bt15_wna.sum
+ *** Results computed using FAS_DRVR ***
+ 
+ Date: 2018/01/15
+ Time Start: 17:26:21.125
+ 
+ Title:
+      Western North America params                                        
+ rho, beta, prtitn, rtp, fs:
+   2.72  3.50 0.707 0.55 2.00
+ spectral shape: source number, pf_a, pd_a, pf_b, pd_b
+(1=Single Corner;2=Joyner;3=A93;...;8=Jena;9=AS00;10=A05;11=Generalized multiplicative 2-corner; 12=Generalized additive 2-corner)
+ pf, pd (1-corner spectrum = 1/(1+(f/fc)**pf)**pd; 0.0 otherwise)
+ (usual model: pf=2.0,pd=1.0; Butterworth: pf=4.0,pd=0.5)
+ (Note: power of high freq decay --> pf*pd)
+ NOTE: see a params file for more complete description of parameters
+   1 2.00 1.00 0.00 0.00
+ spectral scaling: stressc, dlsdm, fbdfa, amagc c1_fa, c2_fa, amagc4fa, c1_eps, c2_eps, amagc4eps, mag4eps1
+ (stress=stressc*10.0**(dlsdm*(amag-amagc))
+ (fbdfa, amagc for Joyner model, usually 4.0, 7.0)
+ (not used for srce 3, but placeholders still needed)
+ NOTE: see ofr.params for more complete description of parameters
+   100.00  0.000E+00  4.00 6.50  0.000E+00  0.000E+00  0.00  0.000E+00  0.000E+00  0.00 0.00
+ !
+ !finite_fault factor specification:
+ !  iflag_f_ff, nlines, c1, c2, c3, c4, DeltaM (0 0 0 0 0 0 0 if a finite-fault factor is not to be used)
+ !
+ !  Distance for point-source calculation
+ !    If iflag_f_ff = 1: rps = sqrt(r^2 + f_ff^2))
+ !    If iflag_f_ff = 2: rps =  r + f_ff
+ !   Use rps in the calculations (this variable is called rmod in the code; it should be changed to rps to
+ !   reflect my current preferred terminology.  I do not have time to do this now).
+ !  Specification of the finite-fault factor h:
+ !    If nlines = 1
+ !      log10(f_ff) = c1 + c2*amag
+ !    If nlines = 2
+ !      log10(f_ff) = c1 + c2*amag  for amag<Mh
+ !      log10(f_ff) = c3 + c4*amag  for amag>=Mh
+ !      where Mh is determined by the intersection of the two lines
+ !      (this is computed in the program)
+ !    If nlines = 3
+ !      log10(f_ff) = c1 + c2*amag  for amag<Mh-DeltaM/2
+ !      log10(f_ff) = c3 + c4*amag  for amag>=Mh+DeltaM/2
+ !      log10(f_ff) given by a cubic in amag between the two lines (this
+ !        produces a smooth transition over the magnitude range DeltaM
+ 1 3 -1.72000003 0.430000007 -0.405000001 0.234999999 2.00000000
+     mh_f_ff, m1t_f_ff, m2t_f_ff =   6.74  5.74  7.74
+     c0t_f_ff, c1t_f_ff, c2t_f_ff, c3t_f_ff =   7.497E-01  4.300E-01 -4.875E-02 -5.240E-09
+ i_gsprd_option =  0
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  10.00  0.00  0.00  0.00  0.00  0.00
+ gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
+    1.00
+    2
+     1.00 -1.000E+00  0.000E+00 6.50
+    40.00 -5.000E-01  0.000E+00 6.50
+ q: fr1, Qr1, s1, ft1, ft2, fr2, qr2, s2, c_q
+    1.000  180.00  0.450   1.000   1.000   1.000  180.00  0.450 3.50
+ source duration: weights of 1/fa, 1/fb
+  0.50 0.50
+ path duration: nknots, (rdur(i), dur(i), slope of last segment
+    6
+     0.0   0.00
+     7.0   2.40
+    45.0   8.40
+   125.0  10.90
+   175.0  17.40
+   270.0  34.20
+   1.560E-01
+ site amplification: namps, (famp(i), amp(i))
+   25
+    0.010  1.000
+    0.015  1.010
+    0.021  1.020
+    0.031  1.020
+    0.045  1.040
+    0.065  1.060
+    0.095  1.090
+    0.138  1.130
+    0.200  1.180
+    0.291  1.250
+    0.423  1.320
+    0.615  1.410
+    0.894  1.510
+    1.301  1.640
+    1.892  1.800
+    2.751  1.990
+    4.000  2.180
+    5.817  2.380
+    8.459  2.560
+   12.301  2.750
+   17.889  2.950
+   26.014  3.170
+   37.830  3.420
+   55.012  3.680
+   80.000  3.960
+ site diminution parameters: fm, akappa, dkappadmag, amagkref
+    0.000  3.500E-02  0.000E+00 0.00
+ low-cut filter parameters: fcut, nslope
+    0.000  8
+ high-cut filter parameters: 
+   itype_hcfilt
+     0=no high-cut filter (but the other parameters are needed as placeholders)
+     1=raised half cycle of cosine
+     2= quarter cycle of a cosine
+     fhc1, fhc2 (low and high frequency
+     eta_hcfilt (power of cosine)
+ 0 25.0000000 50.0000000 1.00000000
+ parameters for rv calcs: zup, eps_int, amp_cutoff, osc_crrctn
+   10.00  1.000E-05  1.000E-03  3
+ WNA Trms4osc coefficients from file bt15_wna_acr_trms4osc.dk_rms2pk.pars
+ ENA Trms4osc coefficients from file bt15_ena_scr_trms4osc.dk_rms2pk.pars
+ 
+ *********** NEW R AND M ***********
+ Rrup, f_ff, Rps, amag, kappa =   2.000E+01  7.191E+00  2.125E+01  6.000E+00  3.500E-02
+   const=   5.307E-24
+   amag, stress, fa, fb=   6.000E+00  1.000E+02  3.560E-01  3.560E-01
+   am0, am0b_m0fa=   1.122E+25  0.000E+00
+ 
+ 
+ Time Stop: 17:26:36.813
+ Elapsed time (sec):   7.000E-03

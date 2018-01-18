@@ -7,14 +7,16 @@ Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
 """
 
-import os
 import ctypes
+import itertools
+import pathlib
 
 import numpy as np
 import numba
 
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
+from scipy.signal import argrelmax
 
 
 @numba.jit
@@ -118,24 +120,7 @@ _calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
 def calc_moments(freqs, fourier_amps, orders):
-    """Compute the spectral moments.
 
-    The spectral moment is computed using the squared Fourier amplitude
-    spectrum.
-
-    Parameters
-    ----------
-    freqs : array_like
-        Frequency of the Fourier amplitude spectrum (Hz)
-    fourier_amps : array_like
-        Amplitude of the Fourier amplitude spectrum.
-
-    Returns
-    -------
-    moments : tuple
-        Computed spectral moments.
-
-    """
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
@@ -145,6 +130,51 @@ def calc_moments(freqs, fourier_amps, orders):
     ]
 
     return moments
+
+
+class SquaredSpectrum(object):
+    """Squared Fourier amplitude spectrum.
+
+    Used to store calculated spectral moments during calculations.
+
+    Parameters
+    ----------
+    freqs : array_like
+        Frequency of the Fourier amplitude spectrum (Hz)
+    fourier_amps : array_like
+        Amplitude of the Fourier amplitude spectrum.
+    """
+
+    def __init__(self, freqs, fourier_amps):
+        self._freqs = freqs
+        self._squared_fa = np.square(fourier_amps)
+        self._moments = {}
+
+    def moment(self, num):
+        """Compute the spectral moments.
+
+        The spectral moment is computed using the squared Fourier amplitude
+        spectrum.
+
+        Returns
+        -------
+        moment : float
+            Computed spectral moments.
+        """
+        num = int(num)
+        try:
+            moment = self._moments[num]
+        except KeyError:
+            moment = 2. * trapz(
+                self._freqs,
+                np.power(2 * np.pi * self._freqs, num) * self._squared_fa
+            )
+            self._moments[num] = moment
+
+        return moment
+
+    def moments(self, *nums):
+        return [self.moment(n) for n in nums]
 
 
 class Calculator(object):
@@ -158,6 +188,7 @@ class Calculator(object):
     def __init__(self, **kwds):
         """Initialize the object."""
         super().__init__()
+        self._spectrum = None
 
     @property
     def name(self):
@@ -178,6 +209,77 @@ class Calculator(object):
     def limited_num_zero_crossings(cls, num_zero_crossings):
         """Limit the number of zero crossing to a static limit."""
         return max(cls._MIN_ZERO_CROSSINGS, num_zero_crossings)
+
+    def __call__(self, duration, freqs, fourier_amps, **kwargs):
+        """Compute the peak response.
+
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
+
+        Returns
+        -------
+        max_resp : float
+            expected maximum response.
+        peak_factor : float
+            associated peak factor.
+
+        """
+        self._spectrum = SquaredSpectrum(freqs, fourier_amps)
+
+        peak_factor = self._calc_peak_factor(duration, **kwargs)
+
+        duration_rms = self._calc_duration_rms(duration, freqs=freqs, **kwargs)
+        # Compute the root-mean-squared response.
+        resp_rms = np.sqrt(self._spectrum.moment(0) / duration_rms)
+
+        self._spectrum = None
+        return peak_factor * resp_rms, peak_factor
+
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
+
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        freqs : array_like
+            Frequency of the Fourier amplitude spectrum (Hz).
+        fourier_amps : array_like
+             Amplitude of the Fourier amplitude spectrum with a single degree
+             of freedom oscillator already applied if being used. Units are
+             not important.
+
+        Returns
+        -------
+        peak_factor : float
+            associated peak factor.
+
+        """
+        raise NotImplementedError
+
+    def _calc_duration_rms(self, duration, **kwargs):
+        """Modify a duration to correct for stationarity.
+
+        Default implemenation does nothing.
+
+        Returns
+        -------
+        duration : float
+            Modified duration.
+        """
+        return duration
 
 
 class Vanmarcke1975(Calculator):
@@ -219,18 +321,22 @@ class Vanmarcke1975(Calculator):
     .. [#] http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
     .. [#] http://stats.stackexchange.com/a/13377/48461
 
+    Parameters
+    ----------
+    use_nonstationarity_factor : bool
+        If the non-stationarity factor should be applied.
     """
 
     NAME = 'Vanmarcke (1975)'
     ABBREV = 'V75'
 
-    def __init__(self, **kwargs):
+    def __init__(self, use_nonstationarity_factor=True, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
+        self._use_nonstationarity_factor = use_nonstationarity_factor
 
-    def __call__(self, duration, freqs, fourier_amps, osc_freq, osc_damping,
-                 **kwargs):
-        """Compute the peak response.
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
 
         Parameters
         ----------
@@ -238,30 +344,18 @@ class Vanmarcke1975(Calculator):
             Duration of the stationary portion of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Arias
             intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
-             not important.
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for
             a damping ratio of 5%.
-
         Returns
         -------
-        max_resp : float
-            expected maximum response.
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
-
-        # Compute the root-mean-squared response
-        resp_rms = np.sqrt(m0 / duration)
+        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         bandwidth_eff = bandwidth ** 1.2
@@ -276,11 +370,13 @@ class Vanmarcke1975(Calculator):
             np.inf,
             args=(num_zero_crossings, bandwidth_eff))[0]
 
-        if osc_freq and osc_damping:
-            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq,
-                                                       duration)
+        osc_freq = kwargs.get('osc_freq', None)
+        osc_damping = kwargs.get('osc_damping', None)
+        if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
+            peak_factor *= self.nonstationarity_factor(
+                osc_damping, osc_freq, duration)
 
-        return peak_factor * resp_rms, peak_factor
+        return peak_factor
 
     @classmethod
     def nonstationarity_factor(cls, osc_damping, osc_freq, duration):
@@ -301,8 +397,9 @@ class Vanmarcke1975(Calculator):
             Nonstationarity factor.
 
         """
-        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq *
-                                  duration))
+        return np.sqrt(
+            1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration)
+        )
 
 
 class Davenport1964(Calculator):
@@ -319,8 +416,8 @@ class Davenport1964(Calculator):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, **kwargs):
-        """Compute the peak response.
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
 
         Parameters
         ----------
@@ -328,25 +425,14 @@ class Davenport1964(Calculator):
             Duration of the stationary portion of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Arias
             intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
-             not important.
 
         Returns
         -------
-        max_resp : float
-            expected maximum response.
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m2 = calc_moments(freqs, fourier_amps, [0, 2])
-
-        # Compute the root-mean-squared response
-        resp_rms = np.sqrt(m0 / duration)
+        m0, m2 = self._spectrum.moments(0, 2)
 
         # Compute the number of zero crossings
         num_zero_crossings = self.limited_num_zero_crossings(
@@ -354,7 +440,7 @@ class Davenport1964(Calculator):
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
-        return peak_factor * resp_rms, peak_factor
+        return peak_factor
 
     @classmethod
     def asymtotic_approx(self, zero_crossings):
@@ -390,8 +476,8 @@ class DerKiureghian1985(Davenport1964):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def __call__(self, duration, freqs, fourier_amps, **kwargs):
-        """Compute the peak response.
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
 
         Parameters
         ----------
@@ -408,16 +494,11 @@ class DerKiureghian1985(Davenport1964):
 
         Returns
         -------
-        max_resp : float
-            expected maximum response.
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
-
-        # Compute the root-mean-squared response
-        resp_rms = np.sqrt(m0 / duration)
+        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
         # Compute the number of zero crossings
         num_zero_crossings = duration * np.sqrt(m2 / m0) / np.pi
@@ -435,7 +516,7 @@ class DerKiureghian1985(Davenport1964):
         eff_crossings = self.limited_num_zero_crossings(eff_crossings)
         peak_factor = self.asymtotic_approx(eff_crossings)
 
-        return peak_factor * resp_rms, peak_factor
+        return peak_factor
 
 
 class ToroMcGuire1987(Davenport1964):
@@ -453,14 +534,8 @@ class ToroMcGuire1987(Davenport1964):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def __call__(self,
-                 duration,
-                 freqs,
-                 fourier_amps,
-                 osc_freq=None,
-                 osc_damping=None,
-                 **kwargs):
-        """Compute the peak response.
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
 
         Parameters
         ----------
@@ -477,13 +552,11 @@ class ToroMcGuire1987(Davenport1964):
 
         Returns
         -------
-        max_resp : float
-            expected maximum response.
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m1, m2 = calc_moments(freqs, fourier_amps, [0, 1, 2])
+        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
         # Vanmarcke's (1976) bandwidth measure and central frequency
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
@@ -494,14 +567,13 @@ class ToroMcGuire1987(Davenport1964):
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
+        osc_freq = kwargs.get('osc_freq', None)
+        osc_damping = kwargs.get('osc_damping', None)
         if osc_freq and osc_damping:
             peak_factor *= Vanmarcke1975.nonstationarity_factor(
                 osc_damping, osc_freq, duration)
 
-        # Compute the root-mean-squared response
-        resp_rms = np.sqrt(m0 / duration)
-
-        return peak_factor * resp_rms, peak_factor
+        return peak_factor
 
 
 class CartwrightLonguetHiggins1956(Calculator):
@@ -519,14 +591,8 @@ class CartwrightLonguetHiggins1956(Calculator):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def __call__(self,
-                 duration,
-                 freqs,
-                 fourier_amps,
-                 osc_freq=None,
-                 osc_damping=None,
-                 **kwargs):
-        """Compute the peak response.
+    def _calc_peak_factor(self, duration, **kwargs):
+        """Compute the peak factor.
 
         Parameters
         ----------
@@ -543,13 +609,11 @@ class CartwrightLonguetHiggins1956(Calculator):
 
         Returns
         -------
-        max_resp : float
-            expected maximum response.
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m1, m2, m4 = calc_moments(freqs, fourier_amps, [0, 1, 2, 4])
+        m0, m1, m2, m4 = self._spectrum.moments(0, 1, 2, 4)
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
         num_extrema = max(2., np.sqrt(m4 / m2) * duration / np.pi)
@@ -559,49 +623,8 @@ class CartwrightLonguetHiggins1956(Calculator):
             0,
             np.inf,
             args=(num_extrema, bandwidth))[0]
-        # Compute the root-mean-squared response -- correcting for the RMS
-        # duration.
-        if osc_freq and osc_damping:
-            rms_duration = self.calc_duration_rms(duration, osc_freq,
-                                                  osc_damping, m0, m1, m2)
-        else:
-            rms_duration = duration
 
-        resp_rms = np.sqrt(m0 / rms_duration)
-
-        return peak_factor * resp_rms, peak_factor
-
-    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
-        """Compute the RMS duration.
-
-        Not used by :class:`.CartwrightLonguetHiggins1956`.
-
-        Parameters
-        ----------
-        duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-        osc_freq : float
-            Frequency of the oscillator (Hz).
-        osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for
-            a damping ratio of 5%.
-        m0 : float
-            Zero-th moment of the Fourier amplitude spectrum.
-        m1 : float
-            First moment of the Fourier amplitude spectrum.
-        m2 : float
-            Second moment of the Fourier amplitude spectrum
-
-        Returns
-        -------
-        duration_rms : float
-            Duration of the root-mean-squared oscillator response (sec).
-
-        """
-        del (osc_freq, osc_damping, m0, m1, m2)
-        return duration
+        return peak_factor
 
 
 class BooreJoyner1984(CartwrightLonguetHiggins1956):
@@ -623,7 +646,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def _calc_duration_rms(self, duration, **kwargs):
         """Compute the oscillator duration.
 
         Oscillator duration is used in the calculation of the root-mean-squared
@@ -640,29 +663,26 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for
             a damping ratio of 5%.
-        m0 : float
-            Zero-th moment of the Fourier amplitude spectrum.
-        m1 : float
-            First moment of the Fourier amplitude spectrum.
-        m2 : float
-            Second moment of the Fourier amplitude spectrum
+
         Returns
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        del (m0, m1, m2)
+        osc_freq = kwargs.get('osc_freq', None)
+        osc_damping = kwargs.get('osc_damping', None)
 
-        power = 3.
-        coef = 1. / 3.
+        if osc_damping and osc_freq:
+            power = 3.
+            coef = 1. / 3.
+            # This equation was rewritten in Boore and Thompson (2012).
+            foo = 1. / (osc_freq * duration)
+            dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
+                         (foo / (1 + coef * foo ** power)))
+            duration *= dur_ratio
 
-        # This equation was rewritten in Boore and Thompson (2012).
-        foo = 1. / (osc_freq * duration)
-        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
-                     (foo / (1 + coef * foo ** power)))
-
-        return duration * dur_ratio
+        return duration
 
 
 class LiuPezeshk1999(BooreJoyner1984):
@@ -681,7 +701,7 @@ class LiuPezeshk1999(BooreJoyner1984):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def _calc_duration_rms(self, duration, **kwargs):
         """Compute the oscillator duration.
 
         Oscillator duration is used in the calculation of the root-mean-squared
@@ -698,31 +718,32 @@ class LiuPezeshk1999(BooreJoyner1984):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a
             damping ratio of 5%.
-        m0 : float
-            Zero-th moment of the Fourier amplitude spectrum.
-        m1 : float
-            First moment of the Fourier amplitude spectrum.
-        m2 : float
-            Second moment of the Fourier amplitude spectrum
+
         Returns
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        power = 2.
-        coef = np.sqrt(2 * np.pi * (1. - (m1 * m1) / (m0 * m2)))
+        osc_freq = kwargs.get('osc_freq', None)
+        osc_damping = kwargs.get('osc_damping', None)
+        if osc_freq and osc_damping:
+            m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
-        # Same model as used in Boore and Joyner (1984). This equation was
-        # rewritten in Boore and Thompson (2012).
-        foo = 1. / (osc_freq * duration)
-        dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
-                     (foo / (1 + coef * foo ** power)))
+            power = 2.
+            coef = np.sqrt(2 * np.pi * (1. - (m1 * m1) / (m0 * m2)))
 
-        return duration * dur_ratio
+            # Same model as used in Boore and Joyner (1984). This equation was
+            # rewritten in Boore and Thompson (2012).
+            foo = 1. / (osc_freq * duration)
+            dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
+                         (foo / (1 + coef * foo ** power)))
+            duration *= dur_ratio
+
+        return duration
 
 
-def _load_bt12_data(region):
+def _make_bt_interpolator(region, ref):
     """Load data from the Boore & Thompson (2012) parameter files.
 
     Parameters
@@ -731,40 +752,43 @@ def _load_bt12_data(region):
         Region for which the parameters were developed. Valid options: 'wna'
         for Western North America (active tectonic), or 'cena' for Eastern
         North America (stable tectonic).
+    ref : str
+        Reference document. Either: bt12 or bt15 for Boore & Thompson (2012) or
+         (2015), respectively.
 
     Returns
     -------
-    params : :class:`np.recarray`
-        Parameters for the region.
+    interpolator : :class:`scipy.interpolate.LinearNDInterpolator`
+        Interpolator for the data.
 
     """
-    fname = os.path.join(
-        os.path.dirname(__file__), 'data', region + '_bt12_trms4osc.pars')
 
-    return np.rec.fromrecords(
-        np.loadtxt(fname, skiprows=4, usecols=range(9)),
+    fpath = pathlib.Path(__file__).parent.joinpath(
+        'data', f'{region}_{ref}_trms4osc.pars.gz')
+    d = np.rec.fromrecords(
+        np.loadtxt(str(fpath), skiprows=4, usecols=range(9)),
         names='mag,dist,c1,c2,c3,c4,c5,c6,c7')
+
+    return LinearNDInterpolator(
+        np.c_[d.mag, np.log(d.dist)],
+        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7]
+    )
 
 
 # Load coefficient interpolators for Boore and Thompson (2012)
-_BT12_INTERPS = {}
-for region in ['wna', 'cena']:
-    d = _load_bt12_data(region)
-    i = LinearNDInterpolator(np.c_[d.mag, np.log(d.dist)],
-                             np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
-    _BT12_INTERPS[region] = i
+_BT_INTERPS = {
+    (region, ref): _make_bt_interpolator(region, ref)
+    for region, ref in itertools.product(['wna', 'cena'], ['bt12', 'bt15'])
+}
 
 
-class BooreThompson2012(BooreJoyner1984):
-    """Boore and Thompson (2012) peak factor.
-
-    Peak calculation based on the peak factor definition by Cartwright &
-    Longuet-Higgins (1956, :cite:`cartwright56` along with the
-    root-mean-squared duration correction proposed by Boore & Thompson (2012,
-    :cite:`boore12`).
+class BooreThompson(object):
+    """Abstract class for the Boore & Thompson duration correction.
 
     The duration ratio is defined by Equation (10) in :cite:`boore12`.
-    Magnitude and distance is interpolated using Qhulls.
+    Magnitude and distance is interpolated using
+    `scipy.interpolate.LinearNDInterpolator` on the natural log of the
+    distance.
 
     Parameters
     ----------
@@ -776,28 +800,17 @@ class BooreThompson2012(BooreJoyner1984):
         Magnitude of the event.
     dist : float
         Distance of the event in (km).
-
-    Notes
-    -----
-        The interpolant is constructed by triangulating the input data with
-        Qhull [#]_, and on each triangle performing linear barycentric
-        interpolation.
-
-    .. [#] http://www.qhull.org/
-
+    ref : str
+        Reference for coefficients, either: 'bt12' or 'bt15'
     """
 
-    NAME = 'Boore & Thompson (2012)'
-    ABBREV = 'BT12'
-
-    def __init__(self, region, mag, dist, **kwargs):
+    def __init__(self, region, mag, dist, ref, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
-
         region = get_region(region)
-        self._COEFS = _BT12_INTERPS[region](mag, np.log(dist))
+        self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
 
-    def calc_duration_rms(self, duration, osc_freq, osc_damping, m0, m1, m2):
+    def _calc_duration_rms(self, duration, **kwargs):
         """Compute the RMS duration.
 
         Parameters
@@ -811,28 +824,195 @@ class BooreThompson2012(BooreJoyner1984):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for
             a damping ratio of 5%.
-        m0 : float
-            Zero-th moment of the Fourier amplitude spectrum.
-        m1 : float
-            First moment of the Fourier amplitude spectrum.
-        m2 : float
-            Second moment of the Fourier amplitude spectrum
+
         Returns
         -------
         duration_rms : float
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        del (m0, m1, m2)
+        osc_freq = kwargs.get('osc_freq', None)
+        osc_damping = kwargs.get('osc_damping', None)
+        if osc_freq and osc_damping:
+            c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
-        c1, c2, c3, c4, c5, c6, c7 = self._COEFS
+            foo = 1 / (osc_freq * duration)
+            dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) *
+                         (1 + c4 / (2 * np.pi * osc_damping) *
+                          (foo / (1 + c5 * foo ** c6)) ** c7))
+            duration *= dur_ratio
 
-        foo = 1 / (osc_freq * duration)
-        dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) *
-                     (1 + c4 / (2 * np.pi * osc_damping) *
-                      (foo / (1 + c5 * foo ** c6)) ** c7))
+        return duration
 
-        return duration * dur_ratio
+
+class BooreThompson2012(BooreThompson, BooreJoyner1984):
+    """Boore and Thompson (2012) peak factor.
+
+    Peak calculation based on the peak factor definition by Cartwright &
+    Longuet-Higgins (1956, :cite:`cartwright56` along with the
+    root-mean-squared duration correction proposed by Boore & Thompson (2012,
+    :cite:`boore12`).
+
+
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed.  Valid options
+        are: 'wna' for Western North America (active tectonic), and 'cena'
+        for Central and Eastern North America ( stable tectonic).
+    mag : float
+        Magnitude of the event.
+    dist : float
+        Distance of the event in (km).
+
+    """
+
+    NAME = 'Boore & Thompson (2012)'
+    ABBREV = 'BT12'
+
+    def __init__(self, region, mag, dist, **kwargs):
+        """Initialize the class."""
+        BooreThompson.__init__(self, region, mag, dist, 'bt12', **kwargs)
+        BooreJoyner1984.__init__(self, **kwargs)
+
+
+class BooreThompson2015(BooreThompson, Vanmarcke1975):
+    """Boore and Thompson (2015) peak factor.
+
+    Peak calculation based on the peak factor definition by Vanmarcke
+    (1975, :cite:`vanmarcke75`) along with the root-mean-squared duration
+    correction proposed by Boore & Thompson (2015, :cite:`boore15`).
+
+
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed.  Valid options
+        are: 'wna' for Western North America (active tectonic), and 'cena'
+        for Central and Eastern North America ( stable tectonic).
+    mag : float
+        Magnitude of the event.
+    dist : float
+        Distance of the event in (km).
+
+    """
+
+    NAME = 'Boore & Thompson (2015)'
+    ABBREV = 'BT15'
+
+    def __init__(self, region, mag, dist, **kwargs):
+        """Initialize the class."""
+        BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
+        Vanmarcke1975.__init__(
+            self, use_nonstationarity_factor=False, **kwargs)
+
+
+class WangRathje2018(Vanmarcke1975):
+    """Wang & Rathje (2018) peak factor.
+
+    Peak calculation based on the peak factor definition by Vanmarcke (1975,
+    :cite:`vanmarcke75`) along with correction for oscillator duration and site
+    amplification as described in Wang & Rathje (2018, :cite:`rathje18`).
+    """
+
+    NAME = 'Wang & Rathje (2018) '
+    ABBREV = 'WR18'
+
+    # Coefficients from Table 2, and paragraph after Equation (8)
+    COEFS = np.rec.fromrecords(
+        [(1,  0.2688,  0.0030,  1.8380, -0.0198, 0.091),
+         (2,  0.2555, -0.0002,  1.2154, -0.0183, 0.081),
+         (3,  0.2287, -0.0014,  0.9404, -0.0130, 0.056)],
+        names='mode,a,b,d,e,sd',
+    )
+
+    def __init__(self, **kwargs):
+        """Initialize the class."""
+        Vanmarcke1975.__init__(
+            self, use_nonstationarity_factor=False, **kwargs)
+
+    def _calc_duration_rms(self, duration, **kwargs):
+        """Compute the RMS duration.
+
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the ground motion. Typically
+            defined as the duration between the 5% and 75% normalized Arias
+            intensity (sec).
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for
+            a damping ratio of 5%.
+        site_tf : array_like
+            Transfer function for applied to compute site effects.
+
+        Returns
+        -------
+        duration_rms : float
+            Duration of the root-mean-squared oscillator response (sec).
+
+        """
+        duration_gm = duration
+        duration_rms = duration
+        osc_freq = kwargs.get('osc_freq', None)
+
+        if osc_freq and 0.1 <= osc_freq:
+            # Apply oscillator correction for rock
+
+            # Equation 4a
+            f_lim = 5.274 * duration_gm ** -0.640
+
+            if osc_freq >= f_lim:
+                # Equation 2
+                ratio = 1
+            else:
+                # Equation 4b
+                dur_o = 31.858 * duration_gm ** -0.849
+                # Equation 4c
+                dur_min = 1.009 * duration_gm / (3.583 + duration_gm)
+
+                # Equation 3b
+                b = 1 / (dur_o - dur_min)
+                # Equation 3a
+                a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
+                # Equation 2
+                ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
+            duration_rms *= ratio
+
+        site_tf = np.abs(kwargs.get('site_tf', []))
+        if np.any(site_tf > 1):
+            # Modify duration for site effects
+
+            # Find the indices of the relative maxima use. Here an order of 3
+            # is used to increase the stability of the algorithm
+            indices = argrelmax(site_tf)[0][:3]
+
+            freqs = kwargs['freqs']
+            modes_f = freqs[indices]
+            modes_a = site_tf[indices]
+
+            # print(modes_f)
+            # print(modes_a)
+            # Amplitude / frequency ratio of the first mode
+            af_ratio = modes_a[0] / modes_f[0]
+            # print(af_ratio)
+
+            c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio ** 2
+            # print(c)
+            m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio ** 2
+            # print(m)
+            a = c * np.exp(-duration_gm / m)
+            # print(a)
+
+            incr = a * np.exp(
+                -np.log(osc_freq / modes_f) ** 2 /
+                (2 * self.COEFS.sd ** 2)
+            )
+            duration_rms += incr.sum()
+
+        return duration_rms
 
 
 def get_peak_calculator(method, calc_kwds):
@@ -855,12 +1035,14 @@ def get_peak_calculator(method, calc_kwds):
     calculators = [
         BooreJoyner1984,
         BooreThompson2012,
+        BooreThompson2015,
         CartwrightLonguetHiggins1956,
         Davenport1964,
         DerKiureghian1985,
         LiuPezeshk1999,
         ToroMcGuire1987,
         Vanmarcke1975,
+        WangRathje2018,
     ]
 
     for calculator in calculators:

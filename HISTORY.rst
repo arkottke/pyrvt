@@ -2,6 +2,13 @@
 History
 =======
 
+0.7.0 (dev)
+-----------
+
+* Added Boore & Thompson (2015)
+* Added Wang & Rathje (2018)
+* Re-factored peak factor calculators
+
 0.6.3 (2017-10-10)
 ------------------
 

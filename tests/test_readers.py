@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os
+import pathlib
 
 from numpy.testing import assert_allclose
 
@@ -9,10 +9,9 @@ from . import readers
 
 
 def test_load_fourier_spectrum():
-    d = readers.load_fourier_spectrum(
-        os.path.join(
-            os.path.dirname(__file__), 'data',
-            'test-bj84.m6.00r0020.0_fs.col'))
+    fpath = pathlib.Path(__file__).parent / 'data'
+    fpath /= 'test-bj84.m6.00r020.0_fs.col'
+    d = readers.load_fourier_spectrum(str(fpath))
 
     assert_allclose(d['mag'], 6)
     assert_allclose(d['dist'], 20)
@@ -97,10 +96,9 @@ def test_load_fourier_spectrum():
 
 
 def test_load_rvt_response_spectrum():
-    d = readers.load_rvt_response_spectrum(
-        os.path.join(
-            os.path.dirname(__file__), 'data',
-            'test-bj84.m6.00r020.0_rs.rv.col'))
+    fpath = pathlib.Path(__file__).parent / 'data'
+    fpath /= 'test-bj84.m6.00r020.0_rs.rv.col'
+    d = readers.load_rvt_response_spectrum(str(fpath))
 
     assert_allclose(d['mag'], 6)
     assert_allclose(d['dist'], 20)

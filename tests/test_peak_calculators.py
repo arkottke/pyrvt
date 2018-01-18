@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
+import pathlib
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_string_equal
@@ -11,19 +11,28 @@ import pyrvt
 
 from . import readers
 
+fpath_data = pathlib.Path(__file__).parent / 'data'
 
-@pytest.mark.parametrize('peak_calculator,abbrev', [
-    (pyrvt.peak_calculators.BooreJoyner1984(), 'bj84'),
-    (pyrvt.peak_calculators.LiuPezeshk1999(), 'lp99'),
-    (pyrvt.peak_calculators.BooreThompson2012('wna', 6, 20.), 'bt12_wna'),
-    (pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.), 'bt12_ena'),
+
+@pytest.mark.parametrize('peak_calculator,abbrev,suffix', [
+    (pyrvt.peak_calculators.BooreJoyner1984(), 'bj84', 'm6.00r020.0'),
+    (pyrvt.peak_calculators.LiuPezeshk1999(), 'lp99', 'm6.00r020.0'),
+    (pyrvt.peak_calculators.BooreThompson2012('wna', 6, 20.),
+     'bt12_wna', 'm6.00r020.0'),
+    (pyrvt.peak_calculators.BooreThompson2012('ena', 6, 20.),
+     'bt12_ena', 'm6.00r020.0'),
+    (pyrvt.peak_calculators.BooreThompson2015('wna', 6, 21.3),
+     'bt15_wna', 'm6.00rps021.3'),
+    (pyrvt.peak_calculators.BooreThompson2015('ena', 6, 20.8),
+     'bt15_ena', 'm6.00rps020.8'),
 ])
-def test_osc_accels(peak_calculator, abbrev):
-    path = os.path.join(os.path.dirname(__file__), 'data')
+def test_osc_accels(peak_calculator, abbrev, suffix):
     fs = readers.load_fourier_spectrum(
-        os.path.join(path, 'test-{}.m6.00r0020.0_fs.col'.format(abbrev)))
+        str(fpath_data / f'test-{abbrev}.{suffix}_fs.col')
+    )
     rs = readers.load_rvt_response_spectrum(
-        os.path.join(path, 'test-{}.m6.00r020.0_rs.rv.col'.format(abbrev)))
+        str(fpath_data / f'test-{abbrev}.{suffix}_rs.rv.col')
+    )
 
     rvt_motion = pyrvt.motions.RvtMotion(
         freqs=fs['freqs'],
@@ -34,7 +43,7 @@ def test_osc_accels(peak_calculator, abbrev):
     spec_accels = rvt_motion.calc_osc_accels(rs['freqs'], rs['damping'])
 
     # The SMSIM output file only provides 4 significant digits
-    assert_allclose(spec_accels, rs['spec_accels'], rtol=0.001, atol=0.05)
+    assert_allclose(spec_accels, rs['spec_accels'], rtol=0.05, atol=0.01)
 
 
 @pytest.fixture
@@ -50,7 +59,8 @@ def test_abbrev(bj84_pc):
     assert_string_equal(bj84_pc.abbrev, 'BJ84')
 
 
-@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87'])
+@pytest.mark.parametrize('method', ['V75', 'D64', 'DK85', 'TM87', 'BT12',
+                                    'BT15', 'WR18'])
 def test_formulations(method):
     mag = 6.5
     dist = 20
@@ -67,3 +77,25 @@ def test_formulations(method):
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels = m.calc_osc_accels(osc_freqs, 0.05)
     assert np.all(np.isreal(osc_accels))
+
+
+def test_wang_rathje():
+    def load(fname):
+        return np.loadtxt(str(fpath_data / fname), skiprows=1, unpack=True)
+
+    freqs, site_tf = load(
+        'TF_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+
+    # Actual duration RMS
+    periods, actual = load(
+        'DurSiteMod_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+
+    pc = pyrvt.peak_calculators.WangRathje2018()
+    duration_gm = 9.75
+
+    calc = np.array([
+        pc._calc_duration_rms(
+            duration_gm, osc_freq=(1 / period), freqs=freqs, site_tf=site_tf)
+        for period in periods
+    ])
+    assert_allclose(actual, calc, rtol=5E-4)

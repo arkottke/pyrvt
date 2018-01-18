@@ -2,8 +2,10 @@
 
 numba
 numpy
-openpyxl
 setuptools
 scipy
-xlrd
-xlwt
+pyexcel
+pyexcel-io
+pyexcel-ods
+pyexcel-xls
+pyexcel-xlsx

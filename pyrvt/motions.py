@@ -206,7 +206,7 @@ class RvtMotion(object):
         """Duration of the ground motion for RVT analysis."""
         return self._duration
 
-    def calc_osc_accels(self, osc_freqs, osc_damping=0.05, trans_func=None):
+    def calc_osc_accels(self, osc_freqs, osc_damping=0.05, trans_func=[]):
         """Pseudo-acceleration spectral response of an oscillator.
 
         Parameters
@@ -226,18 +226,22 @@ class RvtMotion(object):
             Peak pseudo-spectral acceleration of the oscillator
 
         """
-        if trans_func is None:
-            trans_func = np.ones_like(self.freqs)
+        if len(trans_func):
+            tf = np.asarray(trans_func)
         else:
-            trans_func = np.asarray(trans_func)
+            tf = np.ones_like(self.freqs)
+
         resp = np.array([
-            self.calc_peak(trans_func *
-                           calc_sdof_tf(self.freqs, of, osc_damping), of,
-                           osc_damping) for of in osc_freqs
+            self.calc_peak(
+                tf * calc_sdof_tf(self.freqs, of, osc_damping),
+                osc_freq=of, osc_damping=osc_damping,
+                site_tf=trans_func
+            )
+            for of in osc_freqs
         ])
         return resp
 
-    def calc_peak(self, transfer_func=None, osc_freq=None, osc_damping=None):
+    def calc_peak(self, transfer_func=None, **kwds):
         """Compute the peak response.
 
         Parameters
@@ -245,11 +249,6 @@ class RvtMotion(object):
         transfer_func : array_like, optional
             Transfer function to apply to the motion. If ``None``, then no
             transfer function is applied.
-        osc_freq : float
-            Frequency of the oscillator (Hz).
-        osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a
-            damping ratio of 5%.
 
         Returns
         -------
@@ -266,8 +265,7 @@ class RvtMotion(object):
             self._duration,
             self._freqs,
             fourier_amps,
-            osc_freq=osc_freq,
-            osc_damping=osc_damping)[0]
+            **kwds)[0]
 
     def calc_attenuation(self, min_freq, max_freq=None):
         r"""Compute the site attenuation (κ) based on a log-linear fit.
