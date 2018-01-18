@@ -226,10 +226,11 @@ class RvtMotion(object):
             Peak pseudo-spectral acceleration of the oscillator
 
         """
-        if trans_func:
+        if len(trans_func):
             tf = np.asarray(trans_func)
         else:
             tf = np.ones_like(self.freqs)
+
         resp = np.array([
             self.calc_peak(
                 tf * calc_sdof_tf(self.freqs, of, osc_damping),
