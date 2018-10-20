@@ -957,8 +957,7 @@ class WangRathje2018(BooreThompson2015):
         if np.any(site_tf > 1):
             # Modify duration for site effects
 
-            # Find the indices of the relative maxima use. Here an order of 3
-            # is used to increase the stability of the algorithm
+            # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]
 
             freqs = kwargs['freqs']
@@ -972,8 +971,10 @@ class WangRathje2018(BooreThompson2015):
             m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio ** 2
             incr_max = c * np.exp(-duration / m)
 
-            incr = incr_max * np.exp(-(np.log(osc_freq / modes_f))
-                                     ** 2 / (2 * self.COEFS.sd ** 2))
+            incr = incr_max * np.exp(
+                -(np.log(osc_freq / modes_f)) ** 2 /
+                (2 * self.COEFS.sd ** 2)
+            )
             duration_rms += incr.sum()
 
         return duration_rms
