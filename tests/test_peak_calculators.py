@@ -89,14 +89,14 @@ def read_wang_rathje_18_data(motion_id):
     freqs = np.array(ws.column[0][2:1002])
     fourier_ampls = np.array(ws.column[1 + motion_id][2:1002])
     duration = ws[2, 5 + motion_id]
-    motion = pysra.motion.RvtMotion(freqs, fourier_ampls, duration,
-                                    pyrvt.peak_calculators.BooreThompson2015(
-                                        'wna',
-                                        mag,
-                                        20, ))
+    motion = pysra.motion.RvtMotion(
+        freqs, fourier_ampls, duration,
+        pyrvt.peak_calculators.WangRathje2018('cena', mag, 20)
+    )
 
     expected = {}
-    for key, sheetname in [('rock', 'SaRock'), ('surface', 'SaSurf')]:
+    for key, sheetname in [('rock', 'SaRock'),
+                           ('surface', 'SaSurf (Modified)')]:
         ws = wb[sheetname]
         osc_freq = np.array(ws.column[0][2:303])
         spec_acc = np.array(ws.column[1 + motion_id][2:303])
@@ -131,10 +131,11 @@ def test_wang_rathje(motion_id, location):
         rso(calc)
         actual = rso.values
 
-        # ratio = actual / expected[location].spec_acc
-        # print(ratio)
-        # print(min(ratio))
     else:
         raise NotImplementedError
 
-    assert_allclose(actual, expected[location].spec_acc, rtol=0.005)
+    ratio = actual / expected[location].spec_acc
+    # print(ratio)
+    print(max(ratio), min(ratio))
+
+    assert_allclose(actual, expected[location].spec_acc, rtol=0.025)
