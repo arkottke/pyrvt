@@ -165,10 +165,9 @@ class SquaredSpectrum(object):
         try:
             moment = self._moments[num]
         except KeyError:
-            moment = 2. * trapz(
-                self._freqs,
-                np.power(2 * np.pi * self._freqs, num) * self._squared_fa
-            )
+            moment = 2. * trapz(self._freqs,
+                                np.power(2 * np.pi * self._freqs, num) *
+                                self._squared_fa)
             self._moments[num] = moment
 
         return moment
@@ -373,8 +372,8 @@ class Vanmarcke1975(Calculator):
         osc_freq = kwargs.get('osc_freq', None)
         osc_damping = kwargs.get('osc_damping', None)
         if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
-            peak_factor *= self.nonstationarity_factor(
-                osc_damping, osc_freq, duration)
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq,
+                                                       duration)
 
         return peak_factor
 
@@ -397,9 +396,8 @@ class Vanmarcke1975(Calculator):
             Nonstationarity factor.
 
         """
-        return np.sqrt(
-            1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration)
-        )
+        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq *
+                                  duration))
 
 
 class Davenport1964(Calculator):
@@ -771,8 +769,7 @@ def _make_bt_interpolator(region, ref):
 
     return LinearNDInterpolator(
         np.c_[d.mag, np.log(d.dist)],
-        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7]
-    )
+        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
 
 
 # Load coefficient interpolators for Boore and Thompson (2012)
@@ -907,7 +904,7 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
             self, use_nonstationarity_factor=False, **kwargs)
 
 
-class WangRathje2018(Vanmarcke1975):
+class WangRathje2018(BooreThompson2015):
     """Wang & Rathje (2018) peak factor.
 
     Peak calculation based on the peak factor definition by Vanmarcke (1975,
@@ -920,16 +917,14 @@ class WangRathje2018(Vanmarcke1975):
 
     # Coefficients from Table 2, and paragraph after Equation (8)
     COEFS = np.rec.fromrecords(
-        [(1,  0.2688,  0.0030,  1.8380, -0.0198, 0.091),
-         (2,  0.2555, -0.0002,  1.2154, -0.0183, 0.081),
-         (3,  0.2287, -0.0014,  0.9404, -0.0130, 0.056)],
-        names='mode,a,b,d,e,sd',
-    )
+        [(1, 0.2688, 0.0030, 1.8380, -0.0198, 0.091),
+         (2, 0.2555, -0.0002, 1.2154, -0.0183, 0.081),
+         (3, 0.2287, -0.0014, 0.9404, -0.0130, 0.056)],
+        names='mode,a,b,d,e,sd', )
 
-    def __init__(self, **kwargs):
+    def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
-        Vanmarcke1975.__init__(
-            self, use_nonstationarity_factor=False, **kwargs)
+        BooreThompson2015.__init__(self, region, mag, dist, **kwargs)
 
     def _calc_duration_rms(self, duration, **kwargs):
         """Compute the RMS duration.
@@ -954,32 +949,9 @@ class WangRathje2018(Vanmarcke1975):
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        duration_gm = duration
-        duration_rms = duration
+        duration_rms = BooreThompson2015._calc_duration_rms(self, duration,
+                                                            **kwargs)
         osc_freq = kwargs.get('osc_freq', None)
-
-        if osc_freq and 0.1 <= osc_freq:
-            # Apply oscillator correction for rock
-
-            # Equation 4a
-            f_lim = 5.274 * duration_gm ** -0.640
-
-            if osc_freq >= f_lim:
-                # Equation 2
-                ratio = 1
-            else:
-                # Equation 4b
-                dur_o = 31.858 * duration_gm ** -0.849
-                # Equation 4c
-                dur_min = 1.009 * duration_gm / (3.583 + duration_gm)
-
-                # Equation 3b
-                b = 1 / (dur_o - dur_min)
-                # Equation 3a
-                a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
-                # Equation 2
-                ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
-            duration_rms *= ratio
 
         site_tf = np.abs(kwargs.get('site_tf', []))
         if np.any(site_tf > 1):
@@ -993,23 +965,15 @@ class WangRathje2018(Vanmarcke1975):
             modes_f = freqs[indices]
             modes_a = site_tf[indices]
 
-            # print(modes_f)
-            # print(modes_a)
             # Amplitude / frequency ratio of the first mode
             af_ratio = modes_a[0] / modes_f[0]
-            # print(af_ratio)
 
             c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio ** 2
-            # print(c)
             m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio ** 2
-            # print(m)
-            a = c * np.exp(-duration_gm / m)
-            # print(a)
+            incr_max = c * np.exp(-duration / m)
 
-            incr = a * np.exp(
-                -np.log(osc_freq / modes_f) ** 2 /
-                (2 * self.COEFS.sd ** 2)
-            )
+            incr = incr_max * np.exp(-(np.log(osc_freq / modes_f))
+                                     ** 2 / (2 * self.COEFS.sd ** 2))
             duration_rms += incr.sum()
 
         return duration_rms
