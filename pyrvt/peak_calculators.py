@@ -954,8 +954,31 @@ class WangRathje2018(BooreThompson2015):
         osc_freq = kwargs.get('osc_freq', None)
 
         site_tf = np.abs(kwargs.get('site_tf', []))
-        if np.any(site_tf > 1):
+        if np.any(site_tf > 1) and 0.1 <= osc_freq:
             # Modify duration for site effects
+
+            # Compute the expected rock oscillator duration
+
+            # Equation 4a
+            f_lim = 5.274 * duration ** -0.640
+            if osc_freq >= f_lim:
+                # Equation 2
+                ratio = 1
+            else:
+                # Equation 4b
+                dur_o = 31.858 * duration ** -0.849
+                # Equation 4c
+                dur_min = 1.009 * duration / (3.583 + duration)
+                # Equation 3b
+                b = 1 / (dur_o - dur_min)
+                # Equation 3a
+                a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
+                # Equation 2
+                ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
+
+            dur_osc_rock = ratio * duration
+
+            # Compute the expected soil oscillator duration
 
             # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]
@@ -975,7 +998,11 @@ class WangRathje2018(BooreThompson2015):
                 -(np.log(osc_freq / modes_f)) ** 2 /
                 (2 * self.COEFS.sd ** 2)
             )
-            duration_rms += incr.sum()
+
+            dur_osc_soil = dur_osc_rock + incr.sum()
+
+            # Scale the RMS duration by the ratio in soil to rock durations
+            duration_rms *= (dur_osc_soil / dur_osc_rock)
 
         return duration_rms
 
