@@ -2,8 +2,8 @@
 History
 =======
 
-0.7.0 (dev)
------------
+0.7.0 (2018-10-20)
+------------------
 
 * Added Boore & Thompson (2015)
 * Added Wang & Rathje (2018)

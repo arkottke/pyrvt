@@ -4,10 +4,13 @@
 import pathlib
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_string_equal
+import pyexcel
 import pytest
 
 import pyrvt
+import pysra
+
+from numpy.testing import assert_allclose, assert_string_equal
 
 from . import readers
 
@@ -77,23 +80,58 @@ def test_formulations(method):
     assert np.all(np.isreal(osc_accels))
 
 
-def test_wang_rathje():
-    def load(fname):
-        return np.loadtxt(str(fpath_data / fname), skiprows=1, unpack=True)
+def read_wang_rathje_18_data(motion_id):
+    mag = {0: 5, 1: 6.5, 2: 8}[motion_id]
 
-    freqs, site_tf = load(
-        'TF_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+    wb = pyexcel.get_book(file_name=str(fpath_data / 'wang_rathje_2018.xlsx'))
+    # Input Fourier amplitude
+    ws = wb['FAS and Dgm']
+    freqs = np.array(ws.column[0][2:1002])
+    fourier_ampls = np.array(ws.column[1 + motion_id][2:1002])
+    duration = ws[2, 5 + motion_id]
+    motion = pysra.motion.RvtMotion(
+        freqs, fourier_ampls, duration,
+        pyrvt.peak_calculators.WangRathje2018('cena', mag, 20)
+    )
 
-    # Actual duration RMS
-    periods, actual = load(
-        'DurSiteMod_M6.5_R20.6_Dgm9.75_ena_bt15_VM_eql_H178_Vsr1730.txt')
+    expected = {}
+    for key, sheetname in [('rock', 'SaRock'),
+                           ('surface', 'SaSurf (Modified)')]:
+        ws = wb[sheetname]
+        osc_freq = np.array(ws.column[0][2:303])
+        spec_acc = np.array(ws.column[1 + motion_id][2:303])
+        expected[key] = np.rec.fromarrays(
+            [osc_freq, spec_acc], names='osc_freq,spec_acc')
 
-    pc = pyrvt.peak_calculators.WangRathje2018()
-    duration_gm = 9.75
+    return motion, expected
 
-    calc = np.array([
-        pc._calc_duration_rms(
-            duration_gm, osc_freq=(1 / period), freqs=freqs, site_tf=site_tf)
-        for period in periods
-    ])
-    assert_allclose(actual, calc, rtol=5E-4)
+
+@pytest.mark.parametrize('motion_id', [0, 1, 2])
+@pytest.mark.parametrize('location', ['rock', 'surface'])
+def test_wang_rathje(motion_id, location):
+    motion, expected = read_wang_rathje_18_data(motion_id)
+
+    if location == 'rock':
+        actual = motion.calc_osc_accels(expected[location].osc_freq)
+    elif location == 'surface':
+        calc = pysra.propagation.LinearElasticCalculator()
+        profile = pysra.site.Profile([
+            pysra.site.Layer(
+                pysra.site.SoilType('Soil', 18., mod_reduc=None, damping=0.01),
+                316, 400),
+            pysra.site.Layer(
+                pysra.site.SoilType('Rock', 22., mod_reduc=None, damping=0.01),
+                0, 3000),
+        ])
+        calc(motion, profile, profile.location('outcrop', index=-1))
+        rso = pysra.output.ResponseSpectrumOutput(
+            expected[location].osc_freq,
+            pysra.output.OutputLocation('outcrop', depth=0), 0.05)
+        # Compute the response spectrum at the surface
+        rso(calc)
+        actual = rso.values
+
+    else:
+        raise NotImplementedError
+
+    assert_allclose(actual, expected[location].spec_acc, rtol=0.02)

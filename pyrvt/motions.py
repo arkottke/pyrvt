@@ -238,6 +238,12 @@ class RvtMotion(object):
                 osc_damping=osc_damping,
                 site_tf=trans_func) for of in osc_freqs
         ])
+
+        of = 100
+        peak, pf = self.peak_calculator(
+            self._duration, self._freqs, self._fourier_amps *
+            np.abs(calc_sdof_tf(self.freqs, of, osc_damping)))
+
         return resp
 
     def calc_peak(self, transfer_func=None, **kwds):
@@ -571,7 +577,7 @@ class CompatibleRvtMotion(RvtMotion):
             These keywords are only required for some peak calculators.
 
         """
-        super().__init__(peak_calculator=peak_calculator)
+        super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
 
         osc_freqs, osc_accels_target = sort_increasing(
             np.asarray(osc_freqs), np.asarray(osc_accels_target))

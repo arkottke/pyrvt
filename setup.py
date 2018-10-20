@@ -8,7 +8,7 @@ with open('README.rst') as readme_file:
 
 setup(
     name='pyRVT',
-    version='0.6.3',
+    version='0.7.0',
     packages=find_packages(exclude=['.*tests.*']),
     entry_points={
         'console_scripts': [
