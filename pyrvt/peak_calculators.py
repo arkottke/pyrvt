@@ -954,27 +954,25 @@ class WangRathje2018(BooreThompson2015):
         osc_freq = kwargs.get('osc_freq', None)
 
         site_tf = np.abs(kwargs.get('site_tf', []))
-        if np.any(site_tf > 1) and 0.1 <= osc_freq:
+        if np.any(site_tf > 1):
             # Modify duration for site effects
 
             # Compute the expected rock oscillator duration
 
             # Equation 4a
             f_lim = 5.274 * duration ** -0.640
-            if osc_freq >= f_lim:
-                # Equation 2
-                ratio = 1
-            else:
+            ratio = 1
+            if 0.1 <= osc_freq < f_lim:
                 # Equation 4b
-                dur_o = 31.858 * duration ** -0.849
+                dur_0 = 31.858 * duration ** -0.849
                 # Equation 4c
                 dur_min = 1.009 * duration / (3.583 + duration)
                 # Equation 3b
-                b = 1 / (dur_o - dur_min)
+                b = 1 / (dur_0 - dur_min)
                 # Equation 3a
-                a = (1 / (dur_o - 1) - b) * (f_lim - 0.1)
+                a = (1 / (dur_0 - 1) - b) * (f_lim - 0.1)
                 # Equation 2
-                ratio = (dur_o - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
+                ratio = (dur_0 - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
 
             dur_osc_rock = ratio * duration
 
@@ -995,7 +993,7 @@ class WangRathje2018(BooreThompson2015):
             incr_max = c * np.exp(-duration / m)
 
             incr = incr_max * np.exp(
-                -(np.log(osc_freq / modes_f)) ** 2 /
+                -np.log(osc_freq / modes_f) ** 2 /
                 (2 * self.COEFS.sd ** 2)
             )
 
