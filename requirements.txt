@@ -1,11 +1,12 @@
 --index-url https://pypi.python.org/simple/
 
+matplotlib
 numba
 numpy
-setuptools
-scipy
 pyexcel
 pyexcel-io
 pyexcel-ods
 pyexcel-xls
 pyexcel-xlsx
+scipy
+setuptools

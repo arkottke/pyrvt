@@ -1,8 +1,6 @@
---index-url https://pypi.python.org/simple/
+-r ./requirements.txt
 
 jinja2
-matplotlib
-numpy
 sphinx
 sphinx_rtd_theme
 sphinxcontrib-bibtex
