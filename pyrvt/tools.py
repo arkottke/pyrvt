@@ -191,7 +191,7 @@ def calc_compatible_spectra(method, periods, events, damping=0.05):
     - **duration** : float -- duration of the ground motion if one was not
       specified
     - **fa** : :class:`numpy.ndarray` -- Fourier amplitude spectra in units of
-      g/sec
+      g*sec
     - **psa_calc** : :class:`numpy.ndarray` -- Pseudo-spectral acceleration
       calculated from `fa`. This will differ slightly from `psa_target`.
 
