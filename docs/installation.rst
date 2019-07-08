@@ -4,8 +4,8 @@
 Installation
 ============
 
-Prior to using `pyrvt`, Python and a number of packages need to be installed. In
-addition to Python, the following packages need to be installed:
+Prior to using `pyrvt`, Python and a number of packages need to be installed.
+In addition to Python, the following packages need to be installed:
 
 *Required:*
 
@@ -14,6 +14,8 @@ addition to Python, the following packages need to be installed:
 - `numba` -- compiled functions for increased speed
 
 - `scipy` -- indefinite integration
+
+- `pyexcel` -- reading and writing XLS and XLSX files
 
 - `pytest` -- required for the unit tests
 
