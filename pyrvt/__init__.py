@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 __author__ = 'Albert Kottke'
-__copyright__ = 'Copyright 2016 Albert Kottke'
+__copyright__ = 'Copyright 2016-2019 Albert Kottke'
 __license__ = 'MIT'
 __title__ = 'pyRVT'
 __version__ = get_distribution('pyRVT').version
