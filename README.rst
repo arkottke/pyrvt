@@ -27,7 +27,7 @@ Peak factor implementations:
 Citation
 --------
 
-Please cite this software using the following DOI_:
+Please cite this software using the DOI_.
 
 .. _DOI: https://zenodo.org/badge/latestdoi/5086299
 
