@@ -1,6 +1,5 @@
 [report]
 omit =
-    *pyrvt/_version.py
     */python?.?/*
     */site-packages/nose/*
 exclude_lines =
