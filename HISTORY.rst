@@ -2,6 +2,11 @@
 History
 =======
 
+0.7.1 (2018-11-30)
+------------------
+
+* Linked requirements file to fix rtfd builds.
+
 0.7.0 (2018-10-20)
 ------------------
 
