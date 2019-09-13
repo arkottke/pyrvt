@@ -1,4 +1,5 @@
 language: python
+cache: pip
 python:
   - '3.7'
 install:
@@ -15,6 +16,6 @@ deploy:
   password:
     secure: eIhb+3akjYdSP9aS9ef10WhiD81Mq9TG1p0irsSVwcCa2mUPaKx8Kq/KQ4Bt7Ha+vZKTu9OWedjmrwmzyVmr77NIJTF7I+UCmFDCR8zjMrweQuIlgQ9L/JmNXmmqOdji9Lp94shqzO/hDgwj3w+Fudvek+PCz8x83dYGxtUdi4A=
     on:
+      tags: true
       distributions: sdist bdist_wheel
       repo: arkottke/pyrvt
-      tags: true
