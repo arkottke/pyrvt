@@ -67,8 +67,8 @@ def log_spaced_values(lower, upper, per_decade=512):
     """
     lower = np.log10(lower)
     upper = np.log10(upper)
-    count = np.ceil(per_decade * (upper - lower))
-    return np.logspace(lower, upper, count)
+    count = int(np.ceil(per_decade * (upper - lower)))
+    return np.logspace(lower, upper, num=count)
 
 
 def calc_sdof_tf(freqs, osc_freq, osc_damping):
