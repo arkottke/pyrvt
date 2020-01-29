@@ -11,7 +11,7 @@ with open('HISTORY.rst') as fp:
 
 setup(
     name='pyRVT',
-    version='0.7.1',
+    version='0.7.2',
     description='Random vibration theory for earthquake ground motions.',
     long_description=readme + '\n\n' + history,
     author='Albert Kottke',

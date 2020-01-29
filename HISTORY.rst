@@ -6,6 +6,7 @@
 ------------------
 
 * Change to no python JIT compliation for Vanmarcke integration.
+* Added pre-commit back.
 
 0.7.1 (2018-11-30)
 ------------------
@@ -30,7 +31,7 @@
 
 * Fixed PEP8 issues in docstrings.
 
-0.6.0 (2017-05-05)
+0.6.1 (2017-05-05)
 ------------------
 
 * Removed pyprind require and progress bars.
