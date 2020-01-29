@@ -7,3 +7,7 @@
         exclude: docs/conf.py
     -   id: check-yaml
     -   id: check-merge-conflict
+-   repo: https://github.com/Lucas-C/pre-commit-hooks-markup
+    sha: v1.0.0
+    hooks:
+    -   id: rst-linter
