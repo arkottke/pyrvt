@@ -19,7 +19,7 @@ from scipy.interpolate import LinearNDInterpolator
 from scipy.signal import argrelmax
 
 
-@numba.jit
+@numba.njit()
 def trapz(x, y):
     """Trapezoidal integration written in numba.
 
