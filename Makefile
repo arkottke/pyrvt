@@ -50,10 +50,10 @@ lint:
 	pydocstyle pyrvt/*.py
 
 test:
-	python setup.py test
+	py.test --flake8 --cov-report html --cov=pyrvt tests/
 
 coverage:
-	coverage run --source pyrvt setup.py test
+	coverage run --source pyrvt setup.py tests
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html

@@ -1,11 +1,16 @@
-=======
-History
-=======
+========
+ History
+========
 
-0.7.1 (2020-01-29)
------------------
+0.7.2 (2020-01-29)
+------------------
 
 * Change to no python JIT compliation for Vanmarcke integration.
+
+0.7.1 (2018-11-30)
+------------------
+
+* Linked requirements file to fix rtfd builds.
 
 0.7.0 (2018-10-20)
 ------------------
