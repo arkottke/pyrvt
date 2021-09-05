@@ -2,8 +2,6 @@ import datetime
 import functools
 import multiprocessing
 
-import numpy as np
-
 import pyrvt
 
 
