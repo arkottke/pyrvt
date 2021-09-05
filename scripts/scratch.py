@@ -1,5 +1,8 @@
 import datetime
+
 import dask
+
+import pyrvt
 
 # def inc(a):
 #     return a + 1
@@ -11,26 +14,23 @@ import dask
 # y = dask.delayed(inc)(2)
 # z = dask.delayed(add)(x, y)
 
-import pyrvt
-
-ext, freqs, events = pyrvt.tools.read_events(
-    '../examples/example_targetSa.csv', 'psa')
+ext, freqs, events = pyrvt.tools.read_events("../examples/example_targetSa.csv", "psa")
 
 osc_damping = 0.05
-peak_calculator = pyrvt.peak_calculators.get_peak_calculator('BJ84', {})
+peak_calculator = pyrvt.peak_calculators.get_peak_calculator("BJ84", {})
 
 start = datetime.datetime.now()
 crms = []
 for event in events:
     crm = dask.delayed(pyrvt.motions.CompatibleRvtMotion)(
         freqs,
-        event['psa'],
-        duration=event['duration'],
+        event["psa"],
+        duration=event["duration"],
         osc_damping=osc_damping,
-        peak_calculator=peak_calculator
+        peak_calculator=peak_calculator,
     )
     crms.append(crm)
 
 results = dask.compute(*crms)
 end = datetime.datetime.now()
-print('Duration:', end - start)
+print("Duration:", end - start)

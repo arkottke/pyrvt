@@ -122,7 +122,6 @@ _calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
 def calc_moments(freqs, fourier_amps, orders):
-
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
@@ -1004,7 +1003,7 @@ class WangRathje2018(BooreThompson2015):
             incr_max = c * np.exp(-duration / m)
 
             incr = incr_max * np.exp(
-                -np.log(osc_freq / modes_f) ** 2 / (2 * self.COEFS.sd**2)
+                -(np.log(osc_freq / modes_f) ** 2) / (2 * self.COEFS.sd**2)
             )
 
             dur_osc_soil = dur_osc_rock + incr.sum()

@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """Tools for reading/writing of files and performing operations."""
-
 import functools
 import multiprocessing
 import pathlib
@@ -10,24 +8,27 @@ import pathlib
 import numpy as np
 import pyexcel
 
-from pyrvt.peak_calculators import get_peak_calculator, get_region
 from pyrvt import motions
+from pyrvt.peak_calculators import get_peak_calculator
+from pyrvt.peak_calculators import get_region
 
 PARAMETER_NAMES = [
-    ('magnitude', 'Magnitude'),
-    ('distance', 'Distance (km)'),
-    ('vs30', 'Vs30 (m/s)'),
-    ('kappa', 'Site Atten., Kappa0 (sec)'),  # Site Atten., κ₀
-    ('duration', 'Duration (sec)'),
-    ('region', 'Region'),
+    ("magnitude", "Magnitude"),
+    ("distance", "Distance (km)"),
+    ("vs30", "Vs30 (m/s)"),
+    ("kappa", "Site Atten., Kappa0 (sec)"),  # Site Atten., κ₀
+    ("duration", "Duration (sec)"),
+    ("region", "Region"),
 ]
 
 
 def get_fpaths(s):
-    if '*' in s:
-        return pathlib.Path('.').glob(s)
+    if "*" in s:
+        return pathlib.Path(".").glob(s)
     else:
-        return [pathlib.Path(s), ]
+        return [
+            pathlib.Path(s),
+        ]
 
 
 def read_events(fpath, response_type):
@@ -54,16 +55,13 @@ def read_events(fpath, response_type):
         the dictionaries.
 
     """
-    assert response_type in ['psa', 'fa']
+    assert response_type in ["psa", "fa"]
     fpath = pathlib.Path(fpath)
 
     data = pyexcel.get_array(file_name=str(fpath))
     ext = fpath.suffix
 
-    parameters = {
-        key: data[i][1:]
-        for i, (key, label) in enumerate(PARAMETER_NAMES)
-    }
+    parameters = {key: data[i][1:] for i, (key, label) in enumerate(PARAMETER_NAMES)}
 
     event_row = len(parameters) + 1
     event_count = len(data[0]) - 1
@@ -77,16 +75,17 @@ def read_events(fpath, response_type):
         e = {k: v[i] for k, v in parameters.items()}
         e[response_type] = resps
 
-        if 'region' in e:
-            e['region'] = get_region(e['region'])
+        if "region" in e:
+            e["region"] = get_region(e["region"])
 
         events.append(e)
 
     return ext, reference, events
 
 
-def write_events(fname, reference, reference_label, response_type,
-                 response_label, events):
+def write_events(
+    fname, reference, reference_label, response_type, response_label, events
+):
     """Write the events to a file.
 
     Parameters
@@ -138,15 +137,16 @@ def _calc_fa(target_freqs, damping, method, event):
     Note that this is intended as a helper function to be called by
     multiprocessing.Pool.
     """
-    event_keys = ['magnitude', 'distance', 'region']
+    event_keys = ["magnitude", "distance", "region"]
     event_kwds = {key: event[key] for key in event_keys}
     crm = motions.CompatibleRvtMotion(
         target_freqs,
-        event['psa'],
-        duration=event['duration'],
+        event["psa"],
+        duration=event["duration"],
         osc_damping=damping,
         event_kwds=event_kwds,
-        peak_calculator=get_peak_calculator(method, event_kwds))
+        peak_calculator=get_peak_calculator(method, event_kwds),
+    )
     psa_calc = crm.calc_osc_accels(target_freqs, damping)
     return crm, psa_calc
 
@@ -196,29 +196,27 @@ def calc_compatible_spectra(method, periods, events, damping=0.05):
       calculated from `fa`. This will differ slightly from `psa_target`.
 
     """
-    target_freqs = 1. / periods
+    target_freqs = 1.0 / periods
     with multiprocessing.Pool() as pool:
         results = pool.map(
-            functools.partial(_calc_fa, target_freqs, damping, method), events)
+            functools.partial(_calc_fa, target_freqs, damping, method), events
+        )
 
     # Copy values back into the dictionary
     for event, (crm, psa_calc) in zip(events, results):
-        if not event['duration']:
-            event['duration'] = crm.duration
-        event['fa'] = crm.fourier_amps
-        event['psa_calc'] = psa_calc
+        if not event["duration"]:
+            event["duration"] = crm.duration
+        event["fa"] = crm.fourier_amps
+        event["psa_calc"] = psa_calc
 
     # Return the frequency from one of the computed motions.
     freqs = results[0][0].freqs
     return freqs
 
 
-def operation_psa2fa(src,
-                     dst,
-                     damping,
-                     method='LP99',
-                     fixed_spacing=True,
-                     verbose=True):
+def operation_psa2fa(
+    src, dst, damping, method="LP99", fixed_spacing=True, verbose=True
+):
     """Compute the accel. response spectrum from a Fourier amplitude spectrum.
 
     Parameters
@@ -247,32 +245,38 @@ def operation_psa2fa(src,
 
     for fpath in get_fpaths(src):
         if verbose:
-            print('Processing:', fpath)
-        ext, periods, events = read_events(fpath, 'psa')
+            print("Processing:", fpath)
+        ext, periods, events = read_events(fpath, "psa")
 
         if fixed_spacing:
             # Interpolate the periods to a smaller range
             _periods = np.logspace(-2, 1, 301)
 
             for e in events:
-                e['psa'] = np.exp(
-                    np.interp(_periods, periods, np.log(e['psa'])))
+                e["psa"] = np.exp(np.interp(_periods, periods, np.log(e["psa"])))
 
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = calc_compatible_spectra(
-            method, periods, events, damping=damping)
+        freqs = calc_compatible_spectra(method, periods, events, damping=damping)
 
-        basename = fpath.stem.rsplit('_', 1)[0]
+        basename = fpath.stem.rsplit("_", 1)[0]
 
         write_events(
-            dst / (basename + '_sa' + ext),
-            periods, 'Period (s)', 'psa_calc', 'Sa (g)', events
+            dst / (basename + "_sa" + ext),
+            periods,
+            "Period (s)",
+            "psa_calc",
+            "Sa (g)",
+            events,
         )
         write_events(
-            dst / (basename + '_fa' + ext),
-            freqs, 'Frequency (Hz)', 'fa', 'FA (g-s)', events
+            dst / (basename + "_fa" + ext),
+            freqs,
+            "Frequency (Hz)",
+            "fa",
+            "FA (g-s)",
+            events,
         )
 
 
@@ -284,23 +288,22 @@ def _calc_psa(osc_freqs, damping, method, freqs, event):
     """
     m = motions.RvtMotion(
         freqs=freqs,
-        fourier_amps=event['fa'],
-        duration=event['duration'],
-        peak_calculator=get_peak_calculator(method,
-                                            dict(
-                                                region=event['region'],
-                                                mag=event['magnitude'],
-                                                dist=event['distance'])))
+        fourier_amps=event["fa"],
+        duration=event["duration"],
+        peak_calculator=get_peak_calculator(
+            method,
+            dict(
+                region=event["region"], mag=event["magnitude"], dist=event["distance"]
+            ),
+        ),
+    )
     psa = m.calc_osc_accels(osc_freqs, damping)
     return psa
 
 
-def operation_fa2psa(src,
-                     dst,
-                     damping,
-                     method='LP99',
-                     fixed_spacing=True,
-                     verbose=True):
+def operation_fa2psa(
+    src, dst, damping, method="LP99", fixed_spacing=True, verbose=True
+):
     """Compute the Fourier amplitude spectrum from a accel. response spectrum.
 
     Parameters
@@ -323,30 +326,34 @@ def operation_fa2psa(src,
     """
     if fixed_spacing:
         periods = np.logspace(-2, 1, 301)
-        osc_freqs = 1. / periods
+        osc_freqs = 1.0 / periods
 
     dst = pathlib.Path(dst)
     dst.mkdir(parents=True, exist_ok=True)
 
     for fpath in get_fpaths(src):
         if verbose:
-            print('Processing:', fpath)
-        ext, freqs, events = read_events(fpath, 'fa')
+            print("Processing:", fpath)
+        ext, freqs, events = read_events(fpath, "fa")
 
         if not fixed_spacing:
             osc_freqs = freqs
-            periods = 1. / osc_freqs
+            periods = 1.0 / osc_freqs
 
         with multiprocessing.Pool() as pool:
             psas = pool.map(
-                functools.partial(_calc_psa, osc_freqs, damping, method,
-                                  freqs), events)
+                functools.partial(_calc_psa, osc_freqs, damping, method, freqs), events
+            )
 
         for event, psa in zip(events, psas):
-            event['psa'] = psa
+            event["psa"] = psa
 
-        basename = fpath.stem.rsplit('_', 1)[0]
+        basename = fpath.stem.rsplit("_", 1)[0]
         write_events(
-            dst / (basename + '_sa' + ext),
-            periods, 'Period (s)', 'psa', 'Sa (g)', events
+            dst / (basename + "_sa" + ext),
+            periods,
+            "Period (s)",
+            "psa",
+            "Sa (g)",
+            events,
         )

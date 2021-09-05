@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -8,7 +7,7 @@ import pyrvt
 
 
 def test_calc_attenuation():
-    m = pyrvt.motions.SourceTheoryMotion(5.5, 0, 'cena', depth=1)
+    m = pyrvt.motions.SourceTheoryMotion(5.5, 0, "cena", depth=1)
     m.calc_fourier_amps()
 
     atten, r_value, freqs, fitted = m.calc_attenuation(50)
@@ -30,10 +29,8 @@ def test_calc_attenuation():
 def test_compatible_rvt_motion():
     # Compute the target from the point source model.
     target = pyrvt.motions.SourceTheoryMotion(
-        6.,
-        20.,
-        'wna',
-        peak_calculator=pyrvt.peak_calculators.DerKiureghian1985())
+        6.0, 20.0, "wna", peak_calculator=pyrvt.peak_calculators.DerKiureghian1985()
+    )
     target.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
 
     osc_freqs = np.logspace(-1, 2, num=50)
@@ -44,7 +41,8 @@ def test_compatible_rvt_motion():
         osc_accels_target,
         duration=target.duration,
         osc_damping=0.05,
-        peak_calculator=pyrvt.peak_calculators.DerKiureghian1985())
+        peak_calculator=pyrvt.peak_calculators.DerKiureghian1985(),
+    )
 
     osc_accels_compat = compat.calc_osc_accels(osc_freqs, 0.05)
 

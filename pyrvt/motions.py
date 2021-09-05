@@ -1,15 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Random vibration theory (RVT) based motions."""
-
 import numpy as np
-
-from scipy.stats import linregress
 from scipy.interpolate import interp1d
+from scipy.stats import linregress
 
 from . import peak_calculators
 
-DEFAULT_CALC = 'V75'
+DEFAULT_CALC = "V75"
 
 
 def sort_increasing(*args):
@@ -42,7 +40,7 @@ def sort_increasing(*args):
         # All decreasing, reverse
         args = [a[::-1] for a in args]
     else:
-        raise NotImplementedError('Values are not regularly ordered.')
+        raise NotImplementedError("Values are not regularly ordered.")
 
     return args
 
@@ -93,9 +91,9 @@ def calc_sdof_tf(freqs, osc_freq, osc_damping):
 
     """
     freqs = np.asarray(freqs)
-    return (
-        -osc_freq ** 2. /
-        (freqs ** 2 - osc_freq ** 2 - 2.j * osc_damping * osc_freq * freqs))
+    return -(osc_freq**2.0) / (
+        freqs**2 - osc_freq**2 - 2.0j * osc_damping * osc_freq * freqs
+    )
 
 
 def calc_stress_drop(magnitude):
@@ -112,7 +110,7 @@ def calc_stress_drop(magnitude):
         Stress drop (bars).
 
     """
-    return 10 ** (3.45 - 0.2 * max(magnitude, 5.))
+    return 10 ** (3.45 - 0.2 * max(magnitude, 5.0))
 
 
 def calc_geometric_spreading(dist, params):
@@ -170,12 +168,14 @@ class RvtMotion(object):
 
     """
 
-    def __init__(self,
-                 freqs=None,
-                 fourier_amps=None,
-                 duration=None,
-                 peak_calculator=None,
-                 calc_kwds=None):
+    def __init__(
+        self,
+        freqs=None,
+        fourier_amps=None,
+        duration=None,
+        peak_calculator=None,
+        calc_kwds=None,
+    ):
         """Initialize the class."""
         self._freqs = freqs
         self._fourier_amps = fourier_amps
@@ -183,13 +183,15 @@ class RvtMotion(object):
 
         if self._freqs is not None:
             self._freqs, self._fourier_amps = sort_increasing(
-                self._freqs, self._fourier_amps)
+                self._freqs, self._fourier_amps
+            )
 
         if isinstance(peak_calculator, peak_calculators.Calculator):
             self.peak_calculator = peak_calculator
         else:
             self.peak_calculator = peak_calculators.get_peak_calculator(
-                peak_calculator or DEFAULT_CALC, calc_kwds)
+                peak_calculator or DEFAULT_CALC, calc_kwds
+            )
 
     @property
     def freqs(self):
@@ -231,18 +233,24 @@ class RvtMotion(object):
         else:
             tf = np.ones_like(self.freqs)
 
-        resp = np.array([
-            self.calc_peak(
-                tf * calc_sdof_tf(self.freqs, of, osc_damping),
-                osc_freq=of,
-                osc_damping=osc_damping,
-                site_tf=trans_func) for of in osc_freqs
-        ])
+        resp = np.array(
+            [
+                self.calc_peak(
+                    tf * calc_sdof_tf(self.freqs, of, osc_damping),
+                    osc_freq=of,
+                    osc_damping=osc_damping,
+                    site_tf=trans_func,
+                )
+                for of in osc_freqs
+            ]
+        )
 
         of = 100
         peak, pf = self.peak_calculator(
-            self._duration, self._freqs, self._fourier_amps *
-            np.abs(calc_sdof_tf(self.freqs, of, osc_damping)))
+            self._duration,
+            self._freqs,
+            self._fourier_amps * np.abs(calc_sdof_tf(self.freqs, of, osc_damping)),
+        )
 
         return resp
 
@@ -266,8 +274,9 @@ class RvtMotion(object):
         else:
             fourier_amps = np.abs(transfer_func) * self._fourier_amps
 
-        return self.peak_calculator(self._duration, self._freqs, fourier_amps,
-                                    **kwds)[0]
+        return self.peak_calculator(self._duration, self._freqs, fourier_amps, **kwds)[
+            0
+        ]
 
     def calc_attenuation(self, min_freq, max_freq=None):
         r"""Compute the site attenuation (κ) based on a log-linear fit.
@@ -306,12 +315,13 @@ class RvtMotion(object):
         mask = (min_freq <= self.freqs) & (self.freqs <= max_freq)
 
         slope, intercept, r_value, p_value, stderr = linregress(
-            self.freqs[mask], np.log(self.fourier_amps[mask]))
+            self.freqs[mask], np.log(self.fourier_amps[mask])
+        )
 
         atten = slope / -np.pi
         freqs = self.freqs[mask]
         fitted = np.exp(intercept + slope * freqs)
-        return atten, r_value ** 2, freqs, fitted
+        return atten, r_value**2, freqs, fitted
 
 
 class SourceTheoryMotion(RvtMotion):
@@ -321,14 +331,17 @@ class SourceTheoryMotion(RvtMotion):
     (2003, :cite:`campbell03`).
     """
 
-    def __init__(self,
-                 magnitude,
-                 distance,
-                 region,
-                 stress_drop=None,
-                 depth=8,
-                 peak_calculator=None,
-                 calc_kwds=None):
+    def __init__(
+        self,
+        magnitude,
+        distance,
+        region,
+        stress_drop=None,
+        depth=8,
+        peak_calculator=None,
+        calc_kwds=None,
+        disable_site_amp=False,
+    ):
         """Initialize the motion.
 
         Parameters
@@ -361,14 +374,15 @@ class SourceTheoryMotion(RvtMotion):
         """
         super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
 
+        self._disable_site_amp = disable_site_amp
         self.magnitude = magnitude
         self.distance = distance
         self.region = peak_calculators.get_region(region)
 
-        if self.region == 'wna':
+        if self.region == "wna":
             # Default parameters for the WUS from Campbell (2003)
             self.shear_velocity = 3.5
-            self.path_atten_coeff = 180.
+            self.path_atten_coeff = 180.0
             self.path_atten_power = 0.45
             self.density = 2.8
             self.site_atten = 0.04
@@ -378,25 +392,49 @@ class SourceTheoryMotion(RvtMotion):
             if stress_drop:
                 self.stress_drop = stress_drop
             else:
-                self.stress_drop = 100.
+                self.stress_drop = 100.0
 
             # Crustal amplification from Campbell (2003) using the
             # log-frequency and the amplification based on a quarter-wave
             # length approximation
             self.site_amp = interp1d(
-                np.log([
-                    0.01, 0.09, 0.16, 0.51, 0.84, 1.25, 2.26, 3.17, 6.05,
-                    16.60, 61.20, 100.00
-                ]), [
-                    1.00, 1.10, 1.18, 1.42, 1.58, 1.74, 2.06, 2.25, 2.58, 3.13,
-                    4.00, 4.40
+                np.log(
+                    [
+                        0.01,
+                        0.09,
+                        0.16,
+                        0.51,
+                        0.84,
+                        1.25,
+                        2.26,
+                        3.17,
+                        6.05,
+                        16.60,
+                        61.20,
+                        100.00,
+                    ]
+                ),
+                [
+                    1.00,
+                    1.10,
+                    1.18,
+                    1.42,
+                    1.58,
+                    1.74,
+                    2.06,
+                    2.25,
+                    2.58,
+                    3.13,
+                    4.00,
+                    4.40,
                 ],
-                bounds_error=False)
-        elif self.region == 'cena':
+                bounds_error=False,
+            )
+        elif self.region == "cena":
             # Default parameters for the CEUS from Campbell (2003)
             self.shear_velocity = 3.6
             self.density = 2.8
-            self.path_atten_coeff = 680.
+            self.path_atten_coeff = 680.0
             self.path_atten_power = 0.36
             self.site_atten = 0.006
 
@@ -411,27 +449,59 @@ class SourceTheoryMotion(RvtMotion):
             # log-frequency and the amplification based on a quarter-wave
             # length approximation
             self.site_amp = interp1d(
-                np.log([
-                    0.01, 0.10, 0.20, 0.30, 0.50, 0.90, 1.25, 1.80, 3.00, 5.30,
-                    8.00, 14.00, 30.00, 60.00, 100.00
-                ]), [
-                    1.00, 1.02, 1.03, 1.05, 1.07, 1.09, 1.11, 1.12, 1.13, 1.14,
-                    1.15, 1.15, 1.15, 1.15, 1.15
+                np.log(
+                    [
+                        0.01,
+                        0.10,
+                        0.20,
+                        0.30,
+                        0.50,
+                        0.90,
+                        1.25,
+                        1.80,
+                        3.00,
+                        5.30,
+                        8.00,
+                        14.00,
+                        30.00,
+                        60.00,
+                        100.00,
+                    ]
+                ),
+                [
+                    1.00,
+                    1.02,
+                    1.03,
+                    1.05,
+                    1.07,
+                    1.09,
+                    1.11,
+                    1.12,
+                    1.13,
+                    1.14,
+                    1.15,
+                    1.15,
+                    1.15,
+                    1.15,
+                    1.15,
                 ],
-                bounds_error=False)
+                bounds_error=False,
+            )
 
         else:
             raise NotImplementedError
 
         # Depth to rupture
         self.depth = depth
-        self.hypo_distance = np.sqrt(self.distance ** 2. + self.depth ** 2.)
+        self.hypo_distance = np.sqrt(self.distance**2.0 + self.depth**2.0)
 
         # Constants
-        self.seismic_moment = 10. ** (1.5 * (self.magnitude + 10.7))
-        self.corner_freq = (4.9e6 * self.shear_velocity *
-                            (self.stress_drop / self.seismic_moment)
-                            ** (1. / 3.))
+        self.seismic_moment = 10.0 ** (1.5 * (self.magnitude + 10.7))
+        self.corner_freq = (
+            4.9e6
+            * self.shear_velocity
+            * (self.stress_drop / self.seismic_moment) ** (1.0 / 3.0)
+        )
 
     def calc_duration(self):
         """Compute the duration by combination of source and path.
@@ -443,22 +513,22 @@ class SourceTheoryMotion(RvtMotion):
 
         """
         # Source component
-        duration_source = 1. / self.corner_freq
+        duration_source = 1.0 / self.corner_freq
 
         # Path component
-        if self.region == 'wna':
+        if self.region == "wna":
             duration_path = 0.05 * self.hypo_distance
-        elif self.region == 'cena':
-            duration_path = 0.
+        elif self.region == "cena":
+            duration_path = 0.0
             if self.hypo_distance > 10:
                 # 10 < R <= 70 km
-                duration_path += 0.16 * (min(self.hypo_distance, 70) - 10.)
+                duration_path += 0.16 * (min(self.hypo_distance, 70) - 10.0)
             if self.hypo_distance > 70:
                 # 70 < R <= 130 km
-                duration_path += -0.03 * (min(self.hypo_distance, 130) - 70.)
+                duration_path += -0.03 * (min(self.hypo_distance, 130) - 70.0)
             if self.hypo_distance > 130:
                 # 130 km < R
-                duration_path += 0.04 * (self.hypo_distance - 130.)
+                duration_path += 0.04 * (self.hypo_distance - 130.0)
         else:
             raise NotImplementedError
 
@@ -480,27 +550,32 @@ class SourceTheoryMotion(RvtMotion):
 
         """
         if freqs is None:
-            self._freqs = log_spaced_values(0.05, 200.)
+            self._freqs = log_spaced_values(0.05, 200.0)
         else:
-            self._freqs, = sort_increasing(np.asarray(freqs))
+            (self._freqs,) = sort_increasing(np.asarray(freqs))
 
         self._duration = self.calc_duration()
 
         # Model component
-        const = (0.55 * 2.) / (np.sqrt(2.) * 4. * np.pi * self.density *
-                               self.shear_velocity ** 3.)
-        source_comp = (const * self.seismic_moment /
-                       (1. + (self._freqs / self.corner_freq) ** 2.))
+        const = (0.55 * 2.0) / (
+            np.sqrt(2.0) * 4.0 * np.pi * self.density * self.shear_velocity**3.0
+        )
+        source_comp = (
+            const
+            * self.seismic_moment
+            / (1.0 + (self._freqs / self.corner_freq) ** 2.0)
+        )
 
         # Path component
-        path_atten = (self.path_atten_coeff * self._freqs
-                      ** self.path_atten_power)
-        geo_atten = calc_geometric_spreading(self.hypo_distance,
-                                             self.geometric_spreading)
+        path_atten = self.path_atten_coeff * self._freqs**self.path_atten_power
+        geo_atten = calc_geometric_spreading(
+            self.hypo_distance, self.geometric_spreading
+        )
 
         path_comp = geo_atten * np.exp(
-            (-np.pi * self._freqs * self.hypo_distance) /
-            (path_atten * self.shear_velocity))
+            (-np.pi * self._freqs * self.hypo_distance)
+            / (path_atten * self.shear_velocity)
+        )
 
         # Site component
         site_dim = np.exp(-np.pi * self.site_atten * self._freqs)
@@ -515,14 +590,19 @@ class SourceTheoryMotion(RvtMotion):
             mask = self.site_amp.x[-1] < ln_freqs
             site_amp[mask] = self.site_amp.y[-1]
 
-        site_comp = site_amp * site_dim
+        site_comp = 1 if self._disable_site_amp else (site_amp * site_dim)
 
         # Conversion factor to convert from dyne-cm into gravity-sec
-        conv = 1.e-20 / 980.7
+        conv = 1.0e-20 / 980.7
         # Combine the three components and convert from displacement to
         # acceleration
-        self._fourier_amps = (conv * (2. * np.pi * self._freqs)
-                              ** 2. * source_comp * path_comp * site_comp)
+        self._fourier_amps = (
+            conv
+            * (2.0 * np.pi * self._freqs) ** 2.0
+            * source_comp
+            * path_comp
+            * site_comp
+        )
 
 
 class CompatibleRvtMotion(RvtMotion):
@@ -534,15 +614,17 @@ class CompatibleRvtMotion(RvtMotion):
 
     """
 
-    def __init__(self,
-                 osc_freqs,
-                 osc_accels_target,
-                 duration=None,
-                 osc_damping=0.05,
-                 event_kwds=None,
-                 window_len=None,
-                 peak_calculator=None,
-                 calc_kwds=None):
+    def __init__(
+        self,
+        osc_freqs,
+        osc_accels_target,
+        duration=None,
+        osc_damping=0.05,
+        event_kwds=None,
+        window_len=None,
+        peak_calculator=None,
+        calc_kwds=None,
+    ):
         """Initialize the motion.
 
         Parameters
@@ -580,7 +662,8 @@ class CompatibleRvtMotion(RvtMotion):
         super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
 
         osc_freqs, osc_accels_target = sort_increasing(
-            np.asarray(osc_freqs), np.asarray(osc_accels_target))
+            np.asarray(osc_freqs), np.asarray(osc_accels_target)
+        )
 
         if duration:
             self._duration = duration
@@ -589,18 +672,20 @@ class CompatibleRvtMotion(RvtMotion):
             self._duration = stm.calc_duration()
 
         fourier_amps = self._estimate_fourier_amps(
-            osc_freqs, osc_accels_target, osc_damping)
+            osc_freqs, osc_accels_target, osc_damping
+        )
 
         # The frequency needs to be extended to account for the fact that the
         # oscillator transfer function has a width. The number of frequencies
         # depends on the range of frequencies provided.
-        self._freqs = log_spaced_values(osc_freqs[0] / 2., 2. * osc_freqs[-1])
+        self._freqs = log_spaced_values(osc_freqs[0] / 2.0, 2.0 * osc_freqs[-1])
         self._fourier_amps = np.empty_like(self._freqs)
 
         # Indices of the first and last point with the range of the provided
         # response spectra
-        indices = np.argwhere((osc_freqs[0] < self._freqs) & (self._freqs <
-                                                              osc_freqs[-1]))
+        indices = np.argwhere(
+            (osc_freqs[0] < self._freqs) & (self._freqs < osc_freqs[-1])
+        )
         first = indices[0, 0]
         # last is extend one past the usable range to allow use of first:last
         # notation
@@ -609,8 +694,8 @@ class CompatibleRvtMotion(RvtMotion):
         log_osc_freqs = np.log(osc_freqs)
 
         self._fourier_amps[first:last] = np.exp(
-            np.interp(log_freqs[first:last], log_osc_freqs,
-                      np.log(fourier_amps)))
+            np.interp(log_freqs[first:last], log_osc_freqs, np.log(fourier_amps))
+        )
 
         def extrapolate():
             """Extrapolate the first and last value of FAS."""
@@ -629,19 +714,25 @@ class CompatibleRvtMotion(RvtMotion):
 
             # Update the first point using the second and third points
             self._fourier_amps[0:first] = _extrap(
-                self._freqs[0:first], self._freqs[first:first + 2],
-                self._fourier_amps[first:first + 2], None)
+                self._freqs[0:first],
+                self._freqs[first : first + 2],
+                self._fourier_amps[first : first + 2],
+                None,
+            )
             # Update the last point using the third- and second-to-last points
             self._fourier_amps[last:] = _extrap(
-                self._freqs[last:], self._freqs[last - 2:last],
-                self._fourier_amps[last - 2:last], None)
+                self._freqs[last:],
+                self._freqs[last - 2 : last],
+                self._fourier_amps[last - 2 : last],
+                None,
+            )
 
         extrapolate()
 
         # Apply a ratio correction between the computed at target response
         # spectra
         self.iterations = 0
-        self.rmse = 1.
+        self.rmse = 1.0
 
         max_iterations = 30
         tolerance = 5e-6
@@ -650,7 +741,7 @@ class CompatibleRvtMotion(RvtMotion):
 
         # Smoothing operator
         if window_len:
-            window = np.ones(window_len, 'd')
+            window = np.ones(window_len, "d")
             window /= window.sum()
 
         while self.iterations < max_iterations and tolerance < self.rmse:
@@ -660,15 +751,18 @@ class CompatibleRvtMotion(RvtMotion):
             # determined through extrapolation.
 
             self._fourier_amps[first:last] *= np.exp(
-                np.interp(log_freqs[first:last], log_osc_freqs,
-                          np.log((osc_accels_target / osc_accels))))
+                np.interp(
+                    log_freqs[first:last],
+                    log_osc_freqs,
+                    np.log((osc_accels_target / osc_accels)),
+                )
+            )
 
             extrapolate()
 
             # Apply a running average to smooth the signal
             if window_len:
-                self._fourier_amps = np.convolve(window, self._fourier_amps,
-                                                 'same')
+                self._fourier_amps = np.convolve(window, self._fourier_amps, "same")
 
             # Recompute the response spectrum
             osc_accels = self.calc_osc_accels(osc_freqs, osc_damping)
@@ -706,15 +800,15 @@ class CompatibleRvtMotion(RvtMotion):
         """
         # Compute initial value using Vanmarcke methodology.
         peak_factor = 2.5
-        fa_sqr_prev = 0.
-        total = 0.
-        sdof_factor = np.pi / (4. * osc_damping) - 1.
+        fa_sqr_prev = 0.0
+        total = 0.0
+        sdof_factor = np.pi / (4.0 * osc_damping) - 1.0
         fourier_amps = np.empty_like(osc_freqs)
         for i, (osc_freq, osc_accel) in enumerate(zip(osc_freqs, osc_accels)):
             # TODO simplify equation and remove duration
             fa_sqr_cur = (
-                ((self.duration * osc_accel ** 2) /
-                 (2 * peak_factor ** 2) - total) / (osc_freq * sdof_factor))
+                (self.duration * osc_accel**2) / (2 * peak_factor**2) - total
+            ) / (osc_freq * sdof_factor)
 
             if fa_sqr_cur < 0:
                 fourier_amps[i] = fourier_amps[i - 1]
@@ -723,8 +817,7 @@ class CompatibleRvtMotion(RvtMotion):
                 fourier_amps[i] = np.sqrt(fa_sqr_cur)
 
             if i == 0:
-                total = fa_sqr_cur * osc_freq / 2.
+                total = fa_sqr_cur * osc_freq / 2.0
             else:
-                total += ((fa_sqr_cur - fa_sqr_prev) / 2 *
-                          (osc_freq - osc_freqs[i - 1]))
+                total += (fa_sqr_cur - fa_sqr_prev) / 2 * (osc_freq - osc_freqs[i - 1])
         return fourier_amps
