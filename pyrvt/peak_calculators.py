@@ -49,8 +49,7 @@ def trapz(x, y):
 # The second argument must be a pointer or it won't work right,
 # but this will cause problems because of the bug in scipy
 # because scipy looks for a double instead of a pointer
-c_sig = numba.types.double(numba.types.intc,
-                           numba.types.CPointer(numba.types.double))
+c_sig = numba.types.double(numba.types.intc, numba.types.CPointer(numba.types.double))
 
 
 # Turn the integrand function into a ctypes function
@@ -79,9 +78,12 @@ def _calc_vanmarcke1975_ccdf(n, a):
     num_zero_crossings = args[1]
     bandwidth_eff = args[2]
 
-    return (1 - (1 - np.exp(-x ** 2 / 2)) * np.exp(-1 * num_zero_crossings * (
-        1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x)) /
-                                                   (np.exp(x ** 2 / 2) - 1)))
+    return 1 - (1 - np.exp(-(x**2) / 2)) * np.exp(
+        -1
+        * num_zero_crossings
+        * (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x))
+        / (np.exp(x**2 / 2) - 1)
+    )
 
 
 # Force the argtypes to be what quad expects
@@ -112,7 +114,7 @@ def _calc_cartwright_pf(n, a):
     x = args[0]
     num_extrema = args[1]
     bandwidth = args[2]
-    return 1. - (1. - bandwidth * np.exp(-x * x)) ** num_extrema
+    return 1.0 - (1.0 - bandwidth * np.exp(-x * x)) ** num_extrema
 
 
 # Force the argtypes to be what quad expects
@@ -125,8 +127,7 @@ def calc_moments(freqs, fourier_amps, orders):
 
     # Use trapzoidal integration to compute the requested moments.
     moments = [
-        2. * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa)
-        for o in orders
+        2.0 * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa) for o in orders
     ]
 
     return moments
@@ -165,9 +166,9 @@ class SquaredSpectrum(object):
         try:
             moment = self._moments[num]
         except KeyError:
-            moment = 2. * trapz(self._freqs,
-                                np.power(2 * np.pi * self._freqs, num) *
-                                self._squared_fa)
+            moment = 2.0 * trapz(
+                self._freqs, np.power(2 * np.pi * self._freqs, num) * self._squared_fa
+            )
             self._moments[num] = moment
 
         return moment
@@ -179,8 +180,8 @@ class SquaredSpectrum(object):
 class Calculator(object):
     """Base class used for all peak calculator classes."""
 
-    NAME = ''
-    ABBREV = ''
+    NAME = ""
+    ABBREV = ""
 
     _MIN_ZERO_CROSSINGS = 1.33
 
@@ -326,8 +327,8 @@ class Vanmarcke1975(Calculator):
         If the non-stationarity factor should be applied.
     """
 
-    NAME = 'Vanmarcke (1975)'
-    ABBREV = 'V75'
+    NAME = "Vanmarcke (1975)"
+    ABBREV = "V75"
 
     def __init__(self, use_nonstationarity_factor=True, **kwargs):
         """Initialize the class."""
@@ -357,23 +358,24 @@ class Vanmarcke1975(Calculator):
         m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
-        bandwidth_eff = bandwidth ** 1.2
+        bandwidth_eff = bandwidth**1.2
 
         num_zero_crossings = self.limited_num_zero_crossings(
-            duration * np.sqrt(m2 / m0) / np.pi)
+            duration * np.sqrt(m2 / m0) / np.pi
+        )
         # The expected peak factor is computed as the integral of the
         # complementary CDF (1 - CDF(x)).
         peak_factor = quad(
             _calc_vanmarcke1975_ccdf.ctypes,
             0,
             np.inf,
-            args=(num_zero_crossings, bandwidth_eff))[0]
+            args=(num_zero_crossings, bandwidth_eff),
+        )[0]
 
-        osc_freq = kwargs.get('osc_freq', None)
-        osc_damping = kwargs.get('osc_damping', None)
+        osc_freq = kwargs.get("osc_freq", None)
+        osc_damping = kwargs.get("osc_damping", None)
         if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
-            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq,
-                                                       duration)
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
 
         return peak_factor
 
@@ -396,8 +398,7 @@ class Vanmarcke1975(Calculator):
             Nonstationarity factor.
 
         """
-        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq *
-                                  duration))
+        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration))
 
 
 class Davenport1964(Calculator):
@@ -407,8 +408,8 @@ class Davenport1964(Calculator):
     Davenport (1964, :cite:`davenport64`).
     """
 
-    NAME = 'Davenport (1964)'
-    ABBREV = 'D64'
+    NAME = "Davenport (1964)"
+    ABBREV = "D64"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -434,7 +435,8 @@ class Davenport1964(Calculator):
 
         # Compute the number of zero crossings
         num_zero_crossings = self.limited_num_zero_crossings(
-            duration * np.sqrt(m2 / m0) / np.pi)
+            duration * np.sqrt(m2 / m0) / np.pi
+        )
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
@@ -467,8 +469,8 @@ class DerKiureghian1985(Davenport1964):
     (1985, :cite:`igusa85`).
     """
 
-    NAME = 'Der Kiureghian (1985)'
-    ABBREV = 'DK85'
+    NAME = "Der Kiureghian (1985)"
+    ABBREV = "DK85"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -506,8 +508,7 @@ class DerKiureghian1985(Davenport1964):
         if bandwidth <= 0.1:
             eff_crossings = max(2.1, 2 * bandwidth * num_zero_crossings)
         elif 0.1 < bandwidth <= 0.69:
-            eff_crossings = \
-                (1.63 * bandwidth ** 0.45 - 0.38) * num_zero_crossings
+            eff_crossings = (1.63 * bandwidth**0.45 - 0.38) * num_zero_crossings
         else:
             eff_crossings = num_zero_crossings
 
@@ -525,8 +526,8 @@ class ToroMcGuire1987(Davenport1964):
     :cite:`toro87`).
     """
 
-    NAME = 'Toro & McGuire (1987)'
-    ABBREV = 'TM87'
+    NAME = "Toro & McGuire (1987)"
+    ABBREV = "TM87"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -561,15 +562,17 @@ class ToroMcGuire1987(Davenport1964):
         freq_cent = np.sqrt(m2 / m0) / (2 * np.pi)
 
         num_zero_crossings = self.limited_num_zero_crossings(
-            2 * freq_cent * duration * (1.63 * bandwidth ** 0.45 - 0.38))
+            2 * freq_cent * duration * (1.63 * bandwidth**0.45 - 0.38)
+        )
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
-        osc_freq = kwargs.get('osc_freq', None)
-        osc_damping = kwargs.get('osc_damping', None)
+        osc_freq = kwargs.get("osc_freq", None)
+        osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
             peak_factor *= Vanmarcke1975.nonstationarity_factor(
-                osc_damping, osc_freq, duration)
+                osc_damping, osc_freq, duration
+            )
 
         return peak_factor
 
@@ -582,8 +585,8 @@ class CartwrightLonguetHiggins1956(Calculator):
     integral provided by Boore (2003, :cite:`boore03`).
     """
 
-    NAME = 'Cartwright & Longuet-Higgins (1956)'
-    ABBREV = 'CLH56'
+    NAME = "Cartwright & Longuet-Higgins (1956)"
+    ABBREV = "CLH56"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -614,13 +617,14 @@ class CartwrightLonguetHiggins1956(Calculator):
         m0, m1, m2, m4 = self._spectrum.moments(0, 1, 2, 4)
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
-        num_extrema = max(2., np.sqrt(m4 / m2) * duration / np.pi)
+        num_extrema = max(2.0, np.sqrt(m4 / m2) * duration / np.pi)
         # Compute the peak factor by the indefinite integral.
-        peak_factor = np.sqrt(2.) * quad(
-            _calc_cartwright_pf.ctypes,
-            0,
-            np.inf,
-            args=(num_extrema, bandwidth))[0]
+        peak_factor = (
+            np.sqrt(2.0)
+            * quad(
+                _calc_cartwright_pf.ctypes, 0, np.inf, args=(num_extrema, bandwidth)
+            )[0]
+        )
 
         return peak_factor
 
@@ -637,8 +641,8 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     (2003, :cite:`boore03`).
     """
 
-    NAME = 'Boore & Joyner (1984)'
-    ABBREV = 'BJ84'
+    NAME = "Boore & Joyner (1984)"
+    ABBREV = "BJ84"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -668,16 +672,17 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        osc_freq = kwargs.get('osc_freq', None)
-        osc_damping = kwargs.get('osc_damping', None)
+        osc_freq = kwargs.get("osc_freq", None)
+        osc_damping = kwargs.get("osc_damping", None)
 
         if osc_damping and osc_freq:
-            power = 3.
-            coef = 1. / 3.
+            power = 3.0
+            coef = 1.0 / 3.0
             # This equation was rewritten in Boore and Thompson (2012).
-            foo = 1. / (osc_freq * duration)
-            dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
-                         (foo / (1 + coef * foo ** power)))
+            foo = 1.0 / (osc_freq * duration)
+            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (
+                foo / (1 + coef * foo**power)
+            )
             duration *= dur_ratio
 
         return duration
@@ -692,8 +697,8 @@ class LiuPezeshk1999(BooreJoyner1984):
     (1999, :cite:`liu99`).
     """
 
-    NAME = 'Liu & Pezeshk (1999)'
-    ABBREV = 'LP99'
+    NAME = "Liu & Pezeshk (1999)"
+    ABBREV = "LP99"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -723,19 +728,20 @@ class LiuPezeshk1999(BooreJoyner1984):
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        osc_freq = kwargs.get('osc_freq', None)
-        osc_damping = kwargs.get('osc_damping', None)
+        osc_freq = kwargs.get("osc_freq", None)
+        osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
             m0, m1, m2 = self._spectrum.moments(0, 1, 2)
 
-            power = 2.
-            coef = np.sqrt(2 * np.pi * (1. - (m1 * m1) / (m0 * m2)))
+            power = 2.0
+            coef = np.sqrt(2 * np.pi * (1.0 - (m1 * m1) / (m0 * m2)))
 
             # Same model as used in Boore and Joyner (1984). This equation was
             # rewritten in Boore and Thompson (2012).
-            foo = 1. / (osc_freq * duration)
-            dur_ratio = (1 + 1. / (2 * np.pi * osc_damping) *
-                         (foo / (1 + coef * foo ** power)))
+            foo = 1.0 / (osc_freq * duration)
+            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (
+                foo / (1 + coef * foo**power)
+            )
             duration *= dur_ratio
 
         return duration
@@ -762,20 +768,22 @@ def _make_bt_interpolator(region, ref):
     """
 
     fpath = pathlib.Path(__file__).parent.joinpath(
-        'data', f'{region}_{ref}_trms4osc.pars.gz')
+        "data", f"{region}_{ref}_trms4osc.pars.gz"
+    )
     d = np.rec.fromrecords(
         np.loadtxt(str(fpath), skiprows=4, usecols=range(9)),
-        names='mag,dist,c1,c2,c3,c4,c5,c6,c7')
+        names="mag,dist,c1,c2,c3,c4,c5,c6,c7",
+    )
 
     return LinearNDInterpolator(
-        np.c_[d.mag, np.log(d.dist)],
-        np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7])
+        np.c_[d.mag, np.log(d.dist)], np.c_[d.c1, d.c2, d.c3, d.c4, d.c5, d.c6, d.c7]
+    )
 
 
 # Load coefficient interpolators for Boore and Thompson (2012)
 _BT_INTERPS = {
     (region, ref): _make_bt_interpolator(region, ref)
-    for region, ref in itertools.product(['wna', 'cena'], ['bt12', 'bt15'])
+    for region, ref in itertools.product(["wna", "cena"], ["bt12", "bt15"])
 }
 
 
@@ -806,6 +814,8 @@ class BooreThompson(object):
         super().__init__(**kwargs)
         region = get_region(region)
         self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
+        if np.isnan(self._COEFS).any():
+            raise RuntimeError(f"{mag:.1f} and {dist:0.1f} are outside of the limits.")
 
     def _calc_duration_rms(self, duration, **kwargs):
         """Compute the RMS duration.
@@ -828,15 +838,15 @@ class BooreThompson(object):
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        osc_freq = kwargs.get('osc_freq', None)
-        osc_damping = kwargs.get('osc_damping', None)
+        osc_freq = kwargs.get("osc_freq", None)
+        osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
             c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
             foo = 1 / (osc_freq * duration)
-            dur_ratio = ((c1 + c2 * (1 - foo ** c3) / (1 + foo ** c3)) *
-                         (1 + c4 / (2 * np.pi * osc_damping) *
-                          (foo / (1 + c5 * foo ** c6)) ** c7))
+            dur_ratio = (c1 + c2 * (1 - foo**c3) / (1 + foo**c3)) * (
+                1 + c4 / (2 * np.pi * osc_damping) * (foo / (1 + c5 * foo**c6)) ** c7
+            )
             duration *= dur_ratio
 
         return duration
@@ -864,12 +874,12 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
 
     """
 
-    NAME = 'Boore & Thompson (2012)'
-    ABBREV = 'BT12'
+    NAME = "Boore & Thompson (2012)"
+    ABBREV = "BT12"
 
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
-        BooreThompson.__init__(self, region, mag, dist, 'bt12', **kwargs)
+        BooreThompson.__init__(self, region, mag, dist, "bt12", **kwargs)
         BooreJoyner1984.__init__(self, **kwargs)
 
 
@@ -894,14 +904,13 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
 
     """
 
-    NAME = 'Boore & Thompson (2015)'
-    ABBREV = 'BT15'
+    NAME = "Boore & Thompson (2015)"
+    ABBREV = "BT15"
 
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
-        BooreThompson.__init__(self, region, mag, dist, 'bt15', **kwargs)
-        Vanmarcke1975.__init__(
-            self, use_nonstationarity_factor=False, **kwargs)
+        BooreThompson.__init__(self, region, mag, dist, "bt15", **kwargs)
+        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
 
 
 class WangRathje2018(BooreThompson2015):
@@ -912,15 +921,18 @@ class WangRathje2018(BooreThompson2015):
     amplification as described in Wang & Rathje (2018, :cite:`rathje18`).
     """
 
-    NAME = 'Wang & Rathje (2018) '
-    ABBREV = 'WR18'
+    NAME = "Wang & Rathje (2018) "
+    ABBREV = "WR18"
 
     # Coefficients from Table 2, and paragraph after Equation (8)
     COEFS = np.rec.fromrecords(
-        [(1, 0.2688, 0.0030, 1.8380, -0.0198, 0.091),
-         (2, 0.2555, -0.0002, 1.2154, -0.0183, 0.081),
-         (3, 0.2287, -0.0014, 0.9404, -0.0130, 0.056)],
-        names='mode,a,b,d,e,sd', )
+        [
+            (1, 0.2688, 0.0030, 1.8380, -0.0198, 0.091),
+            (2, 0.2555, -0.0002, 1.2154, -0.0183, 0.081),
+            (3, 0.2287, -0.0014, 0.9404, -0.0130, 0.056),
+        ],
+        names="mode,a,b,d,e,sd",
+    )
 
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
@@ -949,22 +961,21 @@ class WangRathje2018(BooreThompson2015):
             Duration of the root-mean-squared oscillator response (sec).
 
         """
-        duration_rms = BooreThompson2015._calc_duration_rms(self, duration,
-                                                            **kwargs)
-        osc_freq = kwargs.get('osc_freq', None)
+        duration_rms = BooreThompson2015._calc_duration_rms(self, duration, **kwargs)
+        osc_freq = kwargs.get("osc_freq", None)
 
-        site_tf = np.abs(kwargs.get('site_tf', []))
+        site_tf = np.abs(kwargs.get("site_tf", []))
         if np.any(site_tf > 1):
             # Modify duration for site effects
 
             # Compute the expected rock oscillator duration
 
             # Equation 4a
-            f_lim = 5.274 * duration ** -0.640
+            f_lim = 5.274 * duration**-0.640
             ratio = 1
             if 0.1 <= osc_freq < f_lim:
                 # Equation 4b
-                dur_0 = 31.858 * duration ** -0.849
+                dur_0 = 31.858 * duration**-0.849
                 # Equation 4c
                 dur_min = 1.009 * duration / (3.583 + duration)
                 # Equation 3b
@@ -972,7 +983,7 @@ class WangRathje2018(BooreThompson2015):
                 # Equation 3a
                 a = (1 / (dur_0 - 1) - b) * (f_lim - 0.1)
                 # Equation 2
-                ratio = (dur_0 - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1)))
+                ratio = dur_0 - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1))
 
             dur_osc_rock = ratio * duration
 
@@ -981,26 +992,25 @@ class WangRathje2018(BooreThompson2015):
             # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]
 
-            freqs = kwargs['freqs']
+            freqs = kwargs["freqs"]
             modes_f = freqs[indices]
             modes_a = site_tf[indices]
 
             # Amplitude / frequency ratio of the first mode
             af_ratio = modes_a[0] / modes_f[0]
 
-            c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio ** 2
-            m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio ** 2
+            c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio**2
+            m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio**2
             incr_max = c * np.exp(-duration / m)
 
             incr = incr_max * np.exp(
-                -np.log(osc_freq / modes_f) ** 2 /
-                (2 * self.COEFS.sd ** 2)
+                -np.log(osc_freq / modes_f) ** 2 / (2 * self.COEFS.sd**2)
             )
 
             dur_osc_soil = dur_osc_rock + incr.sum()
 
             # Scale the RMS duration by the ratio in soil to rock durations
-            duration_rms *= (dur_osc_soil / dur_osc_rock)
+            duration_rms *= dur_osc_soil / dur_osc_rock
 
         return duration_rms
 
@@ -1039,7 +1049,7 @@ def get_peak_calculator(method, calc_kwds):
         if method in [calculator.NAME, calculator.ABBREV]:
             return calculator(**calc_kwds)
     else:
-        raise NotImplementedError('No calculator for: %s', method)
+        raise NotImplementedError("No calculator for: %s", method)
 
 
 def get_region(region):
@@ -1057,9 +1067,9 @@ def get_region(region):
 
     """
     region = region.lower()
-    if region in ['cena', 'ena', 'ceus', 'eus']:
-        return 'cena'
-    elif region in ['wna', 'wus']:
-        return 'wna'
+    if region in ["cena", "ena", "ceus", "eus"]:
+        return "cena"
+    elif region in ["wna", "wus"]:
+        return "wna"
     else:
-        raise NotImplementedError('No recognized region for: %s', region)
+        raise NotImplementedError("No recognized region for: %s", region)

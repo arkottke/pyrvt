@@ -60,6 +60,11 @@ def test_abbrev(bj84_pc):
     assert_string_equal(bj84_pc.abbrev, 'BJ84')
 
 
+@pytest.mark.xfail()
+def test_bt15_out_of_bounds():
+    pyrvt.peak_calculators.BooreThompson2012('wna', 9, 100)
+
+
 @pytest.mark.parametrize(
     'method', ['V75', 'D64', 'DK85', 'TM87', 'BT12', 'BT15', 'WR18'])
 def test_formulations(method):
