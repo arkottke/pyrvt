@@ -1,5 +1,6 @@
+repos:
 -   repo: git://github.com/pre-commit/pre-commit-hooks
-    sha: 5bf6c09bfa1297d3692cadd621ef95f1284e33c0
+    rev: 5bf6c09bfa1297d3692cadd621ef95f1284e33c0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -8,6 +9,6 @@
     -   id: check-yaml
     -   id: check-merge-conflict
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-markup
-    sha: v1.0.0
+    rev: v1.0.0
     hooks:
     -   id: rst-linter
