@@ -3,10 +3,13 @@
 """Tools for reading/writing of files and performing operations."""
 import functools
 import multiprocessing
-import pathlib
 
 import numpy as np
+import numpy.typing as npt
 import pyexcel
+
+from pathlib import Path
+from typing import Dict, Union, List, Tuple
 
 from pyrvt import motions
 from pyrvt.peak_calculators import get_peak_calculator
@@ -24,19 +27,21 @@ PARAMETER_NAMES = [
 
 def get_fpaths(s):
     if "*" in s:
-        return pathlib.Path(".").glob(s)
+        return Path(".").glob(s)
     else:
         return [
-            pathlib.Path(s),
+            Path(s),
         ]
 
 
-def read_events(fpath, response_type):
+def read_events(
+    fpath: Union[str, Path], response_type: str
+) -> Tuple[str, np.ndarray, List[dict]]:
     """Read data from the file an Excel work book.
 
     Parameters
     ----------
-    fpath : str or `pathlib.Path`
+    fpath : str or `Path`
         Filename of the input file.
     response_type : str
         Type of response. Valid options are: 'psa' for psuedo-spectral
@@ -56,7 +61,7 @@ def read_events(fpath, response_type):
 
     """
     assert response_type in ["psa", "fa"]
-    fpath = pathlib.Path(fpath)
+    fpath = Path(fpath)
 
     data = pyexcel.get_array(file_name=str(fpath))
     ext = fpath.suffix
@@ -84,7 +89,12 @@ def read_events(fpath, response_type):
 
 
 def write_events(
-    fname, reference, reference_label, response_type, response_label, events
+    fname: Union[str, Path],
+    reference: npt.ArrayLike,
+    reference_label: str,
+    response_type: str,
+    response_label: str,
+    events: List[dict],
 ):
     """Write the events to a file.
 
@@ -124,7 +134,7 @@ def write_events(
         rows.append([reference[i]] + [e[response_type][i] for e in events])
 
     # Create the parent directory
-    fpath = pathlib.Path(fname)
+    fpath = Path(fname)
     fpath.parent.mkdir(parents=True, exist_ok=True)
 
     # Write the file
@@ -151,7 +161,9 @@ def _calc_fa(target_freqs, damping, method, event):
     return crm, psa_calc
 
 
-def calc_compatible_spectra(method, periods, events, damping=0.05):
+def calc_compatible_spectra(
+    method: str, periods: npt.ArrayLike, events: List[dict], damping: float = 0.05
+) -> (np.ndarray, List[dict]):
     """Compute the response spectrum compatible motions.
 
     Parameters
@@ -171,6 +183,9 @@ def calc_compatible_spectra(method, periods, events, damping=0.05):
     -------
     :class:`numpy.ndarray`
         Frequency of the computed Fourier amplitude spectra.
+
+    dicts
+        Modified events
 
     Note
     ----
@@ -203,19 +218,28 @@ def calc_compatible_spectra(method, periods, events, damping=0.05):
         )
 
     # Copy values back into the dictionary
+    modified = []
     for event, (crm, psa_calc) in zip(events, results):
+        event = dict(event)
         if not event["duration"]:
             event["duration"] = crm.duration
         event["fa"] = crm.fourier_amps
         event["psa_calc"] = psa_calc
 
+        modified.append(event)
+
     # Return the frequency from one of the computed motions.
     freqs = results[0][0].freqs
-    return freqs
+    return freqs, modified
 
 
 def operation_psa2fa(
-    src, dst, damping, method="LP99", fixed_spacing=True, verbose=True
+    src: Union[str, Path],
+    dst: Union[str, Path],
+    damping: float,
+    method: str = "LP99",
+    fixed_spacing: bool = True,
+    verbose: bool = True,
 ):
     """Compute the accel. response spectrum from a Fourier amplitude spectrum.
 
@@ -240,7 +264,7 @@ def operation_psa2fa(
 
     """
 
-    dst = pathlib.Path(dst)
+    dst = Path(dst)
     dst.mkdir(parents=True, exist_ok=True)
 
     for fpath in get_fpaths(src):
@@ -258,7 +282,9 @@ def operation_psa2fa(
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs = calc_compatible_spectra(method, periods, events, damping=damping)
+        freqs, events = calc_compatible_spectra(
+            method, periods, events, damping=damping
+        )
 
         basename = fpath.stem.rsplit("_", 1)[0]
 
@@ -280,7 +306,13 @@ def operation_psa2fa(
         )
 
 
-def _calc_psa(osc_freqs, damping, method, freqs, event):
+def _calc_psa(
+    osc_freqs: npt.ArrayLike,
+    damping: float,
+    method: str,
+    freqs: npt.ArrayLike,
+    event: Dict[str, float],
+) -> np.ndarray:
     """Calculate the response spectra for an event.
 
     Note that this is intended as a helper function to be called by
@@ -302,7 +334,12 @@ def _calc_psa(osc_freqs, damping, method, freqs, event):
 
 
 def operation_fa2psa(
-    src, dst, damping, method="LP99", fixed_spacing=True, verbose=True
+    src: Union[str, Path],
+    dst: Union[str, Path],
+    damping: float,
+    method: str = "LP99",
+    fixed_spacing: bool = True,
+    verbose: bool = True,
 ):
     """Compute the Fourier amplitude spectrum from a accel. response spectrum.
 
@@ -328,7 +365,7 @@ def operation_fa2psa(
         periods = np.logspace(-2, 1, 301)
         osc_freqs = 1.0 / periods
 
-    dst = pathlib.Path(dst)
+    dst = Path(dst)
     dst.mkdir(parents=True, exist_ok=True)
 
     for fpath in get_fpaths(src):

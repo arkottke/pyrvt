@@ -23,7 +23,7 @@ from scipy.interpolate import LinearNDInterpolator
 from scipy.signal import argrelmax
 
 
-@numba.jit
+@numba.jit(nopython=True)
 def trapz(x: npt.ArrayLike, y: npt.ArrayLike) -> float:
     """Trapezoidal integration written in numba.
 
@@ -988,10 +988,13 @@ class WangRathje2018(BooreThompson2015):
         """
         duration_rms = BooreThompson2015._calc_duration_rms(self, duration, **kwargs)
         osc_freq = kwargs.get("osc_freq", None)
+        site_tf = kwargs.get("site_tf", None)
 
-        site_tf = np.abs(kwargs.get("site_tf", []))
-        if np.any(site_tf > 1):
+        if site_tf is not None:
             # Modify duration for site effects
+
+            # Work only on the absolute value
+            site_tf = np.abs(site_tf)
 
             # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]

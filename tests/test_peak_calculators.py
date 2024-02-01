@@ -69,11 +69,11 @@ def bj84_pc():
 
 
 def test_name(bj84_pc):
-    assert_string_equal(bj84_pc.name, "Boore & Joyner (1984)")
+    assert_string_equal(bj84_pc.NAME, "Boore & Joyner (1984)")
 
 
 def test_abbrev(bj84_pc):
-    assert_string_equal(bj84_pc.abbrev, "BJ84")
+    assert_string_equal(bj84_pc.ABBREV, "BJ84")
 
 
 @pytest.mark.parametrize(

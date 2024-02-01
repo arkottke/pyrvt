@@ -66,7 +66,7 @@ parser.add_argument(
     [DK85] Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro
     and McGuire (1987), and [V75] Vanmarcke (1975). If the BT12 method is used,
     then the magnitude, distance and region must be provided by the input
-    files. If no value is provided, then '%(default)s' is used as the
+    files. If no value is provided, then "%(default)s" is used as the
     default.""",
 )
 
