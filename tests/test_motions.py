@@ -3,7 +3,13 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
+import re
+
 import pyrvt
+import pandas as pd
+import pytest
+
+from pathlib import Path
 
 
 def test_calc_attenuation():
@@ -14,16 +20,6 @@ def test_calc_attenuation():
 
     assert_allclose(0.006, atten, rtol=0.01)
     assert_allclose(1.0, r_value, rtol=0.01)
-
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # ax.plot(m.freqs, m.fourier_amps, 'b-')
-    # ax.set_xlabel('Frequency (Hz)')
-    # ax.set_xscale('log')
-    # ax.set_ylabel('Amplitude')
-    # ax.set_yscale('log')
-    #
-    # fig.savefig('test')
 
 
 def test_compatible_rvt_motion():
@@ -49,26 +45,75 @@ def test_compatible_rvt_motion():
     # Might be off by a few percent because of difficulties with the inversion.
     assert_allclose(osc_accels_target, osc_accels_compat, rtol=0.03, atol=0.05)
 
-    # fig, axes = plt.subplots(2, 1)
-    #
-    # ax = axes.flat[0]
-    #
-    # ax.plot(target.freqs, target.fourier_amps, 'b-', label='Target')
-    # ax.plot(compat.freqs, compat.fourier_amps, 'r--', label='Compatible')
-    #
-    # ax.set_xlabel('Frequency (Hz)')
-    # ax.set_xscale('log')
-    # ax.set_ylabel('Fourier Ampl. (cm/s)')
-    # ax.set_yscale('log')
-    #
-    # ax = axes.flat[1]
-    #
-    # ax.plot(osc_freqs, osc_resp_target, 'b-', label='Target')
-    # ax.plot(osc_freqs, osc_resp_compat, 'r--', label='Compatible')
-    #
-    # ax.set_xlabel('Frequency (Hz)')
-    # ax.set_xscale('log')
-    # ax.set_ylabel('Spectral Accel. (cm/s²)')
-    # ax.set_yscale('log')
-    #
-    # fig.savefig('compatible_fas.png', dpi=300)
+
+def iter_fas_test_cases():
+    """Iterate through the FAS examples provided by P. Stafford."""
+    srcpath = Path(__file__).parent / "data"
+
+    for fpath in srcpath.glob("PJSfasSpectraDurationScaling_*.csv"):
+        tests = np.genfromtxt(fpath, delimiter=",", names=True)
+
+        freqs = tests["Frequency_Hz"]
+        method = "continuous" if "Optimal" in fpath.name else "trilinear"
+
+        for n in tests.dtype.names:
+            if "FAS" not in n:
+                continue
+            key = n.split("_", 1)[1]
+            m = re.search(r"M(?P<mag>\d+)_R(?P<dist>\d+)", key)
+            mag, dist = [float(p) for p in m.groups()]
+
+            yield {
+                "mag": mag,
+                "dist": dist,
+                "dur_ex": tests[f"Dex_{key}"][0],
+                "dur_rms": tests[f"Drms_{key}"],
+                "method": method,
+                "freqs": freqs,
+                # Convert from m/s to cm/s
+                "fourier_amps": tests[n] * 100,
+            }
+
+
+@pytest.fixture(params=iter_fas_test_cases())
+def stafford_fas(request):
+    case = request.param
+    # Compute the values
+
+    mot = pyrvt.motions.StaffordEtAl22Motion(
+        case["mag"],
+        dist_jb=case["dist"],
+        disable_site_amp=False,
+        method=case["method"],
+        freqs=case["freqs"],
+    )
+
+    d = {
+        "freqs": case["freqs"],
+        "scenario": {k: case[k] for k in ["mag", "dist", "method"]},
+        "desired": {
+            "fourier_amps": case["fourier_amps"],
+            "duration": case["dur_ex"],
+        },
+        "actual": {
+            "fourier_amps": mot._fourier_amps,
+            "duration": mot._duration,
+            "dist_ps": mot._dist_ps,
+        },
+    }
+    return d
+
+
+# @pytest.mark.parametrize("key", ["fourier_amps", "duration"])
+def test_stafford_fas(stafford_fas):
+    assert_allclose(
+        stafford_fas["actual"]["fourier_amps"],
+        stafford_fas["desired"]["fourier_amps"],
+        rtol=0.002,
+    )
+
+    assert_allclose(
+        stafford_fas["actual"]["duration"],
+        stafford_fas["desired"]["duration"],
+        rtol=0.002,
+    )

@@ -1,6 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 """Random vibration theory (RVT) based motions."""
+
+import gzip
+
+from pathlib import Path
+
 import numpy as np
 import numpy.typing as npt
 
@@ -120,7 +126,7 @@ def calc_stress_drop(magnitude: float) -> float:
 
 
 def calc_geometric_spreading(
-    dist: float, params: List[(float, Optional[float])]
+    dist: float, params: List[Tuple[float, Optional[float]]]
 ) -> float:
     """Geometric spreading defined by piece-wise linear model.
 
@@ -618,6 +624,821 @@ class SourceTheoryMotion(RvtMotion):
             * path_comp
             * site_comp
         )
+
+
+class StaffordEtAl22Motion(RvtMotion):
+    # Site amplification from Al Atik & Abrahamson (2021) generic rock amplification
+    # function for Vs30 of 760 m/s obtained from inversion of the Chiou & Youngs (2014)
+    # response spectral model note that the ordinate at (0.01, 1.0) has been added to the
+    # amp function that was provided. These values were taken from:
+    # https://github.com/pstafford/StochasticGroundMotionSimulation.jl/blob/master/src/fourier/PJSsite.jl
+    #
+    # In the original code, the interpolation is done on log(amplitdue) and linear
+    # frequency. I would typically do this on log frequency and linear amplitude.
+    LN_SITE_AMP = interp1d(
+        [
+            0.01,
+            0.1,
+            0.102329,
+            0.104713,
+            0.107152,
+            0.109648,
+            0.112202,
+            0.114815,
+            0.11749,
+            0.120226,
+            0.123027,
+            0.125893,
+            0.128825,
+            0.131826,
+            0.134896,
+            0.138038,
+            0.141254,
+            0.144544,
+            0.147911,
+            0.151356,
+            0.154882,
+            0.158489,
+            0.162181,
+            0.165959,
+            0.169824,
+            0.17378,
+            0.177828,
+            0.18197,
+            0.186209,
+            0.190546,
+            0.194984,
+            0.199526,
+            0.204174,
+            0.20893,
+            0.213796,
+            0.218776,
+            0.223872,
+            0.229087,
+            0.234423,
+            0.239883,
+            0.245471,
+            0.251189,
+            0.25704,
+            0.263027,
+            0.269153,
+            0.275423,
+            0.281838,
+            0.288403,
+            0.295121,
+            0.301995,
+            0.30903,
+            0.316228,
+            0.323594,
+            0.331131,
+            0.338844,
+            0.346737,
+            0.354813,
+            0.363078,
+            0.371535,
+            0.380189,
+            0.389045,
+            0.398107,
+            0.40738,
+            0.416869,
+            0.42658,
+            0.436516,
+            0.446684,
+            0.457088,
+            0.467735,
+            0.47863,
+            0.489779,
+            0.501187,
+            0.512861,
+            0.524807,
+            0.537032,
+            0.549541,
+            0.562341,
+            0.57544,
+            0.588844,
+            0.60256,
+            0.616595,
+            0.630957,
+            0.645654,
+            0.660693,
+            0.676083,
+            0.691831,
+            0.707946,
+            0.724436,
+            0.74131,
+            0.758578,
+            0.776247,
+            0.794328,
+            0.81283,
+            0.831764,
+            0.851138,
+            0.870964,
+            0.891251,
+            0.912011,
+            0.933254,
+            0.954993,
+            0.977237,
+            1.0,
+            1.023293,
+            1.047129,
+            1.071519,
+            1.096478,
+            1.122018,
+            1.148153,
+            1.174897,
+            1.202264,
+            1.230269,
+            1.258926,
+            1.28825,
+            1.318257,
+            1.348963,
+            1.380384,
+            1.412537,
+            1.44544,
+            1.479108,
+            1.513561,
+            1.548816,
+            1.584893,
+            1.62181,
+            1.659587,
+            1.698244,
+            1.737801,
+            1.778279,
+            1.819701,
+            1.862087,
+            1.905461,
+            1.949844,
+            1.995262,
+            2.041738,
+            2.089296,
+            2.137962,
+            2.187761,
+            2.238721,
+            2.290868,
+            2.344229,
+            2.398833,
+            2.454709,
+            2.511886,
+            2.570396,
+            2.630268,
+            2.691535,
+            2.754228,
+            2.818383,
+            2.884031,
+            2.951209,
+            3.019952,
+            3.090296,
+            3.162278,
+            3.235937,
+            3.311311,
+            3.388441,
+            3.467368,
+            3.548134,
+            3.63078,
+            3.715352,
+            3.801893,
+            3.890451,
+            3.981071,
+            4.073803,
+            4.168694,
+            4.265795,
+            4.365158,
+            4.466835,
+            4.570881,
+            4.677351,
+            4.7863,
+            4.897787,
+            5.011872,
+            5.128613,
+            5.248074,
+            5.370318,
+            5.495409,
+            5.623413,
+            5.754399,
+            5.888436,
+            6.025596,
+            6.165949,
+            6.309573,
+            6.456542,
+            6.606934,
+            6.760828,
+            6.918308,
+            7.079456,
+            7.24436,
+            7.413103,
+            7.585776,
+            7.762471,
+            7.943282,
+            8.128304,
+            8.317636,
+            8.511379,
+            8.709635,
+            8.912507,
+            9.120107,
+            9.332541,
+            9.549923,
+            9.772372,
+            10.0,
+            10.23293,
+            10.471284,
+            10.715192,
+            10.96478,
+            11.220183,
+            11.481534,
+            11.748973,
+            12.022642,
+            12.302684,
+            12.589251,
+            12.882492,
+            13.182563,
+            13.489624,
+            13.80384,
+            14.12537,
+            14.454392,
+            14.79108,
+            15.135614,
+            15.48817,
+            15.848933,
+            16.218101,
+            16.59587,
+            16.98244,
+            17.37801,
+            17.782793,
+            18.19701,
+            18.62087,
+            19.05461,
+            19.498443,
+            19.952621,
+            20.41738,
+            20.89296,
+            21.37962,
+            21.877611,
+            22.38721,
+            22.908672,
+            23.442283,
+            23.988321,
+            24.4608,
+            25.032,
+            25.6166,
+            26.2148,
+            26.827,
+            27.4534,
+            28.0945,
+            28.7506,
+            29.422,
+            30.109,
+            30.8121,
+            31.5317,
+            32.268,
+            33.0215,
+            33.7926,
+            34.5818,
+            35.3893,
+            36.2157,
+            37.0614,
+            37.9269,
+            38.8126,
+            39.7189,
+            40.6465,
+            41.5956,
+            42.567,
+            43.561,
+            44.5782,
+            45.6192,
+            46.6845,
+            47.7747,
+            48.8903,
+            50.032,
+            51.2004,
+            52.396,
+            53.6196,
+            54.8717,
+            56.1531,
+            57.4643,
+            58.8062,
+            60.1795,
+            61.5848,
+            63.023,
+            64.4947,
+            66.0007,
+            67.542,
+            69.1192,
+            70.7333,
+            72.3851,
+            74.0754,
+            75.8052,
+            77.5754,
+            79.387,
+            81.2409,
+            83.138,
+            85.0794,
+            87.0662,
+            89.0994,
+            91.18,
+            93.3093,
+            95.4883,
+            97.7181,
+            100.0,
+        ],
+        np.log(
+            [
+                1.0,
+                1.264743,
+                1.271871,
+                1.279014,
+                1.286166,
+                1.293327,
+                1.300495,
+                1.307668,
+                1.314844,
+                1.322022,
+                1.3292,
+                1.33638,
+                1.343563,
+                1.350753,
+                1.357952,
+                1.365166,
+                1.3724,
+                1.379659,
+                1.386946,
+                1.394264,
+                1.401614,
+                1.408999,
+                1.416419,
+                1.423873,
+                1.431361,
+                1.438883,
+                1.446437,
+                1.454019,
+                1.461627,
+                1.469255,
+                1.476897,
+                1.484547,
+                1.492199,
+                1.499845,
+                1.507478,
+                1.515089,
+                1.52267,
+                1.530214,
+                1.537712,
+                1.545156,
+                1.552541,
+                1.55986,
+                1.567111,
+                1.574289,
+                1.581393,
+                1.588421,
+                1.595371,
+                1.602243,
+                1.609038,
+                1.615756,
+                1.622398,
+                1.628966,
+                1.635461,
+                1.641884,
+                1.64824,
+                1.654529,
+                1.660755,
+                1.666921,
+                1.673029,
+                1.679083,
+                1.685087,
+                1.691043,
+                1.696955,
+                1.702826,
+                1.708661,
+                1.714462,
+                1.720234,
+                1.725979,
+                1.731701,
+                1.737405,
+                1.743093,
+                1.748769,
+                1.754436,
+                1.7601,
+                1.765763,
+                1.771428,
+                1.777101,
+                1.782784,
+                1.788483,
+                1.7942,
+                1.79994,
+                1.805707,
+                1.811506,
+                1.81734,
+                1.823215,
+                1.829134,
+                1.835103,
+                1.841123,
+                1.847199,
+                1.853331,
+                1.85952,
+                1.865766,
+                1.872069,
+                1.878427,
+                1.884838,
+                1.891302,
+                1.897816,
+                1.904376,
+                1.910981,
+                1.917627,
+                1.924312,
+                1.931032,
+                1.937785,
+                1.944567,
+                1.951374,
+                1.958204,
+                1.965053,
+                1.971919,
+                1.978799,
+                1.98569,
+                1.992588,
+                1.999493,
+                2.0064,
+                2.013308,
+                2.020215,
+                2.02712,
+                2.034019,
+                2.040913,
+                2.047799,
+                2.054677,
+                2.061546,
+                2.068404,
+                2.075252,
+                2.082088,
+                2.088913,
+                2.095727,
+                2.102529,
+                2.109321,
+                2.116101,
+                2.122872,
+                2.129632,
+                2.136385,
+                2.14313,
+                2.149868,
+                2.156601,
+                2.163329,
+                2.170056,
+                2.176782,
+                2.183509,
+                2.190238,
+                2.196973,
+                2.203714,
+                2.210465,
+                2.217228,
+                2.224004,
+                2.230798,
+                2.237612,
+                2.244448,
+                2.25131,
+                2.258201,
+                2.265124,
+                2.272083,
+                2.279082,
+                2.286124,
+                2.293212,
+                2.300353,
+                2.307549,
+                2.314805,
+                2.322127,
+                2.329519,
+                2.336986,
+                2.344534,
+                2.352169,
+                2.359894,
+                2.367718,
+                2.375645,
+                2.383683,
+                2.391837,
+                2.400114,
+                2.408522,
+                2.417069,
+                2.425761,
+                2.434606,
+                2.443614,
+                2.452794,
+                2.462154,
+                2.471704,
+                2.481454,
+                2.491416,
+                2.501599,
+                2.512017,
+                2.522681,
+                2.533593,
+                2.544623,
+                2.555702,
+                2.566822,
+                2.577981,
+                2.589182,
+                2.600422,
+                2.611704,
+                2.623026,
+                2.634389,
+                2.645793,
+                2.657238,
+                2.668725,
+                2.680254,
+                2.691824,
+                2.703436,
+                2.71509,
+                2.726786,
+                2.738525,
+                2.750306,
+                2.76213,
+                2.773996,
+                2.785906,
+                2.797859,
+                2.809855,
+                2.821894,
+                2.833977,
+                2.846104,
+                2.858274,
+                2.870489,
+                2.882748,
+                2.895052,
+                2.9074,
+                2.919793,
+                2.93223,
+                2.944713,
+                2.957241,
+                2.969814,
+                2.982433,
+                2.995097,
+                3.007808,
+                3.020564,
+                3.033367,
+                3.046216,
+                3.059111,
+                3.072054,
+                3.085043,
+                3.098079,
+                3.111162,
+                3.124293,
+                3.137471,
+                3.150697,
+                3.163971,
+                3.177292,
+                3.190662,
+                3.204081,
+                3.217547,
+                3.231063,
+                3.242526,
+                3.256161,
+                3.269851,
+                3.28359,
+                3.29738,
+                3.311217,
+                3.325106,
+                3.339046,
+                3.353036,
+                3.367075,
+                3.381166,
+                3.395309,
+                3.409502,
+                3.423746,
+                3.438042,
+                3.452391,
+                3.466789,
+                3.48124,
+                3.495744,
+                3.5103,
+                3.524909,
+                3.539569,
+                3.554285,
+                3.56905,
+                3.583871,
+                3.598744,
+                3.613671,
+                3.628651,
+                3.643686,
+                3.658775,
+                3.673917,
+                3.689114,
+                3.704366,
+                3.719671,
+                3.735033,
+                3.750447,
+                3.765917,
+                3.781441,
+                3.797022,
+                3.812659,
+                3.82835,
+                3.844099,
+                3.859904,
+                3.875764,
+                3.891682,
+                3.907655,
+                3.923684,
+                3.939771,
+                3.955913,
+                3.972112,
+                3.988367,
+                4.004681,
+                4.021051,
+                4.037478,
+                4.053962,
+                4.070504,
+                4.087104,
+                4.103761,
+                4.120476,
+                4.13725,
+                4.154081,
+                4.170967,
+            ]
+        ),
+        kind="linear",
+    )
+
+    def __init__(
+        self,
+        mag: float,
+        dist_rup: Optional[float] = None,
+        dist_jb: Optional[float] = None,
+        mechanism: str = "U",
+        method: str = "continuous",
+        delta_ztor: float = 0,
+        freqs: Optional[npt.ArrayLike] = None,
+        disable_site_amp: bool = False,
+    ):
+        """Point source model developed by Stafford (2021) for a Vs30 of 760 m/s.
+
+        Use an RVT framework, and assume the following duration/peak factor models:
+            - Boore & Thompson (2014) for excitation duration
+            - Boore & Thompson (2015) for RMS duration
+            - Vanmarke (1975)/Der Kiureghian (1980) peak factor expression — as per Boore & Thompson (2015)
+
+        """
+
+        if freqs is None:
+            self._freqs = np.geomspace(0.005, 200, 512)
+        else:
+            self._freqs = np.asarray(freqs)
+
+        if dist_rup is None and dist_jb is None:
+            raise NotImplementedError
+        elif dist_rup is None:
+            # Compute rupture distance for dist_jb
+            depth_tor = StaffordEtAl22Motion.calc_depth_tor(mag, mechanism)
+            dist_rup = np.sqrt(depth_tor**2 + dist_jb**2)
+
+        # Constants
+        shear_vel = 3.5
+        density = 2.75
+
+        # Parameters
+        if method == "continuous":
+            # Stress parameter components
+            ln_ds0 = 4.599
+            dln_ds0 = 0.4624
+            dz_a = 0.0453
+            dz_b = 0.109
+            # Geometric spreading
+            y_1 = 1.1611
+            y_f = 0.5
+            r_t = 50
+            # Finite fault
+            h_a = -0.8712
+            h_b = 0.4451
+            h_c = 1.1513
+            h_d = 5.0948
+            h_e = 7.2725
+            # Anelastic attenuation
+            Q_0 = 205.4
+            n_a = 0.6884
+            # Magnitude scaling of eta
+            n_b = 0.1354
+            n_c = 5.1278
+        elif method == "trilinear":
+            # Stress parameter components
+            ln_ds0 = 5.07
+            dln_ds0 = 0.6451
+            dz_a = 0.4077
+            dz_b = 0.117
+            # Geometric spreading
+            y_1 = 1.1680
+            y_2 = 0.9293
+            y_f = 0.5
+            # Finite fault
+            h_a = -0.7771
+            h_b = 0.4768
+            h_c = 1.1513
+            h_d = 3.418
+            h_e = 7.088
+            # Anelastic attenuation
+            Q_0 = 183.7
+            n = 0.7077
+        else:
+            raise NotImplementedError
+
+        # Stress drop in bars
+        stress_drop = np.exp(
+            ln_ds0
+            + dln_ds0 * np.minimum(mag - 5, 0)
+            + delta_ztor * (dz_a + dz_b / np.cosh(2 * np.maximum(mag - 4.5, 0)))
+        )
+
+        # Source spectrum
+        const = (0.55 / np.sqrt(2) * 2) / (4 * np.pi * density * shear_vel**3) * 1e-20
+        seismic_moment = 10 ** (1.5 * (mag + 10.7))
+
+        corner_freq = 4.9058e6 * shear_vel * (stress_drop / seismic_moment) ** (1 / 3)
+        source_comp = (const * seismic_moment) / (1 + (self._freqs / corner_freq) ** 2)
+
+        # Path scaling
+
+        ## Finite fault factor h(m)
+        fault_fact = np.exp(
+            h_a
+            + h_b * mag
+            + ((h_b - h_c) / h_d) * np.log(1 + np.exp(-h_d * (mag - h_e)))
+        )
+        dist_ps = dist_rup + fault_fact
+        ## Geometric spreading term
+        if method == "continuous":
+            geom_spread = np.exp(
+                -y_1 * np.log(dist_ps)
+                + (y_1 - y_f) / 2 * np.log((dist_rup**2 + r_t**2) / (1**2 + r_t**2))
+            )
+            n = n_a + n_b * np.tanh(mag - n_c)
+            dist_ae = dist_rup
+        elif method == "trilinear":
+            geom_spread = calc_geometric_spreading(
+                dist_ps, [(y_1, 25), (y_2, 85), (y_f, None)]
+            )
+            print(geom_spread)
+            dist_ae = dist_ps
+        else:
+            raise NotImplementedError
+
+        # Distance metric is different between the two forms
+        anelastic_atten = np.exp(
+            -(np.pi * self._freqs ** (1 - n) * dist_ae) / (Q_0 * shear_vel)
+        )
+
+        path_comp = geom_spread * anelastic_atten
+
+        # Convert to acceleration (cm/s)
+        conv = (2 * np.pi * self._freqs) ** 2
+
+        if disable_site_amp:
+            site_term = 1.0
+        else:
+            # Value from Al Atik and Abrahamson
+            site_atten = 0.039
+            site_amp = np.exp(self.LN_SITE_AMP(self._freqs))
+            site_term = site_amp * np.exp(-np.pi * site_atten * self._freqs)
+
+        # Combine the three components and convert from displacement to acceleration
+        self._fourier_amps = conv * source_comp * path_comp * site_term
+        self._dist_ps = dist_ps
+
+        self._duration = StaffordEtAl22Motion.calc_duration(corner_freq, dist_ps)
+
+    @staticmethod
+    def calc_depth_tor(mag: float, mechanism: str) -> float:
+        """Top of rupture model from Chiou and Youngs (2014)
+
+        Parameters
+        ----------
+        mag : float
+            moment magnitude of the event (:math:`M_w`)
+        mechanism : str
+            fault mechanism. Valid options: "U", "SS", "NS",
+            "RS".
+
+        Returns
+        -------
+        depth_tor : float
+            estimated depth to top of rupture (km)
+
+        """
+        if mechanism == "RS":
+            # Reverse and reverse-oblique faulting
+            depth_tor = 2.704 - 1.226 * max(mag - 5.849, 0)
+        else:
+            # Combined strike-slip and normal faulting
+            depth_tor = 2.673 - 1.136 * max(mag - 4.970, 0)
+
+        return max(depth_tor, 0) ** 2
+
+    @staticmethod
+    def calc_duration(corner_freq, dist_ps):
+        """Boore & Thomspson (2014) duration model."""
+
+        # Source component. Equation 2
+        d_s = 1.0 / corner_freq
+
+        # Path component. Table 1
+        # Maximum distance set to be 10 km
+        DISTS = [0, 7, 45, 125, 175, 270]
+        D_P = [0.0, 2.4, 8.4, 10.9, 17.4, 34.2]
+
+        if dist_ps < DISTS[-1]:
+            d_p = np.interp(dist_ps, DISTS, D_P)
+        else:
+            d_p = D_P[-1] + 0.156 * (dist_ps - DISTS[-1])
+
+        return d_s + d_p
 
 
 class CompatibleRvtMotion(RvtMotion):
