@@ -504,6 +504,7 @@ class SourceTheoryMotion(RvtMotion):
                     1.15,
                 ],
                 bounds_error=False,
+                fill_value=(1.0, 1.15)
             )
 
         else:
@@ -652,12 +653,32 @@ class StaffordEtAl22Motion(RvtMotion):
             - Boore & Thompson (2015) for RMS duration
             - Vanmarke (1975)/Der Kiureghian (1980) peak factor expression — as per Boore & Thompson (2015)
 
-        """
+        Note that other peak factors models are not permitted to be consistent with the
+        Sea22 model.
 
-        if freqs is None:
-            self._freqs = np.geomspace(0.005, 200, 512)
-        else:
-            self._freqs = np.asarray(freqs)
+        Parameters
+        ----------
+        magnitude : float
+            moment magnitude of the event.
+        dist_rup : float, optional
+            closest distance to the rupture (km). Either *dist_rup* or *dist_jb* must be
+            provided.
+        dist_jb : float, optional
+            Joyner-Boore distance (km). Either *dist_rup* or *dist_jb* must be
+            provided.
+        mechansim : str, optional
+            earthquake mechansim. Options are: "U", "SS", "NS", "RS".  Defaults to 'U'.
+        method: str, optional
+            geometric spreading model. Options are: "continuous" or "trilinear".
+            Defaults to "continuous".
+        delta_ztor : float, optional
+            difference in the top of the rutpure (km)
+        freqs : array_like
+            frequencies for which the Fourier amplitude spectrum should be computed.
+            Defaults to `np.geomspace(0.05, 200, 512)`
+        disable_site_amp: bool, optional
+            if the crustal site amplification should be disable. Defaults to *False*.
+        """
 
         if dist_rup is None and dist_jb is None:
             raise NotImplementedError
@@ -665,6 +686,14 @@ class StaffordEtAl22Motion(RvtMotion):
             # Compute rupture distance for dist_jb
             depth_tor = StaffordEtAl22Motion.calc_depth_tor(mag, mechanism)
             dist_rup = np.sqrt(depth_tor**2 + dist_jb**2)
+
+        super().__init__(peak_calculator='BT15', calc_kwds={'mag': mag, 'dist':
+            dist_rup, 'region': 'wus'})
+
+        if freqs is None:
+            self._freqs = np.geomspace(0.05, 200, 512)
+        else:
+            self._freqs = np.asarray(freqs)
 
         # Constants
         shear_vel = 3.5
@@ -723,9 +752,12 @@ class StaffordEtAl22Motion(RvtMotion):
                 names=True,
                 skip_header=1,
             ).view(np.recarray)
-
+            
+            _ln_site_amp = np.log(data['site_amp'])
             self._ln_site_amp = interp1d(
-                data["freq"], np.log(data["site_amp"]), kind="linear"
+                data["freq"], _ln_site_amp, kind="linear",
+                bounds_error=False,
+                fill_value=(_ln_site_amp[0], _ln_site_amp[-1])
             )
 
         # Stress drop in bars
