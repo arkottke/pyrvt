@@ -1,0 +1,108 @@
+site_name: pyRVT Documentation
+site_url: https://readthedocs.org/projects/pyrvt/
+watch: [mkdocs.yml, README.md, CONTRIBUTING.md, CHANGELOG.md, src/pyrvt]
+copyright: Copyright &copy; 2023 Albert Kottke
+
+nav:
+  - Home:
+      - Overview: index.md
+      - Changelog: changelog.md
+      - Authors: authors.md
+      - License: license.md
+  - Usage:
+      - Library: usage/library.md
+      - CLI: usage/cli.md
+  - API Reference:
+      - pyrvt: reference/
+  - Development:
+      - Contributing: contributing.md
+      - Coverage report: coverage.md
+theme:
+  name: material
+  features:
+    - announce.dismiss
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tooltips
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+plugins:
+  - gen-files:
+      scripts:
+        - scripts/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - coverage
+  - mkdocstrings:
+      enable_inventory: true
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_style: numpy
+            docstring_options:
+              ignore_init_summary: true
+            docstring_section_style: list
+            filters: ["!^_"]
+            heading_level: 1
+            inherited_members: true
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+            line_length: 60
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary: true
+  - mkdocs-jupyter:
+      ignore_h1_titles: True
+      include:
+        ["examples/*.ipynb"] # Default: ["*.py", "*.ipynb"]
+        # ignore: ["some-irrelevant-files/*.ipynb"]
+  - bibtex:
+      bib_file: "docs/refs.bib"
+  - search
+markdown_extensions:
+  - attr_list
+  - admonition
+  - callouts
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - footnotes
+  - pymdownx.magiclink
+  - pymdownx.snippets:
+      base_path: [!relative $config_dir]
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
+
+extra_css:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
