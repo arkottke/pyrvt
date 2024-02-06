@@ -504,7 +504,7 @@ class SourceTheoryMotion(RvtMotion):
                     1.15,
                 ],
                 bounds_error=False,
-                fill_value=(1.0, 1.15)
+                fill_value=(1.0, 1.15),
             )
 
         else:
@@ -633,7 +633,7 @@ class StaffordEtAl22Motion(RvtMotion):
     #
     # In the original code, the interpolation is done on log(amplitdue) and linear
     # frequency. I would typically do this on log frequency and linear amplitude.
-    _ln_site_amp = None
+    _ln_site_amp_interpolator = None
 
     def __init__(
         self,
@@ -687,8 +687,10 @@ class StaffordEtAl22Motion(RvtMotion):
             depth_tor = StaffordEtAl22Motion.calc_depth_tor(mag, mechanism)
             dist_rup = np.sqrt(depth_tor**2 + dist_jb**2)
 
-        super().__init__(peak_calculator='BT15', calc_kwds={'mag': mag, 'dist':
-            dist_rup, 'region': 'wus'})
+        super().__init__(
+            peak_calculator="BT15",
+            calc_kwds={"mag": mag, "dist": dist_rup, "region": "wus"},
+        )
 
         if freqs is None:
             self._freqs = np.geomspace(0.05, 200, 512)
@@ -698,6 +700,7 @@ class StaffordEtAl22Motion(RvtMotion):
         # Constants
         shear_vel = 3.5
         density = 2.75
+        site_atten = 0.039
 
         # Parameters
         if method == "continuous":
@@ -744,22 +747,6 @@ class StaffordEtAl22Motion(RvtMotion):
         else:
             raise NotImplementedError
 
-        if self._ln_site_amp is None:
-            # Load the data
-            data = np.genfromtxt(
-                gzip.open(Path(__file__).parent / "data" / "sea22-site_amp.csv.gz"),
-                delimiter=",",
-                names=True,
-                skip_header=1,
-            ).view(np.recarray)
-            
-            _ln_site_amp = np.log(data['site_amp'])
-            self._ln_site_amp = interp1d(
-                data["freq"], _ln_site_amp, kind="linear",
-                bounds_error=False,
-                fill_value=(_ln_site_amp[0], _ln_site_amp[-1])
-            )
-
         # Stress drop in bars
         stress_drop = np.exp(
             ln_ds0
@@ -787,7 +774,9 @@ class StaffordEtAl22Motion(RvtMotion):
         if method == "continuous":
             geom_spread = np.exp(
                 -y_1 * np.log(dist_ps)
-                + (y_1 - y_f) / 2 * np.log((dist_rup**2 + r_t**2) / (1**2 + r_t**2))
+                + (y_1 - y_f)
+                / 2
+                * np.log((dist_rup**2 + r_t**2) / (1**2 + r_t**2))
             )
             n = n_a + n_b * np.tanh(mag - n_c)
             dist_ae = dist_rup
@@ -811,18 +800,39 @@ class StaffordEtAl22Motion(RvtMotion):
         conv = (2 * np.pi * self._freqs) ** 2
 
         if disable_site_amp:
-            site_term = 1.0
+            site_tf = 1.0
         else:
-            # Value from Al Atik and Abrahamson
-            site_atten = 0.039
-            site_amp = np.exp(self._ln_site_amp(self._freqs))
-            site_term = site_amp * np.exp(-np.pi * site_atten * self._freqs)
+            site_tf = StaffordEtAl22Motion.site_amp(self._freqs, site_atten)
 
         # Combine the three components and convert from displacement to acceleration
-        self._fourier_amps = conv * source_comp * path_comp * site_term
+        self._fourier_amps = conv * source_comp * path_comp * site_tf
         self._dist_ps = dist_ps
 
         self._duration = StaffordEtAl22Motion.calc_duration(corner_freq, dist_ps)
+
+    @classmethod
+    def site_amp(cls, freqs, site_atten):
+        if cls._ln_site_amp_interpolator is None:
+            # Load the data
+            data = np.genfromtxt(
+                gzip.open(Path(__file__).parent / "data" / "sea22-site_amp.csv.gz"),
+                delimiter=",",
+                names=True,
+                skip_header=1,
+            ).view(np.recarray)
+
+            _ln_site_amp = np.log(data["site_amp"])
+            cls._ln_site_amp_interpolator = interp1d(
+                data["freq"],
+                _ln_site_amp,
+                kind="linear",
+                bounds_error=False,
+                fill_value=(_ln_site_amp[0], _ln_site_amp[-1]),
+            )
+
+        return np.exp(cls._ln_site_amp_interpolator(freqs)) * np.exp(
+            -np.pi * site_atten * freqs
+        )
 
     @property
     def dist_ps(self) -> float:
