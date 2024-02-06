@@ -29,6 +29,17 @@ Documentation = "https://pyrvt.readthedocs.io"
 [project.scripts]
 pyrvt = "pyrvt.runner:main"
 
+[tool.black]
+line-length = 99
+target-version = ['py37', 'py38', 'py39', 'py310']
+
+[tool.isort]
+profile = "black"
+filter_files = true
+
+[tool.ruff]
+line-lenth = 99
+
 [tool.hatch.version]
 source = "vcs"
 
