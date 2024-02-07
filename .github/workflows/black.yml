@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - uses: psf/black@v24
-        with:
-          args: ". --check"
+      - uses: psf/black@stable
+        options: "--check --verbose"
+        jupyter: true
