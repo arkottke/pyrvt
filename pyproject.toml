@@ -38,7 +38,7 @@ profile = "black"
 filter_files = true
 
 [tool.ruff]
-line-lenth = 99
+line-length = 99
 
 [tool.hatch.version]
 source = "vcs"
