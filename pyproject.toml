@@ -86,7 +86,6 @@ dependencies = [
   "markdown-callouts",
   "mkdocstrings[python]",
   "mkdocs-bibtex",
-  "mkdocs-coverage",
   "mkdocs-gen-files",
   "mkdocs-literate-nav",
   "mkdocs-material",

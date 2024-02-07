@@ -16,7 +16,6 @@ nav:
       - pyrvt: reference/
   - Development:
       - Contributing: contributing.md
-      - Coverage report: coverage.md
 theme:
   name: material
   features:
