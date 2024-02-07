@@ -1,15 +1,16 @@
 --index-url https://pypi.python.org/simple/
 
+black
 jinja2
-matplotlib
-numpy
-mkdocs
 markdown-callouts
-mkdocstrings[python]
+matplotlib
+mkdocs
 mkdocs-bibtex
 mkdocs-gen-files
+mkdocs-jupyter
 mkdocs-literate-nav
 mkdocs-material
 mkdocs-section-index
-mkdocs-jupyter
-black
+mkdocstrings[python]
+numpy
+pymdown-extensions
