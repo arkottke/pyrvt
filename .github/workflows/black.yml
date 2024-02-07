@@ -8,5 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
-        options: "--check --verbose"
-        jupyter: true
+        with:
+          options: "--check --verbose"
+          jupyter: true
