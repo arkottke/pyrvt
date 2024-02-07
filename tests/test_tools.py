@@ -273,9 +273,7 @@ def test_calc_compatible_spectra():
     src_fname = os.path.join(os.path.dirname(__file__), "data", "test_sa.csv")
     ext, periods, events = pyrvt.tools.read_events(src_fname, "psa")
 
-    freqs, events_mod = pyrvt.tools.calc_compatible_spectra(
-        "LP99", periods, events[:1], 0.05
-    )
+    freqs, events_mod = pyrvt.tools.calc_compatible_spectra("LP99", periods, events[:1], 0.05)
 
     # Test that the fit is within 2% of the target
     assert_allclose(events[0]["psa"], events_mod[0]["psa_calc"], rtol=0.02)
