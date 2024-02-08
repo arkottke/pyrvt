@@ -13,9 +13,7 @@ from pyrvt.tools import operation_psa2fa
 parser = argparse.ArgumentParser(
     prog="pyrvt", description="Compute response or Fourier amplitude spectra using RVT."
 )
-parser.add_argument(
-    "--version", action="version", version="%(prog)s version " + str(__version__)
-)
+parser.add_argument("--version", action="version", version="%(prog)s version " + str(__version__))
 parser.add_argument(
     "operation",
     help="""Operation to be performed: [psa2fa] converts from pseudo-spectral
@@ -73,13 +71,9 @@ def main():
     args = parser.parse_args()
 
     if args.operation == "psa2fa":
-        operation_psa2fa(
-            args.input, args.output, args.damping, args.method, args.fixed_spacing
-        )
+        operation_psa2fa(args.input, args.output, args.damping, args.method, args.fixed_spacing)
     elif args.operation == "fa2psa":
-        operation_fa2psa(
-            args.input, args.output, args.damping, args.method, args.fixed_spacing
-        )
+        operation_fa2psa(args.input, args.output, args.damping, args.method, args.fixed_spacing)
     else:
         raise NotImplementedError
 

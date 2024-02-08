@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import multiprocessing
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
@@ -23,13 +24,12 @@ PARAMETER_NAMES = [
 ]
 
 
-def get_fpaths(s):
-    return Path(".").glob(s) if "*" in s else [Path(s)]
+def get_fpaths(pat: str) -> List[Path]:
+    """Iterate over file paths."""
+    return Path(".").glob(pat) if "*" in pat else [Path(pat)]
 
 
-def read_events(
-    fpath: str | Path, response_type: str
-) -> tuple[str, np.ndarray, list[dict]]:
+def read_events(fpath: str | Path, response_type: str) -> tuple[str, np.ndarray, list[dict]]:
     """Read data from the file an Excel work book.
 
     Parameters
@@ -206,9 +206,7 @@ def calc_compatible_spectra(
     """
     target_freqs = 1.0 / periods
     with multiprocessing.Pool() as pool:
-        results = pool.map(
-            functools.partial(_calc_fa, target_freqs, damping, method), events
-        )
+        results = pool.map(functools.partial(_calc_fa, target_freqs, damping, method), events)
 
     # Copy values back into the dictionary
     modified = []
@@ -234,7 +232,7 @@ def operation_psa2fa(
     fixed_spacing: bool = True,
     verbose: bool = True,
 ):
-    """Compute the accel. response spectrum from a Fourier amplitude spectrum.
+    """Compute the acceleration response spectrum from a Fourier amplitude spectrum.
 
     Parameters
     ----------
@@ -256,7 +254,6 @@ def operation_psa2fa(
         Print status of calculation.
 
     """
-
     dst = Path(dst)
     dst.mkdir(parents=True, exist_ok=True)
 
@@ -275,9 +272,7 @@ def operation_psa2fa(
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs, events = calc_compatible_spectra(
-            method, periods, events, damping=damping
-        )
+        freqs, events = calc_compatible_spectra(method, periods, events, damping=damping)
 
         basename = fpath.stem.rsplit("_", 1)[0]
 
