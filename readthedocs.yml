@@ -11,5 +11,5 @@ build:
     - pip install hatch
     - hatch run docs:build
     - ls
-    - echo $READTHEDOCS_OUTPUT/html
-    - ls $READTHEDOCS_OUTPUT/html
+    - ls $READTHEDOCS_OUTPUT
+    - mv site $READTHEDOCS_OUTPUT/html
