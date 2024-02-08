@@ -10,6 +10,5 @@ build:
   commands:
     - pip install hatch
     - hatch run docs:build
-    - ls
-    - ls $READTHEDOCS_OUTPUT
+    - mkdir -p $READTHEDOCS_OUTPUT
     - mv site $READTHEDOCS_OUTPUT/html
