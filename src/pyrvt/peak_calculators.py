@@ -6,21 +6,25 @@ Peak factor models.
 Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
 """
-
 import ctypes
 import itertools
 import pathlib
 
-import numpy as np
 import numba
+import numpy as np
+import numpy.typing as npt
+
+from abc import ABC, abstractmethod
+
+from typing import List, Tuple
 
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 from scipy.signal import argrelmax
 
 
-@numba.njit()
-def trapz(x, y):
+@numba.jit
+def trapz(x: npt.ArrayLike, y: npt.ArrayLike) -> float:
     """Trapezoidal integration written in numba.
 
     Parameters
@@ -54,7 +58,7 @@ c_sig = numba.types.double(numba.types.intc, numba.types.CPointer(numba.types.do
 
 # Turn the integrand function into a ctypes function
 @numba.cfunc(c_sig)
-def _calc_vanmarcke1975_ccdf(n, a):
+def _calc_vanmarcke1975_ccdf(n: int, a) -> float:
     """Calculate the Vanmarcke (1975) complementary CDF.
 
     Parameters
@@ -121,7 +125,26 @@ def _calc_cartwright_pf(n, a):
 _calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
-def calc_moments(freqs, fourier_amps, orders):
+def calc_moments(
+    freqs: npt.ArrayLike, fourier_amps: npt.ArrayLike, orders: List[int]
+) -> List[float]:
+    """Compute the moments of a Fourier amplitude spectrumself.
+
+    Parameters
+    ----------
+    freqs : array_like
+        Frequency of the Fourier amplitude spectrum (Hz)
+    fourier_amps : array_like
+        Amplitude of the Fourier amplitude spectrum.
+    orders : list
+        Moments to consider
+
+    Returns
+    -------
+    moment : list
+        Computed spectral moments.
+    """
+
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
@@ -132,7 +155,7 @@ def calc_moments(freqs, fourier_amps, orders):
     return moments
 
 
-class SquaredSpectrum(object):
+class SquaredSpectrum:
     """Squared Fourier amplitude spectrum.
 
     Used to store calculated spectral moments during calculations.
@@ -176,40 +199,42 @@ class SquaredSpectrum(object):
         return [self.moment(n) for n in nums]
 
 
-class Calculator(object):
-    """Base class used for all peak calculator classes."""
+class Calculator(ABC):
+    """Base class used for all peak calculator classes.
 
-    NAME = ""
-    ABBREV = ""
+    Provides the interface that is used by all the other classes. Specific peak
+    calculators modify the :method:`_calc_peak_factor` and potentially
+    :method:`_calc_duration_rms` methods. Using the calculator is done through calling
+    of :method:`__call__`.
+    """
 
-    _MIN_ZERO_CROSSINGS = 1.33
+    #:  Name of the calculator
+    NAME: str = ""
+    #: Abbreviation of the calculator
+    ABBREV: str = ""
+
+    # FIXME: Provide justification for this number
+
+    #: Minimum number of zero crossings permitted.
+    _MIN_ZERO_CROSSINGS: float = 1.33
 
     def __init__(self, **kwds):
         """Initialize the object."""
         super().__init__()
         self._spectrum = None
 
-    @property
-    def name(self):
-        """Name of the calculator."""
-        return self.NAME
-
-    @property
-    def abbrev(self):
-        """Abbreviated name of the calculator."""
-        return self.ABBREV
-
-    @property
-    def min_zero_crossings(self):
-        """Minimum number of zero crossings."""
-        return self._MIN_ZERO_CROSSINGS
-
     @classmethod
-    def limited_num_zero_crossings(cls, num_zero_crossings):
+    def limited_num_zero_crossings(cls, num_zero_crossings: float) -> float:
         """Limit the number of zero crossing to a static limit."""
         return max(cls._MIN_ZERO_CROSSINGS, num_zero_crossings)
 
-    def __call__(self, duration, freqs, fourier_amps, **kwargs):
+    def __call__(
+        self,
+        duration: float,
+        freqs: npt.ArrayLike,
+        fourier_amps: npt.ArrayLike,
+        **kwargs,
+    ) -> Tuple[float]:
         """Compute the peak response.
 
         Parameters
@@ -244,7 +269,8 @@ class Calculator(object):
         self._spectrum = None
         return peak_factor * resp_rms, peak_factor
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    @abstractmethod
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
@@ -266,9 +292,9 @@ class Calculator(object):
             associated peak factor.
 
         """
-        raise NotImplementedError
+        pass
 
-    def _calc_duration_rms(self, duration, **kwargs):
+    def _calc_duration_rms(self, duration: float, **kwargs) -> float:
         """Modify a duration to correct for stationarity.
 
         Default implemenation does nothing.
@@ -284,10 +310,9 @@ class Calculator(object):
 class Vanmarcke1975(Calculator):
     r"""Vanmarcke (1975) peak factor.
 
-    The Vanmarcke (1975, :cite:`vanmarcke75`) peak factor, which includes the
-    effects of clumping.  The peak factor equation is from Equation (2) in Der
-    Kiureghian (1980, :cite:`derkiureghian80`), which is based on Equation (29)
-    in :cite:`vanmarcke75`.
+    The Vanmarcke (1975, :cite:t:`vanmarcke75`) peak factor, which includes the effects
+    of clumping.  The peak factor equation is from Equation (2) in Der Kiureghian (1980,
+    :cite:`derkiureghian80`), which is based on Equation (29) in :cite:`vanmarcke75`.
 
     The cumulative density function (CDF) of the peak is defined as:
 
@@ -297,19 +322,18 @@ class Vanmarcke1975(Calculator):
             \exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) -
             1 }\right]
 
-    where :math:`N_z` is the number of zero crossings, :math:`\delta_e` is the
-    effective bandwidth (:math:`\delta^{1.2}`).
+    where :math:`N_z` is the number of zero crossings, :math:`\delta_e` is the effective
+    bandwidth (:math:`\delta^{1.2}`).
 
-    Typically, the expected value of the peak factor is calculated by
-    integrating over the probability density function (i.e., :math:`f_x(x) =
-    \frac{d}{dx} F_x( x)`):
+    Typically, the expected value of the peak factor is calculated by integrating over
+    the probability density function (i.e., :math:`f_x(x) = \frac{d}{dx} F_x( x)`):
 
     .. math::
         E[x] = \int_0^\infty x f_x(x) dx
 
-    However, because of the properties of :math:`F_x(x)`, specifically that it
-    has non-zero probabilities for only positive values, :math:`E[x]` can be
-    computed directly from :math:`F_x(x)`.
+    However, because of the properties of :math:`F_x(x)`, specifically that it has
+    non-zero probabilities for only positive values, :math:`E[x]` can be computed
+    directly from :math:`F_x(x)`.
 
     .. math::
         E[x] = \int_0^\infty 1 - F_x(x) dx.
@@ -326,28 +350,29 @@ class Vanmarcke1975(Calculator):
         If the non-stationarity factor should be applied.
     """
 
-    NAME = "Vanmarcke (1975)"
-    ABBREV = "V75"
+    #:  Name of the calculator
+    NAME: str = "Vanmarcke (1975)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "V75"
 
-    def __init__(self, use_nonstationarity_factor=True, **kwargs):
+    def __init__(self, use_nonstationarity_factor: bool = True, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
         self._use_nonstationarity_factor = use_nonstationarity_factor
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for
-            a damping ratio of 5%.
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
         Returns
         -------
         peak_factor : float
@@ -379,7 +404,9 @@ class Vanmarcke1975(Calculator):
         return peak_factor
 
     @classmethod
-    def nonstationarity_factor(cls, osc_damping, osc_freq, duration):
+    def nonstationarity_factor(
+        cls, osc_damping: float, osc_freq: float, duration: float
+    ) -> float:
         """Compute nonstationarity factor to modify duration.
 
         Parameters
@@ -407,14 +434,16 @@ class Davenport1964(Calculator):
     Davenport (1964, :cite:`davenport64`).
     """
 
-    NAME = "Davenport (1964)"
-    ABBREV = "D64"
+    #:  Name of the calculator
+    NAME: str = "Davenport (1964)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "D64"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
@@ -442,7 +471,7 @@ class Davenport1964(Calculator):
         return peak_factor
 
     @classmethod
-    def asymtotic_approx(self, zero_crossings):
+    def asymtotic_approx(self, zero_crossings: float) -> float:
         """Compute the peak factor from the asymptotic approximation.
 
         Parameters
@@ -463,33 +492,32 @@ class Davenport1964(Calculator):
 class DerKiureghian1985(Davenport1964):
     """Der Kiureghian (1985) peak factor.
 
-    RVT calculation using peak factor derived by Davenport (1964,
-    :cite:`davenport64`) with limits suggested by Igusa & Der Kiureghian
-    (1985, :cite:`igusa85`).
+    RVT calculation using peak factor derived by :cite:t:`davenport64` with limits
+    suggested by :cite:t:`igusa85`.
     """
 
-    NAME = "Der Kiureghian (1985)"
-    ABBREV = "DK85"
+    #:  Name of the calculator
+    NAME: str = "Der Kiureghian (1985)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "DK85"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
         freqs : array_like
             Frequency of the Fourier amplitude spectrum (Hz).
         fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
-             not important.
+             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
+             oscillator already applied if being used. Units are not important.
 
         Returns
         -------
@@ -520,32 +548,33 @@ class DerKiureghian1985(Davenport1964):
 class ToroMcGuire1987(Davenport1964):
     """Toro and McGuire (1987) peak factor.
 
-    Peak factor equation using asymptotic solution proposed by Davenport (1964,
-    :cite:`davenport64`) with modifications proposed by Toro & McGuire (1987,
-    :cite:`toro87`).
+    Peak factor equation using asymptotic solution proposed by :cite:t:`davenport64`
+    with modifications proposed by :cite:t:`toro87`.
     """
 
-    NAME = "Toro & McGuire (1987)"
-    ABBREV = "TM87"
+    #:  Name of the calculator
+    NAME: str = "Toro & McGuire (1987)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "TM87"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias
             intensity (sec).
         freqs : array_like
             Frequency of the Fourier amplitude spectrum (Hz).
         fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
+             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
+             oscillator already applied if being used. Units are
              not important.
 
         Returns
@@ -579,32 +608,33 @@ class ToroMcGuire1987(Davenport1964):
 class CartwrightLonguetHiggins1956(Calculator):
     """Cartwight and Longuet-Higgins (1956) peak factor.
 
-    RVT calculation based on the peak factor definition by Cartwright and
-    Longuet-Higgins (1956, :cite:`cartwright56`) using the
-    integral provided by Boore (2003, :cite:`boore03`).
+    RVT calculation based on the peak factor definition by :cite:t:`cartwright56` using
+    the integral provided by :cite:t:`boore03`.
     """
 
-    NAME = "Cartwright & Longuet-Higgins (1956)"
-    ABBREV = "CLH56"
+    #: Name of the calculator
+    NAME: str = "Cartwright & Longuet-Higgins (1956)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "CLH56"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration, **kwargs):
+    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias
             intensity (sec).
         freqs : array_like
             Frequency of the Fourier amplitude spectrum (Hz).
         fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
+             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
+             oscillator already applied if being used. Units are
              not important.
 
         Returns
@@ -631,17 +661,16 @@ class CartwrightLonguetHiggins1956(Calculator):
 class BooreJoyner1984(CartwrightLonguetHiggins1956):
     """Boore and Joyner (1984) peak factor.
 
-    RVT calculation based on the peak factor definition by Cartwright &
-    Longuet-Higgins (1956, :cite:`cartwright56`) and along with the
-    root-mean-squared duration correction proposed by Boore & Joyner (1984,
-    :cite:`boore84`).
+    RVT calculation based on the peak factor definition by :cite:t:`cartwright56` and
+    along with the root-mean-squared duration correction proposed by :cite:t:`boore84`.
 
-    This RVT calculation is used by SMSIM and is described in Boore
-    (2003, :cite:`boore03`).
+    This RVT calculation is used by SMSIM and is described in :cite:t:`boore03`.
     """
 
-    NAME = "Boore & Joyner (1984)"
-    ABBREV = "BJ84"
+    #:  Name of the calculator
+    NAME: str = "Boore & Joyner (1984)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "BJ84"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -651,19 +680,18 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
         """Compute the oscillator duration.
 
         Oscillator duration is used in the calculation of the root-mean-squared
-        response and based on  :cite:`boore84`.
+        response and based on :cite:t:`boore84`.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for
-            a damping ratio of 5%.
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
 
         Returns
         -------
@@ -690,14 +718,14 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
 class LiuPezeshk1999(BooreJoyner1984):
     """Liu and Pezeshk (1999) peak factor.
 
-    RVT calculation based on the peak factor definition by Cartwright &
-    Longuet-Higgins (1956, :cite:`cartwright56`) along with the
-    root-mean-squared duration correction proposed by Liu & Pezeshk
-    (1999, :cite:`liu99`).
+    RVT calculation based on the peak factor definition by :cite:t:`cartwright56` along
+    with the root-mean-squared duration correction proposed by :cite:t:`liu99`.
     """
 
-    NAME = "Liu & Pezeshk (1999)"
-    ABBREV = "LP99"
+    #:  Name of the calculator
+    NAME: str = "Liu & Pezeshk (1999)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "LP99"
 
     def __init__(self, **kwargs):
         """Initialize the class."""
@@ -712,14 +740,13 @@ class LiuPezeshk1999(BooreJoyner1984):
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a
-            damping ratio of 5%.
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
 
         Returns
         -------
@@ -747,17 +774,17 @@ class LiuPezeshk1999(BooreJoyner1984):
 
 
 def _make_bt_interpolator(region, ref):
-    """Load data from the Boore & Thompson (2012) parameter files.
+    """Load data from the :cite:t:`boore12` and :cite:t:`boore15` parameter files.
 
     Parameters
     ----------
     region : str
-        Region for which the parameters were developed. Valid options: 'wna'
-        for Western North America (active tectonic), or 'cena' for Eastern
-        North America (stable tectonic).
+        Region for which the parameters were developed. Valid options: 'wna' for Western
+        North America (active tectonic), or 'cena' for Eastern North America (stable
+        tectonic).
     ref : str
-        Reference document. Either: bt12 or bt15 for Boore & Thompson (2012) or
-         (2015), respectively.
+        Reference document. Either: bt12 or bt15 for Boore & Thompson (2012) or (2015),
+        respectively.
 
     Returns
     -------
@@ -786,13 +813,12 @@ _BT_INTERPS = {
 }
 
 
-class BooreThompson(object):
+class BooreThompson(Calculator):
     """Abstract class for the Boore & Thompson duration correction.
 
-    The duration ratio is defined by Equation (10) in :cite:`boore12`.
-    Magnitude and distance is interpolated using
-    `scipy.interpolate.LinearNDInterpolator` on the natural log of the
-    distance.
+    The duration ratio is defined by Equation (10) in :cite:t:`boore12`. Magnitude and
+    distance is interpolated using `scipy.interpolate.LinearNDInterpolator` on the
+    natural log of the distance.
 
     Parameters
     ----------
@@ -813,8 +839,6 @@ class BooreThompson(object):
         super().__init__(**kwargs)
         region = get_region(region)
         self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
-        if np.isnan(self._COEFS).any():
-            raise RuntimeError(f"{mag:.1f} and {dist:0.1f} are outside of the limits.")
 
     def _calc_duration_rms(self, duration, **kwargs):
         """Compute the RMS duration.
@@ -854,18 +878,16 @@ class BooreThompson(object):
 class BooreThompson2012(BooreThompson, BooreJoyner1984):
     """Boore and Thompson (2012) peak factor.
 
-    Peak calculation based on the peak factor definition by Cartwright &
-    Longuet-Higgins (1956, :cite:`cartwright56` along with the
-    root-mean-squared duration correction proposed by Boore & Thompson (2012,
-    :cite:`boore12`).
+    Peak calculation based on the peak factor definition by :cite:t:`cartwright56` along with the
+    root-mean-squared duration correction proposed by :cite:t:`boore12`.
 
 
     Parameters
     ----------
     region : str
-        Region for which the parameters were developed.  Valid options
-        are: 'wna' for Western North America (active tectonic), and 'cena'
-        for Central and Eastern North America ( stable tectonic).
+        Region for which the parameters were developed.  Valid options are: 'wna' for
+        Western North America (active tectonic), and 'cena' for Central and Eastern
+        North America ( stable tectonic).
     mag : float
         Magnitude of the event.
     dist : float
@@ -873,8 +895,10 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
 
     """
 
-    NAME = "Boore & Thompson (2012)"
-    ABBREV = "BT12"
+    #:  Name of the calculator
+    NAME: str = "Boore & Thompson (2012)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "BT12"
 
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
@@ -885,17 +909,16 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
 class BooreThompson2015(BooreThompson, Vanmarcke1975):
     """Boore and Thompson (2015) peak factor.
 
-    Peak calculation based on the peak factor definition by Vanmarcke
-    (1975, :cite:`vanmarcke75`) along with the root-mean-squared duration
-    correction proposed by Boore & Thompson (2015, :cite:`boore15`).
+    Peak calculation based on the peak factor definition by :cite:t:`vanmarcke75` along
+    with the root-mean-squared duration correction proposed by :cite:t:`boore15`.
 
 
     Parameters
     ----------
     region : str
-        Region for which the parameters were developed.  Valid options
-        are: 'wna' for Western North America (active tectonic), and 'cena'
-        for Central and Eastern North America ( stable tectonic).
+        Region for which the parameters were developed.  Valid options are: 'wna' for
+        Western North America (active tectonic), and 'cena' for Central and Eastern
+        North America ( stable tectonic).
     mag : float
         Magnitude of the event.
     dist : float
@@ -903,8 +926,10 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
 
     """
 
-    NAME = "Boore & Thompson (2015)"
-    ABBREV = "BT15"
+    #:  Name of the calculator
+    NAME: str = "Boore & Thompson (2015)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "BT15"
 
     def __init__(self, region, mag, dist, **kwargs):
         """Initialize the class."""
@@ -915,13 +940,15 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
 class WangRathje2018(BooreThompson2015):
     """Wang & Rathje (2018) peak factor.
 
-    Peak calculation based on the peak factor definition by Vanmarcke (1975,
-    :cite:`vanmarcke75`) along with correction for oscillator duration and site
-    amplification as described in Wang & Rathje (2018, :cite:`rathje18`).
+    Peak calculation based on the peak factor definition by :cite:t:`vanmarcke75` along
+    with correction for oscillator duration by :cite:t:`boore15` and site amplification
+    as described in :cite:t:`rathje18`.
     """
 
-    NAME = "Wang & Rathje (2018) "
-    ABBREV = "WR18"
+    #:  Name of the calculator
+    NAME: str = "Wang & Rathje (2018) "
+    #: Abbreviation of the calculator
+    ABBREV: str = "WR18"
 
     # Coefficients from Table 2, and paragraph after Equation (8)
     COEFS = np.rec.fromrecords(
@@ -943,9 +970,8 @@ class WangRathje2018(BooreThompson2015):
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            Duration of the stationary portion of the ground motion. Typically defined
+            as the duration between the 5% and 75% normalized Arias intensity (sec).
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
@@ -967,27 +993,6 @@ class WangRathje2018(BooreThompson2015):
         if np.any(site_tf > 1):
             # Modify duration for site effects
 
-            # Compute the expected rock oscillator duration
-
-            # Equation 4a
-            f_lim = 5.274 * duration**-0.640
-            ratio = 1
-            if 0.1 <= osc_freq < f_lim:
-                # Equation 4b
-                dur_0 = 31.858 * duration**-0.849
-                # Equation 4c
-                dur_min = 1.009 * duration / (3.583 + duration)
-                # Equation 3b
-                b = 1 / (dur_0 - dur_min)
-                # Equation 3a
-                a = (1 / (dur_0 - 1) - b) * (f_lim - 0.1)
-                # Equation 2
-                ratio = dur_0 - (osc_freq - 0.1) / (a + b * (osc_freq - 0.1))
-
-            dur_osc_rock = ratio * duration
-
-            # Compute the expected soil oscillator duration
-
             # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]
 
@@ -1003,13 +1008,9 @@ class WangRathje2018(BooreThompson2015):
             incr_max = c * np.exp(-duration / m)
 
             incr = incr_max * np.exp(
-                -(np.log(osc_freq / modes_f) ** 2) / (2 * self.COEFS.sd**2)
+                -((np.log(osc_freq / modes_f)) ** 2) / (2 * self.COEFS.sd**2)
             )
-
-            dur_osc_soil = dur_osc_rock + incr.sum()
-
-            # Scale the RMS duration by the ratio in soil to rock durations
-            duration_rms *= dur_osc_soil / dur_osc_rock
+            duration_rms += incr.sum()
 
         return duration_rms
 
