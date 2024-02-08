@@ -5,21 +5,19 @@ build-backend = "hatchling.build"
 [project]
 name = "pyRVT"
 version = "0.8.0"
-authors = [
-{ name = "Albert Kottke", email="albert.kottke@gmail.com" }
-]
-description= "Random vibration theory for earthquake ground motions."
+authors = [{ name = "Albert Kottke", email = "albert.kottke@gmail.com" }]
+description = "Random vibration theory for earthquake ground motions."
 readme = "README.rst"
 license = "MIT"
 requires-python = ">=3.7"
 dependencies = [
-    "numpy",
-    "numba",
-    "setuptools",
-    "scipy",
-    "pyexcel",
-    "pyexcel-io",
-    "pyexcel-xlsx",
+  "numpy",
+  "numba",
+  "setuptools",
+  "scipy",
+  "pyexcel",
+  "pyexcel-io",
+  "pyexcel-xlsx",
 ]
 
 [project.urls]
@@ -34,12 +32,7 @@ line-length = 99
 target-version = ['py37', 'py38', 'py39', 'py310']
 
 [tool.hatch.build.targets.sdist]
-exclude = [
-  "/*.yml",
-  "/.*",
-  "/.github",
-  "/docs",
-]
+exclude = ["/*.yml", "/.*", "/.github", "/docs"]
 
 [tool.isort]
 profile = "black"
@@ -53,17 +46,17 @@ source = "vcs"
 
 [tool.hatch.envs.test]
 dependencies = [
-    "coverage[toml]",
-    "pytest",
-    "pystrata",
-# FIXME: Add as dependency of pystrata
-    "matplotlib",
-    "pykooh",
-    "tomli",
-    "pandas",
-# Done
-    "pytest-cov",
-    "pytest-runner",
+  "coverage[toml]",
+  "pytest",
+  "pystrata",
+  "pytest-cov",
+  "pytest-runner",
+  # FIXME: Add as dependency of pystrata
+  "matplotlib",
+  "pykooh",
+  "tomli",
+  "pandas",
+  # Done
 ]
 
 [tool.hatch.envs.test.scripts]
@@ -73,21 +66,11 @@ run = "run-coverage --no-cov"
 
 [tool.hatch.envs.style]
 detached = true
-dependencies = [
-  "black",
-  "isort",
-]
+dependencies = ["black", "isort"]
 
 [tool.hatch.envs.style.scripts]
-check = [
-  "black --check --diff .",
-  "isort --check-only --diff .",
-]
-fmt = [
-  "isort .",
-  "black .",
-  "check",
-]
+check = ["black --check --diff .", "isort --check-only --diff ."]
+fmt = ["isort .", "black .", "check"]
 
 [tool.hatch.envs.docs]
 dependencies = [
@@ -105,46 +88,3 @@ dependencies = [
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
 serve = "mkdocs serve --dev-addr localhost:8000"
-
-# [options]
-# # Use src/ so that package has to be installed for testing and use
-# package_dir=
-#     =src
-# packages=find:
-# zip_safe = False
-# include_package_data = True
-# python_requires = >=3.7
-# install_requires =
-# tests_require =
-#     pystrata
-#
-# [options.package_data]
-# pyrvt = data/*
-#
-# [options.packages.find]
-# where = src
-#
-# [options.entry_points]
-# console_scripts =
-#     pyrvt = pyrvt.runner:main
-#
-# [aliases]
-# test = pytest
-# release = clean --all sdist bdist_wheel build_sphinx upload upload_docs
-#
-# [flake8]
-# exclude = docs/
-# max-line-length = 88
-# extend-ignore = E203
-#
-# [pydocstyle]
-# inherit = false
-# convention = numpy
-# match = (?!test_).*\.py
-#
-# [wheel]
-# universal = 1
-#
-# [yapf]
-# based_on_style = pep8
-# spaces_around_power_operator = true
