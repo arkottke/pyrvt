@@ -16,6 +16,10 @@ repos:
     rev: v1.1.1
     hooks:
       - id: doc8
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
   - repo: https://github.com/psf/black
     rev: 24.1.1 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
