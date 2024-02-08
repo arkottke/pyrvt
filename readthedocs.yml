@@ -7,8 +7,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
-      - pip install hatch
-      - hatch run docs:build
-      - ls
-      - echo $READTHEDOCS_OUTPUT/html
-      - ls $READTHEDOCS_OUTPUT/html
+  commands:
+    - pip install hatch
+    - hatch run docs:build
+    - ls
+    - echo $READTHEDOCS_OUTPUT/html
+    - ls $READTHEDOCS_OUTPUT/html
