@@ -1,6 +1,4 @@
----
-title: pyRVT
----
+# pyRVT
 
 [![PyPi Cheese
 Shop](https://img.shields.io/pypi/v/pyrvt.svg)](https://img.shields.io/pypi/v/pyrvt.svg)
