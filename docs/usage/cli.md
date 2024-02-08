@@ -4,7 +4,7 @@
 arguments can be found by running `pyrvt`, which will produce the
 following output:
 
-```bash
+```
 ❯ pyrvt --help
 usage: pyrvt [-h] [--version] -i INPUT [-o OUTPUT] [-d DAMPING] [-f]
              [-m {BJ84,BT12,DK85,LP99,TM87,V75,WR18}]
