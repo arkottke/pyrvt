@@ -1,15 +1,14 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 """The command line interface for calling pyRVT.
 
 See :doc:`usage` for more details.
 """
+
 import argparse
 
-from . import __version__
-from .motions import DEFAULT_CALC
-from .tools import operation_fa2psa
-from .tools import operation_psa2fa
+from pyrvt import __version__
+from pyrvt.motions import DEFAULT_CALC
+from pyrvt.tools import operation_fa2psa
+from pyrvt.tools import operation_psa2fa
 
 parser = argparse.ArgumentParser(
     prog="pyrvt", description="Compute response or Fourier amplitude spectra using RVT."
@@ -19,26 +18,25 @@ parser.add_argument(
 )
 parser.add_argument(
     "operation",
-    help="""Operation to be performed: [psa2fa] converts from
-    pseudo-spectral acceleration to Fourier amplitude, and [fa2psa] converts
-    from Fourier amplitude to pseudo-spectral acceleration.""",
+    help="""Operation to be performed: [psa2fa] converts from pseudo-spectral
+    acceleration to Fourier amplitude, and [fa2psa] converts from Fourier amplitude to
+    pseudo-spectral acceleration.""",
     choices=["psa2fa", "fa2psa"],
 )
 parser.add_argument(
     "-i",
     "--input",
-    help="""Path containing the input file(s). Supported file types are
-    csv, xls, and xlsx -- provided the required packages have been
-    installed. A single file or glob can be specified. An example of a
-    glob would be "input/*_sa.xls" for all files within directory "input"
-    ending in "_sa.xls".""",
+    help="""Path containing the input file(s). Supported file types are csv, xls, and
+    xlsx -- provided the required packages have been installed. A single file or glob
+    can be specified. An example of a glob would be "input/*_sa.xls" for all files
+    within directory "input" ending in "_sa.xls".""",
     required=True,
 )
 parser.add_argument(
     "-o",
     "--output",
-    help="""Path where the output files should be created. If this
-    directory does not exist it will be created. Default: ./output""",
+    help="""Path where the output files should be created. If this directory does not
+    exist it will be created. Default: ./output""",
     default="./output",
 )
 parser.add_argument(
@@ -53,21 +51,20 @@ parser.add_argument(
     "--fixed-spacing",
     action="store_true",
     help="""Fixed spacing of the oscillator period of
-    0.01 to 10 sec log-spaced with 100 points. Target SA values will be
-    interpolated if needed""",
+    0.01 to 10 sec log-spaced with 100 points. Target SA values will be interpolated if
+      needed""",
 )
 parser.add_argument(
     "-m",
     "--method",
     default=DEFAULT_CALC,
-    choices=["BJ84", "BT12", "DK85", "LP99", "TM87", "V75"],
-    help="""Specify the peak factor calculation method. Possible options
-    are: [BJ84] Boore and Joyner (1984), [BT12] Boore and Thompson (2012),
-    [DK85] Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro
-    and McGuire (1987), and [V75] Vanmarcke (1975). If the BT12 method is used,
-    then the magnitude, distance and region must be provided by the input
-    files. If no value is provided, then "%(default)s" is used as the
-    default.""",
+    choices=["BJ84", "BT12", "DK85", "LP99", "TM87", "V75", "WR18"],
+    help="""Specify the peak factor calculation method. Possible options are: [BJ84]
+    Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [DK85] Der Kiureghian
+    (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro and McGuire (1987), [V75]
+    Vanmarcke (1975), and [WR18] Wang and Rathje (2018). If the BT12 method is used,
+    then the magnitude, distance and region must be provided by the input files. If no
+    value is provided, then "%(default)s" is used as the default.""",
 )
 
 

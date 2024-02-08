@@ -1,22 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import pathlib
 
 import numpy as np
 import pyexcel
+import pyrvt
 import pystrata
 import pytest
 from numpy.testing import assert_allclose
 from numpy.testing import assert_string_equal
 
-import pyrvt
 from . import readers
 
 fpath_data = pathlib.Path(__file__).parent / "data"
 
 
 @pytest.mark.parametrize(
-    "peak_calculator,abbrev,suffix",
+    ("peak_calculator", "abbrev", "suffix"),
     [
         (pyrvt.peak_calculators.BooreJoyner1984(), "bj84", "m6.00r020.0"),
         (pyrvt.peak_calculators.LiuPezeshk1999(), "lp99", "m6.00r020.0"),
@@ -89,7 +87,7 @@ def test_formulations(method):
         dist,
         region,
         peak_calculator=pyrvt.peak_calculators.get_peak_calculator(
-            method, dict(mag=mag, dist=dist, region=region)
+            method, {"mag": mag, "dist": dist, "region": region}
         ),
     )
     m.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
@@ -127,7 +125,7 @@ def read_wang_rathje_18_data(motion_id):
     return motion, expected
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 @pytest.mark.parametrize("motion_id", [0, 1, 2])
 @pytest.mark.parametrize("location", ["rock", "surface"])
 def test_wang_rathje(motion_id, location):
@@ -163,9 +161,5 @@ def test_wang_rathje(motion_id, location):
 
     else:
         raise NotImplementedError
-
-    # ratio = actual / expected[location].spec_acc
-    # print(ratio)
-    # print(max(ratio), min(ratio))
 
     assert_allclose(actual, expected[location].spec_acc, rtol=0.025)

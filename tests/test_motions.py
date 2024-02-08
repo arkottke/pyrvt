@@ -1,15 +1,10 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-import numpy as np
-from numpy.testing import assert_allclose
-
 import re
-
-import pyrvt
-import pandas as pd
-import pytest
-
 from pathlib import Path
+
+import numpy as np
+import pyrvt
+import pytest
+from numpy.testing import assert_allclose
 
 
 def test_calc_attenuation():
@@ -61,7 +56,7 @@ def iter_fas_test_cases():
                 continue
             key = n.split("_", 1)[1]
             m = re.search(r"M(?P<mag>\d+)_R(?P<dist>\d+)", key)
-            mag, dist = [float(p) for p in m.groups()]
+            mag, dist = (float(p) for p in m.groups())
 
             yield {
                 "mag": mag,
@@ -88,7 +83,7 @@ def stafford_fas(request):
         freqs=case["freqs"],
     )
 
-    d = {
+    return {
         "freqs": case["freqs"],
         "scenario": {k: case[k] for k in ["mag", "dist", "method"]},
         "desired": {
@@ -96,12 +91,11 @@ def stafford_fas(request):
             "duration": case["dur_ex"],
         },
         "actual": {
-            "fourier_amps": mot._fourier_amps,
-            "duration": mot._duration,
-            "dist_ps": mot._dist_ps,
+            "fourier_amps": mot.fourier_amps,
+            "duration": mot.duration,
+            "dist_ps": mot.dist_ps,
         },
     }
-    return d
 
 
 # @pytest.mark.parametrize("key", ["fourier_amps", "duration"])

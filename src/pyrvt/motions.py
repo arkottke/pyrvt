@@ -1,17 +1,22 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+"""Random vibration theory (RVT) based motions.
 
-"""Random vibration theory (RVT) based motions."""
+
+The module attribute `DEFAULT_CALC` is used to control the default peak factor
+calculator is one is not provided when a class is initialized.
+"""
+
+from __future__ import annotations
 
 import gzip
-
 from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
-
-from typing import Dict, List, Optional, Tuple, Union
-
 from scipy.interpolate import interp1d
 from scipy.stats import linregress
 
@@ -26,8 +31,7 @@ def sort_increasing(*args):
     Check if the first array is is increasing, if not reverse the order. Same
     operation is applied to additional arrays.
 
-    Parameters
-    ----------
+    Args:
     args : array_like
         arrays to be re-ordered.
 
@@ -109,7 +113,7 @@ def calc_sdof_tf(
 
 
 def calc_stress_drop(magnitude: float) -> float:
-    """Stress drop using Atkinson & Boore (2011, :cite:`atkinson11`) model.
+    """Stress drop using Atkinson & Boore (2011) model.
 
     Parameters
     ----------
@@ -170,25 +174,24 @@ class RvtMotion:
         Absolute value of acceleration Fourier amplitudes.
     duration : float, optional
         Ground motion duration (sec).
-    peak_calculator : :class:`~.peak_calculators.Calculator`, optional
+    peak_calculator : `Calculator`, optional
         Peak calculator to use. If `None`, then the default peak
         calculator is used.  The peak calculator may either be specified
-        by a :class:`~.peak_calculators.Calculator` object, or by the
-        initials of the calculator using
-        :func:`~.peak_calculators.peak_calculator`.
+        by a [pyrvt.peak_calculators.Calculator][] instance, or created by the
+        abbreviation of the calculator using
+        [pyrvt.peak_calculators.get_peak_calculator][].
     calc_kwds : dict, optional
         Keywords to be passed during the creation the peak calculator.
         These keywords are only required for some peak calculators.
-
     """
 
     def __init__(
         self,
-        freqs: npt.ArrayLike = None,
-        fourier_amps: npt.ArrayLike = None,
-        duration: float = None,
+        freqs: Optional[npt.ArrayLike] = None,
+        fourier_amps: Optional[npt.ArrayLike] = None,
+        duration: Optional[float] = None,
         peak_calculator: Optional[Union[str, peak_calculators.Calculator]] = None,
-        calc_kwds: Dict = None,
+        calc_kwds: Optional[Dict] = None,
     ):
         """Initialize the class."""
         self._freqs = freqs
@@ -232,7 +235,7 @@ class RvtMotion:
 
         Parameters
         ----------
-        osc_freq : float
+        osc_freqs : float
             Frequency of the oscillator (Hz).
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a
@@ -243,7 +246,7 @@ class RvtMotion:
 
         Returns
         -------
-        spec_accels : :class:`numpy.ndarray`
+        spec_accels : `numpy.ndarray`
             Peak pseudo-spectral acceleration of the oscillator
 
         """
@@ -264,13 +267,6 @@ class RvtMotion:
             ]
         )
 
-        of = 100
-        peak, pf = self.peak_calculator(
-            self._duration,
-            self._freqs,
-            self._fourier_amps * np.abs(calc_sdof_tf(self.freqs, of, osc_damping)),
-        )
-
         return resp
 
     def calc_peak(self, transfer_func: Optional[npt.ArrayLike] = None, **kwds) -> float:
@@ -279,7 +275,7 @@ class RvtMotion:
         Parameters
         ----------
         transfer_func : array_like, optional
-            Transfer function to apply to the motion. If ``None``, then no
+            Transfer function to apply to the motion. If `None`, then no
             transfer function is applied.
 
         Returns
@@ -307,8 +303,8 @@ class RvtMotion:
         min_freq : float
             minimum frequency of the fit (Hz).
         max_freq : float, optional
-            maximum frequency of the fit. If ``None``, then the maximum
-            frequency range is used.
+            maximum frequency of the fit. If `None`, then the maximum frequency range is
+            used.
 
         Returns
         -------
@@ -316,18 +312,20 @@ class RvtMotion:
             attenuation parameter.
         r_sqr : float
             squared correlation coefficient of the fit (R²). See
-            :func:`scipy.stats.linregress`.
-        freqs : :class:`numpy.ndarray`
+            `scipy.stats.linregress`.
+        freqs : array_like
             selected frequencies
-        fitted : :class:`numpy.ndarray`
+        fitted : array_like
             fitted values
 
         Notes
         -----
-        This function computes the site attenuation defined by Anderson &
-        Hough (1984, :cite:`anderson84`) as:
+        This function computes the site attenuation defined by Anderson & Hough (1984)
+        [@anderson84] as:
 
-        .. math:: a(f) = A_0 \exp(-\pi \kappa f) \text( for ) f > f_E
+        $$
+        a(f) = A_0 \exp(-\pi \kappa f) \text( for ) f > f_E
+        $$
 
         for a single Fourier amplitude spectrum
 
@@ -348,8 +346,7 @@ class RvtMotion:
 class SourceTheoryMotion(RvtMotion):
     """Single-corner source theory model.
 
-    The single-corner source theory model uses default parameters from Campbell
-    (2003, :cite:`campbell03`).
+    The single-corner source theory model uses default parameters from Campbell (2003).
     """
 
     def __init__(
@@ -372,22 +369,22 @@ class SourceTheoryMotion(RvtMotion):
         distance : float
             Epicentral distance (km).
         region : str
-            Region for the parameters. Either 'cena' for
-        Central and Eastern North America, or 'wna' for Western North
-        America.
+            Region for the parameters. Either 'cena' for Central and Eastern North
+            America, or 'wna' for Western North America.
         stress_drop : float, optional
             Stress drop of the event (bars).  If `None`, then the default value
             is used. For `region` is 'cena', the default value is computed by
-            the :cite:`atkinson11` model, while for `region` is 'wna' the
+            the  model, while for `region` is 'wna' the
             default value is 100 bars.
         depth : float, optional
             Hypocenter depth (km). The `depth` is combined with the `distance`
             to compute the hypocentral distance.
-        peak_calculator : :class:`~.peak_calculators.Calculator`, optional
-            Peak calculator to use. If `None`, then the default peak calculator
-            is used. The peak calculator may either be specified by a
-            :class:`~.peak_calculators.Calculator` object, or by the initials
-            of the calculator using :func:`~.peak_calculators.peak_calculator`.
+        peak_calculator : `Calculator`, optional
+            Peak calculator to use. If `None`, then the default peak
+            calculator is used. The peak calculator may either be specified by
+            a [pyrvt.peak_calculators.Calculator][] object, or by the
+            initials of the calculator using
+            [pyrvt.peak_calculators.get_peak_calculator][].
         calc_kwds : dict, optional
             Keywords to be passed during the creation the peak calculator.
             These keywords are only required for some peak calculators.
@@ -635,619 +632,7 @@ class StaffordEtAl22Motion(RvtMotion):
     #
     # In the original code, the interpolation is done on log(amplitdue) and linear
     # frequency. I would typically do this on log frequency and linear amplitude.
-    LN_SITE_AMP = interp1d(
-        [
-            0.01,
-            0.1,
-            0.102329,
-            0.104713,
-            0.107152,
-            0.109648,
-            0.112202,
-            0.114815,
-            0.11749,
-            0.120226,
-            0.123027,
-            0.125893,
-            0.128825,
-            0.131826,
-            0.134896,
-            0.138038,
-            0.141254,
-            0.144544,
-            0.147911,
-            0.151356,
-            0.154882,
-            0.158489,
-            0.162181,
-            0.165959,
-            0.169824,
-            0.17378,
-            0.177828,
-            0.18197,
-            0.186209,
-            0.190546,
-            0.194984,
-            0.199526,
-            0.204174,
-            0.20893,
-            0.213796,
-            0.218776,
-            0.223872,
-            0.229087,
-            0.234423,
-            0.239883,
-            0.245471,
-            0.251189,
-            0.25704,
-            0.263027,
-            0.269153,
-            0.275423,
-            0.281838,
-            0.288403,
-            0.295121,
-            0.301995,
-            0.30903,
-            0.316228,
-            0.323594,
-            0.331131,
-            0.338844,
-            0.346737,
-            0.354813,
-            0.363078,
-            0.371535,
-            0.380189,
-            0.389045,
-            0.398107,
-            0.40738,
-            0.416869,
-            0.42658,
-            0.436516,
-            0.446684,
-            0.457088,
-            0.467735,
-            0.47863,
-            0.489779,
-            0.501187,
-            0.512861,
-            0.524807,
-            0.537032,
-            0.549541,
-            0.562341,
-            0.57544,
-            0.588844,
-            0.60256,
-            0.616595,
-            0.630957,
-            0.645654,
-            0.660693,
-            0.676083,
-            0.691831,
-            0.707946,
-            0.724436,
-            0.74131,
-            0.758578,
-            0.776247,
-            0.794328,
-            0.81283,
-            0.831764,
-            0.851138,
-            0.870964,
-            0.891251,
-            0.912011,
-            0.933254,
-            0.954993,
-            0.977237,
-            1.0,
-            1.023293,
-            1.047129,
-            1.071519,
-            1.096478,
-            1.122018,
-            1.148153,
-            1.174897,
-            1.202264,
-            1.230269,
-            1.258926,
-            1.28825,
-            1.318257,
-            1.348963,
-            1.380384,
-            1.412537,
-            1.44544,
-            1.479108,
-            1.513561,
-            1.548816,
-            1.584893,
-            1.62181,
-            1.659587,
-            1.698244,
-            1.737801,
-            1.778279,
-            1.819701,
-            1.862087,
-            1.905461,
-            1.949844,
-            1.995262,
-            2.041738,
-            2.089296,
-            2.137962,
-            2.187761,
-            2.238721,
-            2.290868,
-            2.344229,
-            2.398833,
-            2.454709,
-            2.511886,
-            2.570396,
-            2.630268,
-            2.691535,
-            2.754228,
-            2.818383,
-            2.884031,
-            2.951209,
-            3.019952,
-            3.090296,
-            3.162278,
-            3.235937,
-            3.311311,
-            3.388441,
-            3.467368,
-            3.548134,
-            3.63078,
-            3.715352,
-            3.801893,
-            3.890451,
-            3.981071,
-            4.073803,
-            4.168694,
-            4.265795,
-            4.365158,
-            4.466835,
-            4.570881,
-            4.677351,
-            4.7863,
-            4.897787,
-            5.011872,
-            5.128613,
-            5.248074,
-            5.370318,
-            5.495409,
-            5.623413,
-            5.754399,
-            5.888436,
-            6.025596,
-            6.165949,
-            6.309573,
-            6.456542,
-            6.606934,
-            6.760828,
-            6.918308,
-            7.079456,
-            7.24436,
-            7.413103,
-            7.585776,
-            7.762471,
-            7.943282,
-            8.128304,
-            8.317636,
-            8.511379,
-            8.709635,
-            8.912507,
-            9.120107,
-            9.332541,
-            9.549923,
-            9.772372,
-            10.0,
-            10.23293,
-            10.471284,
-            10.715192,
-            10.96478,
-            11.220183,
-            11.481534,
-            11.748973,
-            12.022642,
-            12.302684,
-            12.589251,
-            12.882492,
-            13.182563,
-            13.489624,
-            13.80384,
-            14.12537,
-            14.454392,
-            14.79108,
-            15.135614,
-            15.48817,
-            15.848933,
-            16.218101,
-            16.59587,
-            16.98244,
-            17.37801,
-            17.782793,
-            18.19701,
-            18.62087,
-            19.05461,
-            19.498443,
-            19.952621,
-            20.41738,
-            20.89296,
-            21.37962,
-            21.877611,
-            22.38721,
-            22.908672,
-            23.442283,
-            23.988321,
-            24.4608,
-            25.032,
-            25.6166,
-            26.2148,
-            26.827,
-            27.4534,
-            28.0945,
-            28.7506,
-            29.422,
-            30.109,
-            30.8121,
-            31.5317,
-            32.268,
-            33.0215,
-            33.7926,
-            34.5818,
-            35.3893,
-            36.2157,
-            37.0614,
-            37.9269,
-            38.8126,
-            39.7189,
-            40.6465,
-            41.5956,
-            42.567,
-            43.561,
-            44.5782,
-            45.6192,
-            46.6845,
-            47.7747,
-            48.8903,
-            50.032,
-            51.2004,
-            52.396,
-            53.6196,
-            54.8717,
-            56.1531,
-            57.4643,
-            58.8062,
-            60.1795,
-            61.5848,
-            63.023,
-            64.4947,
-            66.0007,
-            67.542,
-            69.1192,
-            70.7333,
-            72.3851,
-            74.0754,
-            75.8052,
-            77.5754,
-            79.387,
-            81.2409,
-            83.138,
-            85.0794,
-            87.0662,
-            89.0994,
-            91.18,
-            93.3093,
-            95.4883,
-            97.7181,
-            100.0,
-        ],
-        np.log(
-            [
-                1.0,
-                1.264743,
-                1.271871,
-                1.279014,
-                1.286166,
-                1.293327,
-                1.300495,
-                1.307668,
-                1.314844,
-                1.322022,
-                1.3292,
-                1.33638,
-                1.343563,
-                1.350753,
-                1.357952,
-                1.365166,
-                1.3724,
-                1.379659,
-                1.386946,
-                1.394264,
-                1.401614,
-                1.408999,
-                1.416419,
-                1.423873,
-                1.431361,
-                1.438883,
-                1.446437,
-                1.454019,
-                1.461627,
-                1.469255,
-                1.476897,
-                1.484547,
-                1.492199,
-                1.499845,
-                1.507478,
-                1.515089,
-                1.52267,
-                1.530214,
-                1.537712,
-                1.545156,
-                1.552541,
-                1.55986,
-                1.567111,
-                1.574289,
-                1.581393,
-                1.588421,
-                1.595371,
-                1.602243,
-                1.609038,
-                1.615756,
-                1.622398,
-                1.628966,
-                1.635461,
-                1.641884,
-                1.64824,
-                1.654529,
-                1.660755,
-                1.666921,
-                1.673029,
-                1.679083,
-                1.685087,
-                1.691043,
-                1.696955,
-                1.702826,
-                1.708661,
-                1.714462,
-                1.720234,
-                1.725979,
-                1.731701,
-                1.737405,
-                1.743093,
-                1.748769,
-                1.754436,
-                1.7601,
-                1.765763,
-                1.771428,
-                1.777101,
-                1.782784,
-                1.788483,
-                1.7942,
-                1.79994,
-                1.805707,
-                1.811506,
-                1.81734,
-                1.823215,
-                1.829134,
-                1.835103,
-                1.841123,
-                1.847199,
-                1.853331,
-                1.85952,
-                1.865766,
-                1.872069,
-                1.878427,
-                1.884838,
-                1.891302,
-                1.897816,
-                1.904376,
-                1.910981,
-                1.917627,
-                1.924312,
-                1.931032,
-                1.937785,
-                1.944567,
-                1.951374,
-                1.958204,
-                1.965053,
-                1.971919,
-                1.978799,
-                1.98569,
-                1.992588,
-                1.999493,
-                2.0064,
-                2.013308,
-                2.020215,
-                2.02712,
-                2.034019,
-                2.040913,
-                2.047799,
-                2.054677,
-                2.061546,
-                2.068404,
-                2.075252,
-                2.082088,
-                2.088913,
-                2.095727,
-                2.102529,
-                2.109321,
-                2.116101,
-                2.122872,
-                2.129632,
-                2.136385,
-                2.14313,
-                2.149868,
-                2.156601,
-                2.163329,
-                2.170056,
-                2.176782,
-                2.183509,
-                2.190238,
-                2.196973,
-                2.203714,
-                2.210465,
-                2.217228,
-                2.224004,
-                2.230798,
-                2.237612,
-                2.244448,
-                2.25131,
-                2.258201,
-                2.265124,
-                2.272083,
-                2.279082,
-                2.286124,
-                2.293212,
-                2.300353,
-                2.307549,
-                2.314805,
-                2.322127,
-                2.329519,
-                2.336986,
-                2.344534,
-                2.352169,
-                2.359894,
-                2.367718,
-                2.375645,
-                2.383683,
-                2.391837,
-                2.400114,
-                2.408522,
-                2.417069,
-                2.425761,
-                2.434606,
-                2.443614,
-                2.452794,
-                2.462154,
-                2.471704,
-                2.481454,
-                2.491416,
-                2.501599,
-                2.512017,
-                2.522681,
-                2.533593,
-                2.544623,
-                2.555702,
-                2.566822,
-                2.577981,
-                2.589182,
-                2.600422,
-                2.611704,
-                2.623026,
-                2.634389,
-                2.645793,
-                2.657238,
-                2.668725,
-                2.680254,
-                2.691824,
-                2.703436,
-                2.71509,
-                2.726786,
-                2.738525,
-                2.750306,
-                2.76213,
-                2.773996,
-                2.785906,
-                2.797859,
-                2.809855,
-                2.821894,
-                2.833977,
-                2.846104,
-                2.858274,
-                2.870489,
-                2.882748,
-                2.895052,
-                2.9074,
-                2.919793,
-                2.93223,
-                2.944713,
-                2.957241,
-                2.969814,
-                2.982433,
-                2.995097,
-                3.007808,
-                3.020564,
-                3.033367,
-                3.046216,
-                3.059111,
-                3.072054,
-                3.085043,
-                3.098079,
-                3.111162,
-                3.124293,
-                3.137471,
-                3.150697,
-                3.163971,
-                3.177292,
-                3.190662,
-                3.204081,
-                3.217547,
-                3.231063,
-                3.242526,
-                3.256161,
-                3.269851,
-                3.28359,
-                3.29738,
-                3.311217,
-                3.325106,
-                3.339046,
-                3.353036,
-                3.367075,
-                3.381166,
-                3.395309,
-                3.409502,
-                3.423746,
-                3.438042,
-                3.452391,
-                3.466789,
-                3.48124,
-                3.495744,
-                3.5103,
-                3.524909,
-                3.539569,
-                3.554285,
-                3.56905,
-                3.583871,
-                3.598744,
-                3.613671,
-                3.628651,
-                3.643686,
-                3.658775,
-                3.673917,
-                3.689114,
-                3.704366,
-                3.719671,
-                3.735033,
-                3.750447,
-                3.765917,
-                3.781441,
-                3.797022,
-                3.812659,
-                3.82835,
-                3.844099,
-                3.859904,
-                3.875764,
-                3.891682,
-                3.907655,
-                3.923684,
-                3.939771,
-                3.955913,
-                3.972112,
-                3.988367,
-                4.004681,
-                4.021051,
-                4.037478,
-                4.053962,
-                4.070504,
-                4.087104,
-                4.103761,
-                4.120476,
-                4.13725,
-                4.154081,
-                4.170967,
-            ]
-        ),
-        kind="linear",
-    )
+    _ln_site_amp = None
 
     def __init__(
         self,
@@ -1330,6 +715,19 @@ class StaffordEtAl22Motion(RvtMotion):
         else:
             raise NotImplementedError
 
+        if self._ln_site_amp is None:
+            # Load the data
+            data = np.genfromtxt(
+                gzip.open(Path(__file__).parent / "data" / "sea22-site_amp.csv.gz"),
+                delimiter=",",
+                names=True,
+                skip_header=1,
+            ).view(np.recarray)
+
+            self._ln_site_amp = interp1d(
+                data["freq"], np.log(data["site_amp"]), kind="linear"
+            )
+
         # Stress drop in bars
         stress_drop = np.exp(
             ln_ds0
@@ -1385,7 +783,7 @@ class StaffordEtAl22Motion(RvtMotion):
         else:
             # Value from Al Atik and Abrahamson
             site_atten = 0.039
-            site_amp = np.exp(self.LN_SITE_AMP(self._freqs))
+            site_amp = np.exp(self._ln_site_amp(self._freqs))
             site_term = site_amp * np.exp(-np.pi * site_atten * self._freqs)
 
         # Combine the three components and convert from displacement to acceleration
@@ -1393,6 +791,11 @@ class StaffordEtAl22Motion(RvtMotion):
         self._dist_ps = dist_ps
 
         self._duration = StaffordEtAl22Motion.calc_duration(corner_freq, dist_ps)
+
+    @property
+    def dist_ps(self) -> float:
+        """Equivalent point source distance (km)."""
+        return self._dist_ps
 
     @staticmethod
     def calc_depth_tor(mag: float, mechanism: str) -> float:
@@ -1444,8 +847,8 @@ class StaffordEtAl22Motion(RvtMotion):
 class CompatibleRvtMotion(RvtMotion):
     """Response spectrum compatible RVT motion.
 
-    A :class:`~.motions.CompatibleRvtMotion` object is used to compute a
-    Fourier amplitude spectrum that is compatible with a target response
+    A [`CompatibleRvtMotion`][pyrvt.motions.CompatibleRvtMotion] object is used to
+    compute a Fourier amplitude spectrum that is compatible with a target response
     spectrum.
 
     """
@@ -1459,7 +862,7 @@ class CompatibleRvtMotion(RvtMotion):
         event_kwds: Optional[Dict] = None,
         window_len: Optional[int] = None,
         peak_calculator: Optional[Union[str, peak_calculators.Calculator]] = None,
-        calc_kwds=None,
+        calc_kwds: Optional[Dict] = None,
     ):
         """Initialize the motion.
 
@@ -1467,7 +870,7 @@ class CompatibleRvtMotion(RvtMotion):
         ----------
         osc_freqs : array_like
             Frequencies of the oscillator response (Hz).
-        osc_accels_target : :class:`numpy.ndarray`
+        osc_accels_target : array_like
             Spectral acceleration of the oscillator at the specified
             frequencies (g).
         duration : float, optional
@@ -1484,12 +887,12 @@ class CompatibleRvtMotion(RvtMotion):
             Window length used for smoothing the computed Fourier amplitude
             spectrum. If `None`, then no smoothing is applied. The smoothing
             is applied as a moving average with a width of `window_len`.
-        peak_calculator : :class:`~.peak_calculators.Calculator`, optional
+        peak_calculator : `Calculator`, optional
             Peak calculator to use. If `None`, then the default peak
             calculator is used. The peak calculator may either be specified by
-            a :class:`~.peak_calculators.Calculator` object, or by the
+            a [pyrvt.peak_calculators.Calculator][] object, or by the
             initials of the calculator using
-            :func:`~.peak_calculators.peak_calculator`.
+            [pyrvt.peak_calculators.get_peak_calculator][].
         calc_kwds : dict, optional
             Keywords to be passed during the creation the peak calculator.
             These keywords are only required for some peak calculators.
@@ -1590,7 +993,7 @@ class CompatibleRvtMotion(RvtMotion):
                 np.interp(
                     log_freqs[first:last],
                     log_osc_freqs,
-                    np.log((osc_accels_target / osc_accels)),
+                    np.log(osc_accels_target / osc_accels),
                 )
             )
 
@@ -1614,10 +1017,9 @@ class CompatibleRvtMotion(RvtMotion):
     ) -> np.ndarray:
         """Estimate the Fourier amplitudes.
 
-        Compute an estimate of the FAS using the Gasparini & Vanmarcke (1976,
-        :cite:`gasparini76`) methodology.  The response is first computed at
-        the lowest frequency and then subsequently computed at higher
-        frequencies.
+        Compute an estimate of the FAS using the Gasparini & Vanmarcke (1976)
+        methodology.  The response is first computed at the lowest frequency and then
+        subsequently computed at higher frequencies.
 
         Parameters
         ----------
@@ -1643,7 +1045,7 @@ class CompatibleRvtMotion(RvtMotion):
         sdof_factor = np.pi / (4.0 * osc_damping) - 1.0
         fourier_amps = np.empty_like(osc_freqs)
         for i, (osc_freq, osc_accel) in enumerate(zip(osc_freqs, osc_accels)):
-            # TODO simplify equation and remove duration
+            # TODO: simplify equation and remove duration
             fa_sqr_cur = (
                 (self.duration * osc_accel**2) / (2 * peak_factor**2) - total
             ) / (osc_freq * sdof_factor)

@@ -41,7 +41,6 @@ clean-pyc:
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test:
-	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
 
@@ -50,7 +49,8 @@ lint:
 	pydocstyle pyrvt/*.py
 
 test:
-	py.test --flake8 --cov-report html --cov=pyrvt tests/
+	pip install -e .
+	pytest --cov-report html --cov=pyrvt tests/
 
 coverage:
 	coverage run --source pyrvt setup.py tests
@@ -59,15 +59,7 @@ coverage:
 	$(BROWSER) htmlcov/index.html
 
 docs:
-	rm -f docs/pyrvt.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ pyrvt
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+	sphinx-autobuild --watch src docs docs/_build/html
 
 release: clean
 	python setup.py sdist upload

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 import pathlib
 
 from numpy.testing import assert_allclose

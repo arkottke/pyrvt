@@ -1,4 +1,5 @@
 """Simple example of calculating a Fourier amplitude spectrum"""
+
 import datetime
 import os
 
@@ -28,4 +29,4 @@ for method in ["BJ84", "CLH56", "DK85", "LP99", "TM87", "V75"]:
     )
     psa_calc = crm.calc_osc_accels(target_freqs, damping)
     duration = datetime.datetime.now() - start
-    print("{:10}{}".format(method, duration))
+    print(f"{method:10}{duration}")

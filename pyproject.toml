@@ -1,4 +1,131 @@
-# As per https://github.com/pypa/setuptools/blob/main/docs/userguide/quickstart.rst
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyRVT"
+version = "0.7.0dev"
+authors = [
+{ name = "Albert Kottke", email="albert.kottke@gmail.com" }
+]
+description= "Random vibration theory for earthquake ground motions."
+readme = "README.rst"
+license = "MIT"
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "numba",
+    "setuptools",
+    "scipy",
+    "pyexcel",
+    "pyexcel-io",
+    "pyexcel-xlsx",
+]
+
+[project.urls]
+Homepage = "https://github.com/arkottke/pyrvt"
+Documentation = "https://pyrvt.readthedocs.io"
+
+[project.scripts]
+pyrvt = "pyrvt.runner:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.envs.test]
+dependencies = [
+    "coverage[toml]",
+    "pytest",
+    "pystrata",
+# FIXME: Add as dependency of pystrata
+    "matplotlib",
+    "pykooh",
+    "tomli",
+    "pandas",
+# Done
+    "pytest-cov",
+    "pytest-runner",
+]
+
+[tool.hatch.envs.test.scripts]
+run-coverage = "pytest --cov-config=pyproject.toml --cov=pkg --cov=tests"
+run = "run-coverage --no-cov"
+
+[tool.hatch.envs.style]
+detached = true
+dependencies = [
+  "black",
+  "isort",
+]
+
+[tool.hatch.envs.style.scripts]
+check = [
+  "black --check --diff .",
+  "isort --check-only --diff .",
+]
+fmt = [
+  "isort .",
+  "black .",
+  "check",
+]
+
+[tool.hatch.envs.docs]
+dependencies = [
+  "mkdocs",
+  "markdown-callouts",
+  "mkdocstrings[python]",
+  "mkdocs-bibtex",
+  "mkdocs-coverage",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-material",
+  "mkdocs-section-index",
+  "mkdocs-jupyter",
+  "black",
+]
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8000"
+
+# [options]
+# # Use src/ so that package has to be installed for testing and use
+# package_dir=
+#     =src
+# packages=find:
+# zip_safe = False
+# include_package_data = True
+# python_requires = >=3.7
+# install_requires =
+# tests_require =
+#     pystrata
+#
+# [options.package_data]
+# pyrvt = data/*
+#
+# [options.packages.find]
+# where = src
+#
+# [options.entry_points]
+# console_scripts =
+#     pyrvt = pyrvt.runner:main
+#
+# [aliases]
+# test = pytest
+# release = clean --all sdist bdist_wheel build_sphinx upload upload_docs
+#
+# [flake8]
+# exclude = docs/
+# max-line-length = 88
+# extend-ignore = E203
+#
+# [pydocstyle]
+# inherit = false
+# convention = numpy
+# match = (?!test_).*\.py
+#
+# [wheel]
+# universal = 1
+#
+# [yapf]
+# based_on_style = pep8
+# spaces_around_power_operator = true

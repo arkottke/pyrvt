@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 """
 Peak factor models.
 
@@ -9,15 +8,14 @@ specific model may include oscillator duration correction.
 import ctypes
 import itertools
 import pathlib
+from abc import ABC
+from abc import abstractmethod
+from typing import List
+from typing import Tuple
 
 import numba
 import numpy as np
 import numpy.typing as npt
-
-from abc import ABC, abstractmethod
-
-from typing import List, Tuple
-
 from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 from scipy.signal import argrelmax
@@ -203,9 +201,9 @@ class Calculator(ABC):
     """Base class used for all peak calculator classes.
 
     Provides the interface that is used by all the other classes. Specific peak
-    calculators modify the :method:`_calc_peak_factor` and potentially
-    :method:`_calc_duration_rms` methods. Using the calculator is done through calling
-    of :method:`__call__`.
+    calculators modify the `_calc_peak_factor` method and potentially
+    `_calc_duration_rms` method. Using any calculator is done through calling of
+    `__call__`.
     """
 
     #:  Name of the calculator
@@ -292,7 +290,6 @@ class Calculator(ABC):
             associated peak factor.
 
         """
-        pass
 
     def _calc_duration_rms(self, duration: float, **kwargs) -> float:
         """Modify a duration to correct for stationarity.

@@ -1,6 +1,9 @@
 -r ./requirements.txt
+furo
 
 jinja2
 sphinx
-sphinx_rtd_theme
+sphinx-autobuild
+sphinx-copybutton
 sphinxcontrib-bibtex
+sphinxext-opengraph

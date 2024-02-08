@@ -1,16 +1,14 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 """Tools for reading/writing of files and performing operations."""
+
+from __future__ import annotations
+
 import functools
 import multiprocessing
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 import pyexcel
-
-from pathlib import Path
-from typing import Dict, Union, List, Tuple
-
 from pyrvt import motions
 from pyrvt.peak_calculators import get_peak_calculator
 from pyrvt.peak_calculators import get_region
@@ -26,17 +24,12 @@ PARAMETER_NAMES = [
 
 
 def get_fpaths(s):
-    if "*" in s:
-        return Path(".").glob(s)
-    else:
-        return [
-            Path(s),
-        ]
+    return Path(".").glob(s) if "*" in s else [Path(s)]
 
 
 def read_events(
-    fpath: Union[str, Path], response_type: str
-) -> Tuple[str, np.ndarray, List[dict]]:
+    fpath: str | Path, response_type: str
+) -> tuple[str, np.ndarray, list[dict]]:
     """Read data from the file an Excel work book.
 
     Parameters
@@ -89,12 +82,12 @@ def read_events(
 
 
 def write_events(
-    fname: Union[str, Path],
+    fname: str | Path,
     reference: npt.ArrayLike,
     reference_label: str,
     response_type: str,
     response_label: str,
-    events: List[dict],
+    events: list[dict],
 ):
     """Write the events to a file.
 
@@ -162,8 +155,8 @@ def _calc_fa(target_freqs, damping, method, event):
 
 
 def calc_compatible_spectra(
-    method: str, periods: npt.ArrayLike, events: List[dict], damping: float = 0.05
-) -> (np.ndarray, List[dict]):
+    method: str, periods: npt.ArrayLike, events: list[dict], damping: float = 0.05
+) -> (np.ndarray, list[dict]):
     """Compute the response spectrum compatible motions.
 
     Parameters
@@ -234,8 +227,8 @@ def calc_compatible_spectra(
 
 
 def operation_psa2fa(
-    src: Union[str, Path],
-    dst: Union[str, Path],
+    src: str | Path,
+    dst: str | Path,
     damping: float,
     method: str = "LP99",
     fixed_spacing: bool = True,
@@ -311,7 +304,7 @@ def _calc_psa(
     damping: float,
     method: str,
     freqs: npt.ArrayLike,
-    event: Dict[str, float],
+    event: dict[str, float],
 ) -> np.ndarray:
     """Calculate the response spectra for an event.
 
@@ -324,18 +317,19 @@ def _calc_psa(
         duration=event["duration"],
         peak_calculator=get_peak_calculator(
             method,
-            dict(
-                region=event["region"], mag=event["magnitude"], dist=event["distance"]
-            ),
+            {
+                "region": event["region"],
+                "mag": event["magnitude"],
+                "dist": event["distance"],
+            },
         ),
     )
-    psa = m.calc_osc_accels(osc_freqs, damping)
-    return psa
+    return m.calc_osc_accels(osc_freqs, damping)
 
 
 def operation_fa2psa(
-    src: Union[str, Path],
-    dst: Union[str, Path],
+    src: str | Path,
+    dst: str | Path,
     damping: float,
     method: str = "LP99",
     fixed_spacing: bool = True,

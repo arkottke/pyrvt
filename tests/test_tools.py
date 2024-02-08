@@ -1,13 +1,11 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 import os
 import shutil
 import tempfile
 
+import pyrvt
 import pytest
 from numpy.testing import assert_allclose
 
-import pyrvt
 from . import make_relpath
 
 exts = [".csv", ".xls", ".xlsx", ".ods"]
