@@ -33,6 +33,14 @@ pyrvt = "pyrvt.runner:main"
 line-length = 99
 target-version = ['py37', 'py38', 'py39', 'py310']
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/*.yml",
+  "/.*",
+  "/.github",
+  "/docs",
+]
+
 [tool.isort]
 profile = "black"
 filter_files = true
