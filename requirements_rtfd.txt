@@ -1,9 +1,15 @@
--r ./requirements.txt
-furo
+--index-url https://pypi.python.org/simple/
 
 jinja2
-sphinx
-sphinx-autobuild
-sphinx-copybutton
-sphinxcontrib-bibtex
-sphinxext-opengraph
+matplotlib
+numpy
+mkdocs
+markdown-callouts
+mkdocstrings[python]
+mkdocs-bibtex
+mkdocs-gen-files
+mkdocs-literate-nav
+mkdocs-material
+mkdocs-section-index
+mkdocs-jupyter
+black
