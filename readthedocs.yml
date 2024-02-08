@@ -10,4 +10,4 @@ build:
   commands:
     - pip install hatch
     - hatch run docs:build
-    - mv site $READTHEDOCS_OUTPUT/html
+    - mv site "$READTHEDOCS_OUTPUT/html"
