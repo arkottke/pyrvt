@@ -34,6 +34,9 @@ target-version = ['py37', 'py38', 'py39', 'py310']
 [tool.hatch.build.targets.sdist]
 exclude = ["/*.yml", "/.*", "/.github", "/docs"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyrvt"]
+
 [tool.isort]
 profile = "black"
 filter_files = true
@@ -88,4 +91,3 @@ dependencies = [
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"
 serve = "mkdocs serve --dev-addr localhost:8000"
-rtfd = 'build -d _readthedocs/html'
