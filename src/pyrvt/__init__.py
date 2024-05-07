@@ -1,5 +1,7 @@
 #!/usr/bin/python
-"""pyRVT module. Provides random vibration theory models for earthquake ground motion calculations."""
+"""pyRVT module. Provides random vibration theory models for earthquake ground motion
+calculations.
+"""
 
 from importlib.metadata import version
 

@@ -1,16 +1,16 @@
- 
+
    ***************** SMSIM, Version  3.800 ************************
- 
-                                                                                
+
+
  output file: test-bj84.gmrv.sum
  *** Results computed using GM_RV_DRVR ***
- 
+
  Date: 2014/02/04
  Time Start: 08:05:26.443
- 
- file with parameters: test-bj84.ofr       
+
+ file with parameters: test-bj84.ofr
  Title:
-     Sample data file **** NOT FOR A PARTICULAR APPLICATION **            
+     Sample data file **** NOT FOR A PARTICULAR APPLICATION **
  rho, beta, prtitn, rtp, fs:
    2.80  3.60 0.710 0.55 2.00
  spectral shape: source number, pf_a, pd_a, pf_b, pd_b
@@ -40,7 +40,7 @@
  !  Atkinson and Boore (2003)     r_rup           1     -2.1403  0.507
  0 0.00000000E+00 0.00000000E+00
  i_gsprd_option =  0
-  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd =
   10.00  0.00  0.00  0.00  0.00  0.00
  gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
     1.00
@@ -73,8 +73,8 @@
  parameters for rv calcs: zup, eps_int, amp_cutoff, osc_crrctn
    10.00  1.000E-05  1.000E-03  1
  fup calculated in driver =  7.329E+01
- 
- *********** NEW R AND M ********** 
+
+ *********** NEW R AND M **********
  r, f_ff, rmod, amag, kappa =   2.000E+01  0.000E+00  2.000E+01  6.000E+00  3.000E-02
   File with response spectra: test-bj84.m6.00r020.0_rs.rv.co
    const=   4.757E-24
@@ -181,5 +181,5 @@
   13.000   0.077  1.859E+00  8.984E-01  4.342E-01    0.19 0.9959   19.5    1.8   1.32   4.30  7.750E-01    7.750E-01       1.8    19.5           39.7     1.8       1.8            3.6           1.32                      1.81        1.61                 1.96    1.859E+00               2.546E+00  2.262E+00          2.758E+00  8.984E-01             1.230E+00  1.093E+00        1.333E+00    4.342E-01               5.947E-01  5.284E-01          6.442E-01  4.28031E+00  3.29017E+00  6.33198E+00  1.15657E+03  3.333E-01  2.942E+00  1.600E+00  4.542E+00  9.235E+00  2.86233E+00        7.013E-01        1.426E+00
   14.000   0.071  1.882E+00  8.447E-01  3.791E-01    0.19 0.9960   19.8    1.8   1.32   4.30  7.907E-01    7.907E-01       1.8    19.8           37.9     1.8       1.8            3.4           1.32                      1.77        1.61                 1.93    1.882E+00               2.520E+00  2.287E+00          2.746E+00  8.447E-01             1.131E+00  1.027E+00        1.232E+00    3.791E-01               5.075E-01  4.607E-01          5.530E-01  3.53730E+00  2.64843E+00  5.29092E+00  9.96842E+02  3.333E-01  2.942E+00  1.600E+00  4.542E+00  8.682E+00  3.08251E+00        7.233E-01        1.383E+00
   15.000   0.067  1.904E+00  7.977E-01  3.342E-01    0.20 0.9961   20.1    1.8   1.33   4.30  8.038E-01    8.038E-01       1.8    20.1           36.3     1.8       1.8            3.2           1.33                      1.74        1.61                 1.91    1.904E+00               2.495E+00  2.310E+00          2.733E+00  7.977E-01             1.045E+00  9.676E-01        1.145E+00    3.342E-01               4.377E-01  4.053E-01          4.795E-01  2.95941E+00  2.16957E+00  4.49488E+00  8.68182E+02  3.333E-01  2.942E+00  1.600E+00  4.542E+00  8.212E+00  3.30269E+00        7.437E-01        1.345E+00
- 
+
  Elapsed time (sec):   1.570E-01

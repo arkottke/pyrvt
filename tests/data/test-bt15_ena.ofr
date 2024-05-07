@@ -2,72 +2,72 @@
    12/11/15
 !              Added parameters for a high-cut filter
 !Title:
-  Boatwright and Seekins (2011) attenuation model)  
+  Boatwright and Seekins (2011) attenuation model)
 !rho, beta, prtitn, radpat, fs:
     2.8 3.7 0.707 0.55 2.0
 !spectral shape: source number, pf_a, pd_a, pf_b, pd_b
 ! where source number means:
 !  1 = 1-corner (S = 1/(1+(f/fc)**pf_a)**pd_a)
 !  2 = Joyner (BSSA 74, 1167--1188)
-!  3 = Atkinson (BSSA 83, 1778--1798; see also Atkinson & Boore, BSSA 85, 
+!  3 = Atkinson (BSSA 83, 1778--1798; see also Atkinson & Boore, BSSA 85,
 !      17--30)
 !  4 = Atkinson & Silva (BSSA 87, 97--113)
 !  5 = Haddon 1996 (approximate spectra in Fig. 10 of
-!          Haddon's paper in BSSA 86, 1300--1313; 
+!          Haddon's paper in BSSA 86, 1300--1313;
 !          see also Atkinson & Boore, BSSA 88, 917--934)
 !  6 = AB98-California (Atkinson & Boore BSSA 88, 917--934)
-!  7 = Boatwright & Choy (this is the functional form used by 
+!  7 = Boatwright & Choy (this is the functional form used by
 !                         Boore & Atkinson, BSSA 79, 1736--1761, p. 1761)
-!  8 = Joyner (his ENA two-corner model, done for the SSHAC elicitation 
+!  8 = Joyner (his ENA two-corner model, done for the SSHAC elicitation
 !      workshop)
 !  9 = Atkinson & Silva (BSSA 90, 255--274)
 ! 10 = Atkinson (2005 model),
-! 11 = Generalized multiplicative two-corner model 
+! 11 = Generalized multiplicative two-corner model
 !      (S = [1/(1+(f/fa)**pf_a)**pd_a]*[1/(1+(f/fb)**pf_b)**pd_b])
-! 12 = Generalized additive two-corner model 
+! 12 = Generalized additive two-corner model
 !      (S = (1-eps)/(1+(f/fa)**pf_a)**pd_a] + eps/(1+(f/fb)**pf_b)**pd_b)
 !          NOTE: if M<M for eps = 1.0, the program uses eps = 1, and the source spectrum only depends
 !          on fb, which is equal to the corner frequency of the single-corner source model.
-!          One warning: the source duration is given by a weighted average of 1/fa and 1/fb, as 
+!          One warning: the source duration is given by a weighted average of 1/fa and 1/fb, as
 !          specified below.   For eps = 1.0 fa will be set equal to fc (the corner frequency for the
 !          single-corner frequency with the specified stress parameter).   This will probably result in a
-!          a discontinuity in fa for eps = 1.0 and for eps slightly larger than 1.0.  This may affect the 
+!          a discontinuity in fa for eps = 1.0 and for eps slightly larger than 1.0.  This may affect the
 !          computation of duration.  Note that if the weights of 0.5 and 0.0 for 1/fa and 1/fb used by Atkinson and Boore (1995)
-!          and Atkinson and Silva (2000) are specified, then the source duration for M smaller than the M for eps = 1.0 
+!          and Atkinson and Silva (2000) are specified, then the source duration for M smaller than the M for eps = 1.0
 !          will be 0.5/fa, whereas it more logically should be 1/fc = 1/fa.  This is a general problem with
 !          the source duration of the two-corner model if the AB95 and AS00 weights are used.  Because
 !          M for eps =1.0 is usually small, the inconsistency will probably only arise for small magnitudes,
-!          for which the source duration will be small compared to the path duration.  But the 
+!          for which the source duration will be small compared to the path duration.  But the
 !          way to avoid an inconsistency in the source duration is to use weights of 0.5 and 0.5 for 1/fa and 1/fb, respectively.
-!          For large M, fb will usually be much larger than fa, and the  
+!          For large M, fb will usually be much larger than fa, and the
 !          source duration will be dominated by 0.5/fa.   For this reason, I am revising my recommendations
 !          for the source duration weights below.
 ! pf_a, pd_a, pf_b, pd_a are used for source numbers 1, 11, and 12, usually
 ! subject to these constraints for an omega-squared spectrum:
 ! source 1: pf_a*pd_a = 2
 ! source 11: pf_a*pd_a + pf_b*pd_b = 2
-! source 12: pf_a*pd_a = pf_b*pd_b = 2 
+! source 12: pf_a*pd_a = pf_b*pd_b = 2
 ! The usual single-corner frequency model uses
-! pf_a=2.0,pd_a=1.0; the Butterworth filter shape is given by 
+! pf_a=2.0,pd_a=1.0; the Butterworth filter shape is given by
 ! pf_a=4.0,pd_a=0.5.  pf_b and pd_b are only used by sources 11 and 12, but dummy
 ! values must be included for all sources.
      1 2.0 1.0 0.0 0.0
-!spectral scaling: 
+!spectral scaling:
 ! stressc, dlsdm, fbdfa, amagc, c1_fa, c2_fa, amagc4fa,  c1_eps, c2_eps, amagc4eps
 !   stress=stressc*10.0**(dlsdm*(amag-amagc))
 !   fbdfa, amagc for Joyner model, usually 4.0, 7.0)
-!   c1_fa, c2_fa, amagc4fa:  the coefficients relating log fa to M in 
+!   c1_fa, c2_fa, amagc4fa:  the coefficients relating log fa to M in
 !     sources 11 and 12, as given by the equation log fa = c1_fa + c2_fa*(M-amagc4fa).
-!   c1_eps, c2_eps, amagc4eps:  the coefficients relating log eps to M in 
+!   c1_eps, c2_eps, amagc4eps:  the coefficients relating log eps to M in
 !     source 12, as given by the equation log eps = c1_eps + c2_eps*(M-amagc4eps).
 !   fb for sources 11 and 12 are given such that the high-frequency spectral level
 !   equals that for a single corner frequency model with a stress parameter
 !   given by stress=stressc*10.0**(dlsdm*(amag-amagc).
 !   See Tables 2 and 3 in Boore (2003) for various source descriptions
-!   (Note: the parameters in the line below are not used for most of the 
+!   (Note: the parameters in the line below are not used for most of the
 !   sources, for which the spectrum is determined by fixed relations between
-!   corner frequency and seismic moment, but placeholders are still needed) 
-! For convenience for those using source 12, here are some of the coefficients for 
+!   corner frequency and seismic moment, but placeholders are still needed)
+! For convenience for those using source 12, here are some of the coefficients for
 ! fa and eps from Table 3 in Boore (2003):
 !                      Model        c1_fa  c2_fa amagc4fa c1_eps  c2_eps amagc4eps
 !  Atkinson and Boore (1995) M>=4.0 2.410 -0.533      0.0   2.520 -0.637       0.0
@@ -86,12 +86,12 @@
 !   reflect my current preferred terminology.  I do not have time to do this now).
 !  Specification of the finite-fault factor h:
 !    If nlines = 1
-!      log10(f_ff) = c1 + c2*amag  
+!      log10(f_ff) = c1 + c2*amag
 !    If nlines = 2
 !      log10(f_ff) = c1 + c2*amag  for amag<Mh
 !      log10(f_ff) = c3 + c4*amag  for amag>=Mh
 !      where Mh is determined by the intersection of the two lines
-!      (this is computed in the program)  
+!      (this is computed in the program)
 !    If nlines = 3
 !      log10(f_ff) = c1 + c2*amag  for amag<Mh-DeltaM/2
 !      log10(f_ff) = c3 + c4*amag  for amag>=Mh+DeltaM/2
@@ -100,19 +100,19 @@
 !  *** NOTE: placeholders are needed for c3, c4, and DeltaM, even if not used.
 !
 !  Published finite-fault factors
-!    Author                            applicable_region meaning_of_r  iflag_f_ff nlines         c1      c2   c3    c4  
+!    Author                            applicable_region meaning_of_r  iflag_f_ff nlines         c1      c2   c3    c4
 !    Atkinson and Silva (2000) (AS00)         ACR        r_rup           1    1      -0.0500  0.1500  0.0   0.0
 !    Toro (2002) (T02)                        SCR        r_rup           2    1      -1.0506  0.2606  0.0   0.0
 !    Atkinson and Boore (2003) (AB03)         subduction r_rup           1    1      -2.1403  0.5070  0.0   0.0
 !    Yenier and Atkinson (2014) (YA14)        ACR        r_rup           1    1      -1.7200  0.4300  0.0   0.0
 !    Yenier and Atkinson (2015) (YA15)        ACR        r_rup           1    1      -0.4050  0.2350  0.0   0.0
 !    Boore and Thompson  (2015) (BT15)        see below
-!  
+!
 !  Input for some of the models, as well as suggested modifications for stable continental regions
 !    Assuming that all of the above the above relations except Toro (2002) and Atkinson and Boore (2003)
 !    are for active crustal regions, and that h is proportional to fault radius, then -0.1644 should be
 !    added to c1 (and c3 for Boore (2014) to adjust for the smaller fault size expected for stable continental region
-!    earthquakes (this adjustment factor uses radius ~ stress^-1/3, and a stress of 88 bars for ACR (from 
+!    earthquakes (this adjustment factor uses radius ~ stress^-1/3, and a stress of 88 bars for ACR (from
 !    my determination of what stress matches the Atkinson and Silva (2000) high-frequency spectral level--
 !    see What_SCF_stress_param_is_consistent_with_the_AS00_source_model.pdf in the daves notes page of
 !    www.daveboore.com) and 185 bars for SCR, from my inversion of 0.1 s and 0.2 s PSA values for 8 ENA
@@ -135,9 +135,9 @@
 !
 !Geometrical spreading option:
 !  0 = use standard hinged line segments
-! >0 = frequency-dependent spreading (numbers 1 through 3 were for development purposes; 
+! >0 = frequency-dependent spreading (numbers 1 through 3 were for development purposes;
 !      they were not intended for general use):
-!  1 = Gail Atkinson's November 2011 proposed spreading for eastern North America (ENA), 
+!  1 = Gail Atkinson's November 2011 proposed spreading for eastern North America (ENA),
 !      with Q=500f^0.5, which must be specified below.
 !  2 = Dave Boore's trial spreading #1 for ENA.
 !  3 = Gail Atkinson's Sept, 2012 report "nga-e-r12_AttenShape.pdf". For this
@@ -148,18 +148,18 @@
    0
 !Parameters for the frequency dependent gsprd:
 !  option 2:
-!     r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, 
+!     r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1,
 !     ft1_dmb_gsprd, ft2_dmb_gsprd
 !  option 4:
 !     h4gspread (a nominal value of focal depth; in a later version I will put this into the control files for the SMSIN driver programs):
 ! (Placeholders are needed, but not used, even if the geometrical spreading option is not 2 or 4)
-!  60.0 -1.1 -1.3 -0.5 1.0 3.2   ! for option 2 this corresponds to 1/r^1.1 for f<=1 Hz and 1/r^1.3 for f>=3.2 Hz, 
+!  60.0 -1.1 -1.3 -0.5 1.0 3.2   ! for option 2 this corresponds to 1/r^1.1 for f<=1 Hz and 1/r^1.3 for f>=3.2 Hz,
 !                                ! for r< 60 km and 1/r^0.5 for all f beyond 60 km.
   10.0 0.0 0.0 0.0 0.0 0.0
-!gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i)) (Usually set 
+!gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i)) (Usually set
 ! r_ref = 1.0 km)
 ! *** NOTE: these lines are needed even if option 1 or greater is chosen above---and
-! there must be nsegs lines following the "nseg" specification, even if the 
+! there must be nsegs lines following the "nseg" specification, even if the
 ! geometrical spreading is not used because option 1 has been chosen.
     1.0
     2
@@ -173,7 +173,7 @@
 ! fb is set equal to fa for source 1, even though fb is not used in spect_shape, using weights of 0.5 and 0.5
 ! for source 1 will give the same answer as the previously recommended 1.0 0.0 weights.  The advantage
 ! to using weights of 0.5 0.5 is that they are the same as I am now recommending for the Atkinson and colleagues (and perhaps
-! all) 2-corner models, for reasons discussed in the spectral shape, source 12 
+! all) 2-corner models, for reasons discussed in the spectral shape, source 12
 ! section above.  This is not what is used by Atkinson and colleagues; they use 0.5 0.0 for the weights
 ! (Atkinson and Boore (1995, p. 20) and Atkinson and Silva (2000, p. 259)).
     0.5 0.5
@@ -230,8 +230,8 @@
     0.0 0.006 0.0 6.0
 !low-cut filter parameters: fcut, nslope (=4, 8, 12, etc)
     0.0 8
-!high-cut filter parameters: itype_hcfilt (0=no high-cut filter [but the other parameters are 
-!  needed as placeholders], 1=raised half cycle of cosine; 2= quarter cycle of a cosine), 
+!high-cut filter parameters: itype_hcfilt (0=no high-cut filter [but the other parameters are
+!  needed as placeholders], 1=raised half cycle of cosine; 2= quarter cycle of a cosine),
 !  fhc1, fhc2 (low and high frequency limits of filter), eta_hcfilt (power of cosine)
   0  25.0 50.0 1.0
 !  2  25.0 50.0 1.0
@@ -239,13 +239,13 @@
 !  1=BJ84;2=LP99; 3=BT Drms/Dex, file 1; 4=BT Drms/Dex, file 2; 5=average of BT file 1 & file 2)
     10.0 0.00001  0.001 4
 !Names of pars files for Boore-Thompson Drms/Dex oscillator adjustment for RV simulations.
-!  Note that these adjustments are for a particular rms-to-peak factor.  Most recently we use the 
+!  Note that these adjustments are for a particular rms-to-peak factor.  Most recently we use the
 !  Der Kiureghian (1980) (DK) factor, but the RV program tmrs_loop_rv_drvr writes out the results using
-!  both the DK factor and the earlier default factor from Cartwright and Longuet-Higgins.  The pars files 
+!  both the DK factor and the earlier default factor from Cartwright and Longuet-Higgins.  The pars files
 !  are definitely dependent on which rms-to-peak factor was used.   I could specify which peak factor
-!  to use in the RV programs, but for now, I prefer to write out the results using both. 
+!  to use in the RV programs, but for now, I prefer to write out the results using both.
 !
-!NOTE: If no folder is specified, the program will look for the files in 
+!NOTE: If no folder is specified, the program will look for the files in
 !  the folder from which the driver is called).
 !
 !File names are required as placeholders, even if they are not used (e.g., for TD simulations
@@ -254,18 +254,16 @@
 !Name of pars file 1:
 !  The file below used the Raoof et al. (BSSA 1999, 888-902) attenuation model for WNA:
 !  If this file is used for random-vibration simulations, use the output based on the
-!  Der Kiureghian (1980) rms-to-peak factor (e.g., output columns from tmrs_loop-rv_drvr 
+!  Der Kiureghian (1980) rms-to-peak factor (e.g., output columns from tmrs_loop-rv_drvr
 !  with "dk80" as part of the column name).  See Boore and Thompson (2015, BSSA, 1029--1041) for details.
          bt15_wna_acr_trms4osc.dk_rms2pk.pars
 !Name of pars file 2:
 !  The file below used the Boatwright and Seekins (BSSA 2011, 1769-1782; BS11) attenuation model for ENA:
 !  If this file is used for random-vibration simulations, use the output based on the
-!  Der Kiureghian (1980) rms-to-peak factor (e.g., output columns from tmrs_loop-rv_drvr 
+!  Der Kiureghian (1980) rms-to-peak factor (e.g., output columns from tmrs_loop-rv_drvr
 !  with "dk80" as part of the column name).  See Boore and Thompson (2015, BSSA, 1029--1041) for details.
          bt15_ena_scr_trms4osc.dk_rms2pk.pars
 !window params: idxwnd(0=box,1=exp), tapr(<1), eps_w, eta_w, f_tb2te, f_te_xtnd
-    1 0.05 0.2 0.05 2.12 1.0 
+    1 0.05 0.2 0.05 2.12 1.0
 !timing stuff: dur_fctr, dt, tshift, seed, nsims, iran_type (0=normal;1=uniform)
     1.3  0.001 50.0 123.0 800 0
-
-

@@ -622,8 +622,8 @@ class SourceTheoryMotion(RvtMotion):
 class StaffordEtAl22Motion(RvtMotion):
     # Site amplification from Al Atik & Abrahamson (2021) generic rock amplification
     # function for Vs30 of 760 m/s obtained from inversion of the Chiou & Youngs (2014)
-    # response spectral model note that the ordinate at (0.01, 1.0) has been added to the
-    # amp function that was provided. These values were taken from:
+    # response spectral model note that the ordinate at (0.01, 1.0) has been added to
+    # the amp function that was provided. These values were taken from:
     # https://github.com/pstafford/StochasticGroundMotionSimulation.jl/blob/master/src/fourier/PJSsite.jl
     #
     # In the original code, the interpolation is done on log(amplitdue) and linear
@@ -646,7 +646,8 @@ class StaffordEtAl22Motion(RvtMotion):
         Use an RVT framework, and assume the following duration/peak factor models:
             - Boore & Thompson (2014) for excitation duration
             - Boore & Thompson (2015) for RMS duration
-            - Vanmarke (1975)/Der Kiureghian (1980) peak factor expression — as per Boore & Thompson (2015)
+            - Vanmarke (1975)/Der Kiureghian (1980) peak factor expression;
+              per Boore & Thompson (2015)
 
         Note that other peak factors models are not permitted to be consistent with the
         Sea22 model.

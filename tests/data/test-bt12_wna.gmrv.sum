@@ -1,16 +1,16 @@
- 
+
    ***************** SMSIM, Version  3.800 ************************
- 
-                                                                                
+
+
  output file: test-bt12_wna.gmrv.sum
  *** Results computed using GM_RV_DRVR ***
- 
+
  Date: 2014/02/04
  Time Start: 08:07:16.576
- 
- file with parameters: test-bt12_wna.ofr   
+
+ file with parameters: test-bt12_wna.ofr
  Title:
-     Sample data file **** NOT FOR A PARTICULAR APPLICATION **            
+     Sample data file **** NOT FOR A PARTICULAR APPLICATION **
  rho, beta, prtitn, rtp, fs:
    2.80  3.60 0.710 0.55 2.00
  spectral shape: source number, pf_a, pd_a, pf_b, pd_b
@@ -40,7 +40,7 @@
  !  Atkinson and Boore (2003)     r_rup           1     -2.1403  0.507
  0 0.00000000E+00 0.00000000E+00
  i_gsprd_option =  0
-  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd =
   10.00  0.00  0.00  0.00  0.00  0.00
  gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
     1.00
@@ -75,8 +75,8 @@
  WNA Trms4osc coefficients from file wna_bt12_trms4osc.pars
  ENA Trms4osc coefficients from file ena_bt12_trms4osc.pars
  fup calculated in driver =  7.329E+01
- 
- *********** NEW R AND M ********** 
+
+ *********** NEW R AND M **********
  r, f_ff, rmod, amag, kappa =   2.000E+01  0.000E+00  2.000E+01  6.000E+00  3.000E-02
   File with response spectra: test-bt12_wna.m6.00r020.0_rs.r
    const=   4.757E-24
@@ -183,5 +183,5 @@
   13.000   0.077  1.858E+00  8.981E-01  4.341E-01    0.19 0.9959   19.5    1.8   1.32   4.30  7.750E-01    7.750E-01       1.8    19.5           39.8     1.8       1.8            3.6           1.32                      1.81        1.61                 1.96    1.858E+00               2.545E+00  2.261E+00          2.757E+00  8.981E-01             1.230E+00  1.093E+00        1.333E+00    4.341E-01               5.946E-01  5.282E-01          6.441E-01  4.28031E+00  3.29017E+00  6.33198E+00  1.15657E+03  1.000E+00  2.942E+00  1.600E+00  4.542E+00  9.241E+00  2.86233E+00        7.010E-01        1.426E+00
   14.000   0.071  1.847E+00  8.290E-01  3.720E-01    0.19 0.9960   19.8    1.8   1.32   4.30  7.907E-01    7.907E-01       1.8    19.8           39.4     1.8       1.8            3.5           1.32                      1.80        1.61                 1.95    1.847E+00               2.506E+00  2.245E+00          2.720E+00  8.290E-01             1.125E+00  1.007E+00        1.221E+00    3.720E-01               5.048E-01  4.521E-01          5.479E-01  3.53730E+00  2.64843E+00  5.29092E+00  9.96842E+02  1.000E+00  2.942E+00  1.600E+00  4.542E+00  9.016E+00  3.08251E+00        7.098E-01        1.409E+00
   15.000   0.067  1.839E+00  7.702E-01  3.226E-01    0.20 0.9961   20.1    1.8   1.33   4.30  8.038E-01    8.038E-01       1.8    20.1           39.0     1.8       1.8            3.5           1.33                      1.79        1.61                 1.94    1.839E+00               2.471E+00  2.230E+00          2.686E+00  7.702E-01             1.035E+00  9.342E-01        1.125E+00    3.226E-01               4.336E-01  3.913E-01          4.713E-01  2.95941E+00  2.16957E+00  4.49488E+00  8.68182E+02  1.000E+00  2.942E+00  1.600E+00  4.542E+00  8.809E+00  3.30269E+00        7.180E-01        1.393E+00
- 
+
  Elapsed time (sec):   1.560E-01

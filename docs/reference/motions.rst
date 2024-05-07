@@ -32,4 +32,3 @@ Helper functions
 .. autofunction:: calc_sdof_tf
 .. autofunction:: log_spaced_values
 .. autofunction:: sort_increasing
-

@@ -2,11 +2,10 @@ import pathlib
 
 import numpy as np
 import pyexcel
+import pyrvt
 import pystrata
 import pytest
 from numpy.testing import assert_allclose, assert_string_equal
-
-import pyrvt
 
 from . import readers
 

@@ -1,15 +1,15 @@
- 
+
    ***************** SMSIM, Version  6.000 ************************
- 
-                                                                                
+
+
  output file: fas_drvr.test-bt15_ena.sum
  *** Results computed using FAS_DRVR ***
- 
+
  Date: 2018/01/15
  Time Start: 17:23:23.237
- 
+
  Title:
-      Boatwright and Seekins (2011) attenuation model)                    
+      Boatwright and Seekins (2011) attenuation model)
  rho, beta, prtitn, rtp, fs:
    2.80  3.70 0.707 0.55 2.00
  spectral shape: source number, pf_a, pd_a, pf_b, pd_b
@@ -51,7 +51,7 @@
      mh_f_ff, m1t_f_ff, m2t_f_ff =   6.74  5.74  7.74
      c0t_f_ff, c1t_f_ff, c2t_f_ff, c3t_f_ff =   6.421E-01  4.300E-01 -4.875E-02 -1.515E-09
  i_gsprd_option =  0
-  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd =
   10.00  0.00  0.00  0.00  0.00  0.00
  gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
     1.00
@@ -93,7 +93,7 @@
     0.000  6.000E-03  0.000E+00 6.00
  low-cut filter parameters: fcut, nslope
     0.000  8
- high-cut filter parameters: 
+ high-cut filter parameters:
    itype_hcfilt
      0=no high-cut filter (but the other parameters are needed as placeholders)
      1=raised half cycle of cosine
@@ -105,13 +105,13 @@
    10.00  1.000E-05  1.000E-03  4
  WNA Trms4osc coefficients from file bt15_wna_acr_trms4osc.dk_rms2pk.pars
  ENA Trms4osc coefficients from file bt15_ena_scr_trms4osc.dk_rms2pk.pars
- 
+
  *********** NEW R AND M ***********
  Rrup, f_ff, Rps, amag, kappa =   2.000E+01  5.613E+00  2.077E+01  6.000E+00  6.000E-03
    const=   4.364E-24
    amag, stress, fa, fb=   6.000E+00  1.850E+02  4.620E-01  4.620E-01
    am0, am0b_m0fa=   1.122E+25  0.000E+00
- 
- 
+
+
  Time Stop: 17:24:46.664
  Elapsed time (sec):   6.001E-03

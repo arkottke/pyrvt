@@ -15,5 +15,3 @@ SMSIM Files
 References
 ==========
  .. _[1] http://daveboore.com/software_online.html
-
-

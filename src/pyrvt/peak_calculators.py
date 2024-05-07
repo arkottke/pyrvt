@@ -5,6 +5,7 @@ Peak factor models.
 Published peak factor models, which compute the expected peak ground motion. A
 specific model may include oscillator duration correction.
 """
+
 import ctypes
 import itertools
 import pathlib
@@ -878,8 +879,8 @@ class BooreThompson(Calculator):
 class BooreThompson2012(BooreThompson, BooreJoyner1984):
     """Boore and Thompson (2012) peak factor.
 
-    Peak calculation based on the peak factor definition by :cite:t:`cartwright56` along with the
-    root-mean-squared duration correction proposed by :cite:t:`boore12`.
+    Peak calculation based on the peak factor definition by :cite:t:`cartwright56`
+    along with the root-mean-squared duration correction proposed by :cite:t:`boore12`.
 
 
     Parameters

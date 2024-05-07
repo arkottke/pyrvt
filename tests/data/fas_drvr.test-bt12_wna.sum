@@ -1,15 +1,15 @@
- 
+
    ***************** SMSIM, Version  3.800 ************************
- 
-                                                                                
+
+
  output file: fas_drvr.test-bt12_wna.sum
  *** Results computed using FAS_DRVR ***
- 
+
  Date: 2014/02/04
  Time Start: 13:27:58.144
- 
+
  Title:
-     Sample data file **** NOT FOR A PARTICULAR APPLICATION **            
+     Sample data file **** NOT FOR A PARTICULAR APPLICATION **
  rho, beta, prtitn, rtp, fs:
    2.80  3.60 0.710 0.55 2.00
  spectral shape: source number, pf_a, pd_a, pf_b, pd_b
@@ -39,7 +39,7 @@
  !  Atkinson and Boore (2003)     r_rup           1     -2.1403  0.507
  0 0.00000000E+00 0.00000000E+00
  i_gsprd_option =  0
-  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd =
   10.00  0.00  0.00  0.00  0.00  0.00
  gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
     1.00
@@ -73,13 +73,13 @@
    10.00  1.000E-05  1.000E-03  3
  WNA Trms4osc coefficients from file wna_bt12_trms4osc.pars
  ENA Trms4osc coefficients from file ena_bt12_trms4osc.pars
- 
+
  *********** NEW R AND M ***********
  r, f_ff, rmod, amag, kappa =   2.000E+01  0.000E+00  2.000E+01  6.000E+00  3.000E-02
    const=   4.757E-24
    amag, stress, fa, fb=   6.000E+00  8.000E+01  3.399E-01  3.399E-01
    am0, am0b_m0fa=   1.122E+25  0.000E+00
- 
- 
+
+
  Time Stop: 13:28:09.779
  Elapsed time (sec):   4.001E-03

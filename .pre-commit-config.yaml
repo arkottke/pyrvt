@@ -19,6 +19,7 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: check-json
+      # Unsafe required for mkdocs.yml format
       - id: check-yaml
         args: [--unsafe]
       - id: check-toml
@@ -28,8 +29,4 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0 # pick a git hash / tag to point to
-    hooks:
-      - id: pydocstyle
-        exclude: test_*
+        files: \.(md|yml)$

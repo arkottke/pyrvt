@@ -1,16 +1,16 @@
- 
+
    ***************** SMSIM, Version  6.000 ************************
- 
-                                                                                
+
+
  output file: test-bt15_wna.gmrv.sum
  *** Results computed using GM_RV_DRVR ***
- 
+
  Date: 2018/01/15
  Time Start: 17:26:52.588
- 
- file with parameters: test-bt15_wna.ofr   
+
+ file with parameters: test-bt15_wna.ofr
  Title:
-      Western North America params                                        
+      Western North America params
  rho, beta, prtitn, rtp, fs:
    2.72  3.50 0.707 0.55 2.00
  spectral shape: source number, pf_a, pd_a, pf_b, pd_b
@@ -52,7 +52,7 @@
      mh_f_ff, m1t_f_ff, m2t_f_ff =   6.74  5.74  7.74
      c0t_f_ff, c1t_f_ff, c2t_f_ff, c3t_f_ff =   7.497E-01  4.300E-01 -4.875E-02 -5.240E-09
  i_gsprd_option =  0
-  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd = 
+  r1_dmb_gsprd, pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, ft1_dmb_gsprd, ft2_dmb_gsprd =
   10.00  0.00  0.00  0.00  0.00  0.00
  gsprd: r_ref, nsegs, (rlow(i), a_s, b_s, m_s(i))  (Usually set r_ref = 1.0 km)
     1.00
@@ -103,7 +103,7 @@
     0.000  3.500E-02  0.000E+00 0.00
  low-cut filter parameters: fcut, nslope
     0.000  8
- high-cut filter parameters: 
+ high-cut filter parameters:
    itype_hcfilt
      0=no high-cut filter (but the other parameters are needed as placeholders)
      1=raised half cycle of cosine
@@ -116,8 +116,8 @@
  WNA Trms4osc coefficients from file bt15_wna_acr_trms4osc.dk_rms2pk.pars
  ENA Trms4osc coefficients from file bt15_ena_scr_trms4osc.dk_rms2pk.pars
  fup calculated in driver =  6.282E+01
- 
- *********** NEW R AND M ********** 
+
+ *********** NEW R AND M **********
  r, f_ff, rmod, amag, kappa =   2.000E+01  7.191E+00  2.125E+01  6.000E+00  3.500E-02
   File with response spectra: test-bt15_wna.m6.00r021.3_rs.r
    const=   5.307E-24
@@ -224,5 +224,5 @@
   13.000   0.077  1.947E+00  9.412E-01  4.549E-01    0.20 0.9933   25.8    3.0   1.93   4.30  7.704E-01    7.704E-01       3.0    25.8          -10.0     3.0       3.0          -10.0           1.69                     -9.99        1.87                -9.99    1.707E+00              -2.067E+01  1.883E+00         -2.067E+01  8.249E-01            -9.990E+00  9.100E-01       -9.990E+00    3.987E-01              -4.828E+00  4.398E-01         -4.828E+00  5.31092E+00  4.25253E+00  8.37670E+00  9.89555E+02  1.000E+00  2.809E+00  4.651E+00  7.459E+00  2.240E+01  1.74275E+00        5.771E-01        1.733E+00
   14.000   0.071  1.917E+00  8.603E-01  3.861E-01    0.20 0.9934   26.2    3.0   1.94   4.30  7.855E-01    7.855E-01       3.0    26.2          -10.0     3.0       3.0          -10.0           1.70                     -9.99        1.87                -9.99    1.681E+00              -2.226E+01  1.852E+00         -2.226E+01  7.542E-01            -9.990E+00  8.311E-01       -9.990E+00    3.385E-01              -4.484E+00  3.730E-01         -4.484E+00  4.35875E+00  3.41973E+00  7.00612E+00  8.52640E+02  1.000E+00  2.809E+00  4.651E+00  7.459E+00  2.215E+01  1.87681E+00        5.803E-01        1.723E+00
   15.000   0.067  1.892E+00  7.926E-01  3.320E-01    0.20 0.9934   26.5    3.0   1.95   4.30  7.980E-01    7.980E-01       3.0    26.5          -10.0     3.0       3.0          -10.0           1.71                     -9.99        1.88                -9.99    1.661E+00              -2.385E+01  1.827E+00         -2.385E+01  6.956E-01            -9.990E+00  7.655E-01       -9.990E+00    2.914E-01              -4.185E+00  3.207E-01         -4.185E+00  3.62570E+00  2.80079E+00  5.95667E+00  7.42424E+02  1.000E+00  2.809E+00  4.651E+00  7.459E+00  2.184E+01  2.01087E+00        5.844E-01        1.711E+00
- 
+
  Elapsed time (sec):   1.970E-01
