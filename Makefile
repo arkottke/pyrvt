@@ -44,13 +44,14 @@ clean-test:
 	rm -f .coverage
 	rm -fr htmlcov/
 
-lint:
-	flake8 pyrvt tests
-	pydocstyle pyrvt/*.py
+style-check:
+	hatch run style:check
+
+style-fmt:
+	hatch run style:fmt
 
 test:
-	pip install -e .
-	pytest --cov-report html --cov=pyrvt tests/
+	hatch run test:run
 
 coverage:
 	coverage run --source pyrvt setup.py tests
@@ -58,8 +59,11 @@ coverage:
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-docs:
-	sphinx-autobuild --watch src docs docs/_build/html
+docs-build:
+	hatch run docs:build
+
+docs-serve:
+	hatch run docs:serve
 
 release: clean
 	python setup.py sdist upload
