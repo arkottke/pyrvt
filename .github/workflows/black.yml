@@ -6,8 +6,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: psf/black@stable
+      - uses: actions/checkout@v4.1.4
+      - uses: psf/black@24.4.2
         with:
           options: "--check --verbose"
           src: "./src"
