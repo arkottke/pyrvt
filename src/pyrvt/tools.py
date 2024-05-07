@@ -5,14 +5,13 @@ from __future__ import annotations
 import functools
 import multiprocessing
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import numpy.typing as npt
 import pyexcel
+
 from pyrvt import motions
-from pyrvt.peak_calculators import get_peak_calculator
-from pyrvt.peak_calculators import get_region
+from pyrvt.peak_calculators import get_peak_calculator, get_region
 
 PARAMETER_NAMES = [
     ("magnitude", "Magnitude"),
@@ -24,12 +23,14 @@ PARAMETER_NAMES = [
 ]
 
 
-def get_fpaths(pat: str) -> List[Path]:
+def get_fpaths(pat: str) -> list[Path]:
     """Iterate over file paths."""
     return Path(".").glob(pat) if "*" in pat else [Path(pat)]
 
 
-def read_events(fpath: str | Path, response_type: str) -> tuple[str, np.ndarray, list[dict]]:
+def read_events(
+    fpath: str | Path, response_type: str
+) -> tuple[str, np.ndarray, list[dict]]:
     """Read data from the file an Excel work book.
 
     Parameters
@@ -206,7 +207,9 @@ def calc_compatible_spectra(
     """
     target_freqs = 1.0 / periods
     with multiprocessing.Pool() as pool:
-        results = pool.map(functools.partial(_calc_fa, target_freqs, damping, method), events)
+        results = pool.map(
+            functools.partial(_calc_fa, target_freqs, damping, method), events
+        )
 
     # Copy values back into the dictionary
     modified = []
@@ -272,7 +275,9 @@ def operation_psa2fa(
             periods = _periods
 
         # Compute the FA from the PSA
-        freqs, events = calc_compatible_spectra(method, periods, events, damping=damping)
+        freqs, events = calc_compatible_spectra(
+            method, periods, events, damping=damping
+        )
 
         basename = fpath.stem.rsplit("_", 1)[0]
 

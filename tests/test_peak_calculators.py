@@ -2,11 +2,11 @@ import pathlib
 
 import numpy as np
 import pyexcel
-import pyrvt
 import pystrata
 import pytest
-from numpy.testing import assert_allclose
-from numpy.testing import assert_string_equal
+from numpy.testing import assert_allclose, assert_string_equal
+
+import pyrvt
 
 from . import readers
 
@@ -41,8 +41,12 @@ fpath_data = pathlib.Path(__file__).parent / "data"
     ],
 )
 def test_osc_accels(peak_calculator, abbrev, suffix):
-    fs = readers.load_fourier_spectrum(str(fpath_data / f"test-{abbrev}.{suffix}_fs.col"))
-    rs = readers.load_rvt_response_spectrum(str(fpath_data / f"test-{abbrev}.{suffix}_rs.rv.col"))
+    fs = readers.load_fourier_spectrum(
+        str(fpath_data / f"test-{abbrev}.{suffix}_fs.col")
+    )
+    rs = readers.load_rvt_response_spectrum(
+        str(fpath_data / f"test-{abbrev}.{suffix}_rs.rv.col")
+    )
 
     rvt_motion = pyrvt.motions.RvtMotion(
         freqs=fs["freqs"],
@@ -70,7 +74,9 @@ def test_abbrev(bj84_pc):
     assert_string_equal(bj84_pc.ABBREV, "BJ84")
 
 
-@pytest.mark.parametrize("method", ["V75", "D64", "DK85", "TM87", "BT12", "BT15", "WR18"])
+@pytest.mark.parametrize(
+    "method", ["V75", "D64", "DK85", "TM87", "BT12", "BT15", "WR18"]
+)
 def test_formulations(method):
     mag = 6.5
     dist = 20
@@ -112,7 +118,9 @@ def read_wang_rathje_18_data(motion_id):
         ws = wb[sheetname]
         osc_freq = np.array(ws.column[0][2:303])
         spec_acc = np.array(ws.column[1 + motion_id][2:303])
-        expected[key] = np.rec.fromarrays([osc_freq, spec_acc], names="osc_freq,spec_acc")
+        expected[key] = np.rec.fromarrays(
+            [osc_freq, spec_acc], names="osc_freq,spec_acc"
+        )
 
     return motion, expected
 

@@ -1,10 +1,9 @@
 #!/usr/bin/python
 """pyRVT module. Provides random vibration theory models for earthquake ground motion calculations."""
+
 from importlib.metadata import version
 
-from . import motions
-from . import peak_calculators
-from . import tools
+from . import motions, peak_calculators, tools
 
 __all__ = [
     "tools",

@@ -8,10 +8,7 @@ specific model may include oscillator duration correction.
 import ctypes
 import itertools
 import pathlib
-from abc import ABC
-from abc import abstractmethod
-from typing import List
-from typing import Tuple
+from abc import ABC, abstractmethod
 
 import numba
 import numpy as np
@@ -124,8 +121,8 @@ _calc_cartwright_pf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
 def calc_moments(
-    freqs: npt.ArrayLike, fourier_amps: npt.ArrayLike, orders: List[int]
-) -> List[float]:
+    freqs: npt.ArrayLike, fourier_amps: npt.ArrayLike, orders: list[int]
+) -> list[float]:
     """Compute the moments of a Fourier amplitude spectrumself.
 
     Parameters
@@ -145,7 +142,9 @@ def calc_moments(
     squared_fa = np.square(fourier_amps)
 
     # Use trapzoidal integration to compute the requested moments.
-    moments = [2.0 * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa) for o in orders]
+    moments = [
+        2.0 * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa) for o in orders
+    ]
 
     return moments
 
@@ -191,7 +190,7 @@ class SquaredSpectrum:
 
         return moment
 
-    def moments(self, *nums) -> List[float]:
+    def moments(self, *nums) -> list[float]:
         """Return the computed moments.
 
         Returns
@@ -237,7 +236,7 @@ class Calculator(ABC):
         freqs: npt.ArrayLike,
         fourier_amps: npt.ArrayLike,
         **kwargs,
-    ) -> Tuple[float]:
+    ) -> tuple[float]:
         """Compute the peak response.
 
         Parameters
@@ -386,7 +385,9 @@ class Vanmarcke1975(Calculator):
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         bandwidth_eff = bandwidth**1.2
 
-        num_zero_crossings = self.limited_num_zero_crossings(duration * np.sqrt(m2 / m0) / np.pi)
+        num_zero_crossings = self.limited_num_zero_crossings(
+            duration * np.sqrt(m2 / m0) / np.pi
+        )
         # The expected peak factor is computed as the integral of the
         # complementary CDF (1 - CDF(x)).
         peak_factor = quad(
@@ -404,7 +405,9 @@ class Vanmarcke1975(Calculator):
         return peak_factor
 
     @classmethod
-    def nonstationarity_factor(cls, osc_damping: float, osc_freq: float, duration: float) -> float:
+    def nonstationarity_factor(
+        cls, osc_damping: float, osc_freq: float, duration: float
+    ) -> float:
         """Compute nonstationarity factor to modify duration.
 
         Parameters
@@ -460,7 +463,9 @@ class Davenport1964(Calculator):
         m0, m2 = self._spectrum.moments(0, 2)
 
         # Compute the number of zero crossings
-        num_zero_crossings = self.limited_num_zero_crossings(duration * np.sqrt(m2 / m0) / np.pi)
+        num_zero_crossings = self.limited_num_zero_crossings(
+            duration * np.sqrt(m2 / m0) / np.pi
+        )
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
@@ -594,7 +599,9 @@ class ToroMcGuire1987(Davenport1964):
         osc_freq = kwargs.get("osc_freq", None)
         osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
-            peak_factor *= Vanmarcke1975.nonstationarity_factor(osc_damping, osc_freq, duration)
+            peak_factor *= Vanmarcke1975.nonstationarity_factor(
+                osc_damping, osc_freq, duration
+            )
 
         return peak_factor
 
@@ -644,7 +651,9 @@ class CartwrightLonguetHiggins1956(Calculator):
         # Compute the peak factor by the indefinite integral.
         peak_factor = (
             np.sqrt(2.0)
-            * quad(_calc_cartwright_pf.ctypes, 0, np.inf, args=(num_extrema, bandwidth))[0]
+            * quad(
+                _calc_cartwright_pf.ctypes, 0, np.inf, args=(num_extrema, bandwidth)
+            )[0]
         )
 
         return peak_factor
@@ -699,7 +708,9 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
             coef = 1.0 / 3.0
             # This equation was rewritten in Boore and Thompson (2012).
             foo = 1.0 / (osc_freq * duration)
-            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (foo / (1 + coef * foo**power))
+            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (
+                foo / (1 + coef * foo**power)
+            )
             duration *= dur_ratio
 
         return duration
@@ -755,7 +766,9 @@ class LiuPezeshk1999(BooreJoyner1984):
             # Same model as used in Boore and Joyner (1984). This equation was
             # rewritten in Boore and Thompson (2012).
             foo = 1.0 / (osc_freq * duration)
-            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (foo / (1 + coef * foo**power))
+            dur_ratio = 1 + 1.0 / (2 * np.pi * osc_damping) * (
+                foo / (1 + coef * foo**power)
+            )
             duration *= dur_ratio
 
         return duration
@@ -780,7 +793,9 @@ def _make_bt_interpolator(region, ref):
         Interpolator for the data.
 
     """
-    fpath = pathlib.Path(__file__).parent.joinpath("data", f"{region}_{ref}_trms4osc.pars.gz")
+    fpath = pathlib.Path(__file__).parent.joinpath(
+        "data", f"{region}_{ref}_trms4osc.pars.gz"
+    )
     d = np.rec.fromrecords(
         np.loadtxt(str(fpath), skiprows=4, usecols=range(9)),
         names="mag,dist,c1,c2,c3,c4,c5,c6,c7",
@@ -995,7 +1010,9 @@ class WangRathje2018(BooreThompson2015):
             m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio**2
             incr_max = c * np.exp(-duration / m)
 
-            incr = incr_max * np.exp(-((np.log(osc_freq / modes_f)) ** 2) / (2 * self.COEFS.sd**2))
+            incr = incr_max * np.exp(
+                -((np.log(osc_freq / modes_f)) ** 2) / (2 * self.COEFS.sd**2)
+            )
             duration_rms += incr.sum()
 
         return duration_rms

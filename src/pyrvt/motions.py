@@ -9,11 +9,6 @@ from __future__ import annotations
 
 import gzip
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 import numpy.typing as npt
@@ -83,7 +78,9 @@ def log_spaced_values(lower: float, upper: float, per_decade: int = 512) -> np.n
     return np.logspace(lower, upper, num=count)
 
 
-def calc_sdof_tf(freqs: npt.ArrayLike, osc_freq: float, osc_damping: float) -> np.ndarray:
+def calc_sdof_tf(
+    freqs: npt.ArrayLike, osc_freq: float, osc_damping: float
+) -> np.ndarray:
     """Single-degree-of-freedom transfer function.
 
     When applied on the acceleration Fourier amplitude spectrum, it provides
@@ -105,7 +102,9 @@ def calc_sdof_tf(freqs: npt.ArrayLike, osc_freq: float, osc_damping: float) -> n
 
     """
     freqs = np.asarray(freqs)
-    return -(osc_freq**2.0) / (freqs**2 - osc_freq**2 - 2.0j * osc_damping * osc_freq * freqs)
+    return -(osc_freq**2.0) / (
+        freqs**2 - osc_freq**2 - 2.0j * osc_damping * osc_freq * freqs
+    )
 
 
 def calc_stress_drop(magnitude: float) -> float:
@@ -125,7 +124,9 @@ def calc_stress_drop(magnitude: float) -> float:
     return 10 ** (3.45 - 0.2 * max(magnitude, 5.0))
 
 
-def calc_geometric_spreading(dist: float, params: List[Tuple[float, Optional[float]]]) -> float:
+def calc_geometric_spreading(
+    dist: float, params: list[tuple[float, float | None]]
+) -> float:
     """Geometric spreading defined by piece-wise linear model.
 
     Parameters
@@ -181,11 +182,11 @@ class RvtMotion:
 
     def __init__(
         self,
-        freqs: Optional[npt.ArrayLike] = None,
-        fourier_amps: Optional[npt.ArrayLike] = None,
-        duration: Optional[float] = None,
-        peak_calculator: Optional[Union[str, peak_calculators.Calculator]] = None,
-        calc_kwds: Optional[Dict] = None,
+        freqs: npt.ArrayLike | None = None,
+        fourier_amps: npt.ArrayLike | None = None,
+        duration: float | None = None,
+        peak_calculator: str | peak_calculators.Calculator | None = None,
+        calc_kwds: dict | None = None,
     ):
         """Initialize the class."""
         self._freqs = freqs
@@ -193,7 +194,9 @@ class RvtMotion:
         self._duration = duration
 
         if self._freqs is not None:
-            self._freqs, self._fourier_amps = sort_increasing(self._freqs, self._fourier_amps)
+            self._freqs, self._fourier_amps = sort_increasing(
+                self._freqs, self._fourier_amps
+            )
 
         if isinstance(peak_calculator, peak_calculators.Calculator):
             self.peak_calculator = peak_calculator
@@ -221,7 +224,7 @@ class RvtMotion:
         self,
         osc_freqs: npt.ArrayLike,
         osc_damping: float = 0.05,
-        trans_func: Optional[npt.ArrayLike] = None,
+        trans_func: npt.ArrayLike | None = None,
     ) -> np.ndarray:
         """Pseudo-acceleration spectral response of an oscillator.
 
@@ -261,7 +264,7 @@ class RvtMotion:
 
         return resp
 
-    def calc_peak(self, transfer_func: Optional[npt.ArrayLike] = None, **kwds) -> float:
+    def calc_peak(self, transfer_func: npt.ArrayLike | None = None, **kwds) -> float:
         """Compute the peak response.
 
         Parameters
@@ -281,11 +284,13 @@ class RvtMotion:
         else:
             fourier_amps = np.abs(transfer_func) * self._fourier_amps
 
-        return self.peak_calculator(self._duration, self._freqs, fourier_amps, **kwds)[0]
+        return self.peak_calculator(self._duration, self._freqs, fourier_amps, **kwds)[
+            0
+        ]
 
     def calc_attenuation(
-        self, min_freq: float, max_freq: Optional[float] = None
-    ) -> Tuple[float, float, np.ndarray, np.ndarray]:
+        self, min_freq: float, max_freq: float | None = None
+    ) -> tuple[float, float, np.ndarray, np.ndarray]:
         r"""Compute the site attenuation (κ) based on a log-linear fit.
 
         Parameters
@@ -344,10 +349,10 @@ class SourceTheoryMotion(RvtMotion):
         magnitude: float,
         distance: float,
         region: str,
-        stress_drop: Optional[float] = None,
-        depth: Optional[float] = 8,
-        peak_calculator: Optional[Union[str, peak_calculators.Calculator]] = None,
-        calc_kwds: Optional[Dict] = None,
+        stress_drop: float | None = None,
+        depth: float | None = 8,
+        peak_calculator: str | peak_calculators.Calculator | None = None,
+        calc_kwds: dict | None = None,
         disable_site_amp: bool = False,
     ):
         """Initialize the motion.
@@ -507,7 +512,9 @@ class SourceTheoryMotion(RvtMotion):
         # Constants
         self.seismic_moment = 10.0 ** (1.5 * (self.magnitude + 10.7))
         self.corner_freq = (
-            4.9e6 * self.shear_velocity * (self.stress_drop / self.seismic_moment) ** (1.0 / 3.0)
+            4.9e6
+            * self.shear_velocity
+            * (self.stress_drop / self.seismic_moment) ** (1.0 / 3.0)
         )
 
     def calc_duration(self) -> float:
@@ -541,7 +548,7 @@ class SourceTheoryMotion(RvtMotion):
 
         return duration_source + duration_path
 
-    def calc_fourier_amps(self, freqs: Optional[npt.ArrayLike] = None) -> np.ndarray:
+    def calc_fourier_amps(self, freqs: npt.ArrayLike | None = None) -> np.ndarray:
         """Compute the acceleration Fourier amplitudes for a frequency range.
 
         Parameters
@@ -567,14 +574,21 @@ class SourceTheoryMotion(RvtMotion):
         const = (0.55 * 2.0) / (
             np.sqrt(2.0) * 4.0 * np.pi * self.density * self.shear_velocity**3.0
         )
-        source_comp = const * self.seismic_moment / (1.0 + (self._freqs / self.corner_freq) ** 2.0)
+        source_comp = (
+            const
+            * self.seismic_moment
+            / (1.0 + (self._freqs / self.corner_freq) ** 2.0)
+        )
 
         # Path component
         path_atten = self.path_atten_coeff * self._freqs**self.path_atten_power
-        geo_atten = calc_geometric_spreading(self.hypo_distance, self.geometric_spreading)
+        geo_atten = calc_geometric_spreading(
+            self.hypo_distance, self.geometric_spreading
+        )
 
         path_comp = geo_atten * np.exp(
-            (-np.pi * self._freqs * self.hypo_distance) / (path_atten * self.shear_velocity)
+            (-np.pi * self._freqs * self.hypo_distance)
+            / (path_atten * self.shear_velocity)
         )
 
         # Site component
@@ -597,7 +611,11 @@ class SourceTheoryMotion(RvtMotion):
         # Combine the three components and convert from displacement to
         # acceleration
         self._fourier_amps = (
-            conv * (2.0 * np.pi * self._freqs) ** 2.0 * source_comp * path_comp * site_comp
+            conv
+            * (2.0 * np.pi * self._freqs) ** 2.0
+            * source_comp
+            * path_comp
+            * site_comp
         )
 
 
@@ -615,12 +633,12 @@ class StaffordEtAl22Motion(RvtMotion):
     def __init__(
         self,
         mag: float,
-        dist_rup: Optional[float] = None,
-        dist_jb: Optional[float] = None,
+        dist_rup: float | None = None,
+        dist_jb: float | None = None,
         mechanism: str = "U",
         method: str = "continuous",
         delta_ztor: float = 0,
-        freqs: Optional[npt.ArrayLike] = None,
+        freqs: npt.ArrayLike | None = None,
         disable_site_amp: bool = False,
     ):
         """Point source model developed by Stafford (2021) for a Vs30 of 760 m/s.
@@ -740,12 +758,14 @@ class StaffordEtAl22Motion(RvtMotion):
 
         # Path scaling
 
-        ## Finite fault factor h(m)
+        # Finite fault factor h(m)
         fault_fact = np.exp(
-            h_a + h_b * mag + ((h_b - h_c) / h_d) * np.log(1 + np.exp(-h_d * (mag - h_e)))
+            h_a
+            + h_b * mag
+            + ((h_b - h_c) / h_d) * np.log(1 + np.exp(-h_d * (mag - h_e)))
         )
         dist_ps = dist_rup + fault_fact
-        ## Geometric spreading term
+        # Geometric spreading term
         if method == "continuous":
             geom_spread = np.exp(
                 -y_1 * np.log(dist_ps)
@@ -754,14 +774,18 @@ class StaffordEtAl22Motion(RvtMotion):
             n = n_a + n_b * np.tanh(mag - n_c)
             dist_ae = dist_rup
         elif method == "trilinear":
-            geom_spread = calc_geometric_spreading(dist_ps, [(y_1, 25), (y_2, 85), (y_f, None)])
+            geom_spread = calc_geometric_spreading(
+                dist_ps, [(y_1, 25), (y_2, 85), (y_f, None)]
+            )
             print(geom_spread)
             dist_ae = dist_ps
         else:
             raise NotImplementedError
 
         # Distance metric is different between the two forms
-        anelastic_atten = np.exp(-(np.pi * self._freqs ** (1 - n) * dist_ae) / (Q_0 * shear_vel))
+        anelastic_atten = np.exp(
+            -(np.pi * self._freqs ** (1 - n) * dist_ae) / (Q_0 * shear_vel)
+        )
 
         path_comp = geom_spread * anelastic_atten
 
@@ -799,7 +823,9 @@ class StaffordEtAl22Motion(RvtMotion):
                 fill_value=(_ln_site_amp[0], _ln_site_amp[-1]),
             )
 
-        return np.exp(cls._ln_site_amp_interpolator(freqs)) * np.exp(-np.pi * site_atten * freqs)
+        return np.exp(cls._ln_site_amp_interpolator(freqs)) * np.exp(
+            -np.pi * site_atten * freqs
+        )
 
     @property
     def dist_ps(self) -> float:
@@ -866,12 +892,12 @@ class CompatibleRvtMotion(RvtMotion):
         self,
         osc_freqs: npt.ArrayLike,
         osc_accels_target: npt.ArrayLike,
-        duration: Optional[float] = None,
-        osc_damping: Optional[float] = 0.05,
-        event_kwds: Optional[Dict] = None,
-        window_len: Optional[int] = None,
-        peak_calculator: Optional[Union[str, peak_calculators.Calculator]] = None,
-        calc_kwds: Optional[Dict] = None,
+        duration: float | None = None,
+        osc_damping: float | None = 0.05,
+        event_kwds: dict | None = None,
+        window_len: int | None = None,
+        peak_calculator: str | peak_calculators.Calculator | None = None,
+        calc_kwds: dict | None = None,
     ):
         """Initialize the motion.
 
@@ -919,7 +945,9 @@ class CompatibleRvtMotion(RvtMotion):
             stm = SourceTheoryMotion(**event_kwds)
             self._duration = stm.calc_duration()
 
-        fourier_amps = self._estimate_fourier_amps(osc_freqs, osc_accels_target, osc_damping)
+        fourier_amps = self._estimate_fourier_amps(
+            osc_freqs, osc_accels_target, osc_damping
+        )
 
         # The frequency needs to be extended to account for the fact that the
         # oscillator transfer function has a width. The number of frequencies
@@ -929,7 +957,9 @@ class CompatibleRvtMotion(RvtMotion):
 
         # Indices of the first and last point with the range of the provided
         # response spectra
-        indices = np.argwhere((osc_freqs[0] < self._freqs) & (self._freqs < osc_freqs[-1]))
+        indices = np.argwhere(
+            (osc_freqs[0] < self._freqs) & (self._freqs < osc_freqs[-1])
+        )
         first = indices[0, 0]
         # last is extend one past the usable range to allow use of first:last
         # notation
@@ -1051,9 +1081,9 @@ class CompatibleRvtMotion(RvtMotion):
         fourier_amps = np.empty_like(osc_freqs)
         for i, (osc_freq, osc_accel) in enumerate(zip(osc_freqs, osc_accels)):
             # TODO: simplify equation and remove duration
-            fa_sqr_cur = ((self.duration * osc_accel**2) / (2 * peak_factor**2) - total) / (
-                osc_freq * sdof_factor
-            )
+            fa_sqr_cur = (
+                (self.duration * osc_accel**2) / (2 * peak_factor**2) - total
+            ) / (osc_freq * sdof_factor)
 
             if fa_sqr_cur < 0:
                 fourier_amps[i] = fourier_amps[i - 1]
