@@ -4,6 +4,7 @@ black
 
 coveralls
 cryptography
+pandas
 pre-commit
 pydocstyle
 pyexcel

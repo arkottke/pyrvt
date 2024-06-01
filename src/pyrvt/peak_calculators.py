@@ -201,6 +201,14 @@ class SquaredSpectrum:
         """
         return [self.moment(n) for n in nums]
 
+    @property
+    def freqs(self) -> np.ndarray:
+        return self._freqs
+
+    @property
+    def squared_fa(self) -> np.ndarray:
+        return self._squared_fa
+
 
 class Calculator(ABC):
     """Base class used for all peak calculator classes.
@@ -209,16 +217,22 @@ class Calculator(ABC):
     calculators modify the `_calc_peak_factor` method and potentially
     `_calc_duration_rms` method. Using any calculator is done through calling of
     `__call__`.
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
-    #:  Name of the calculator
     NAME: str = ""
-    #: Abbreviation of the calculator
     ABBREV: str = ""
-
     # FIXME: Provide justification for this number
-
-    #: Minimum number of zero crossings permitted.
     _MIN_ZERO_CROSSINGS: float = 1.33
 
     def __init__(self, **kwds):
@@ -228,7 +242,20 @@ class Calculator(ABC):
 
     @classmethod
     def limited_num_zero_crossings(cls, num_zero_crossings: float) -> float:
-        """Limit the number of zero crossing to a static limit."""
+        """Limit the number of zero crossings to a static limit.
+
+        The minimum is configured through adjusting `cls._MIN_ZERO_CROSSINGS`.
+
+        Parameters
+        ----------
+        num_zero_crossings : float
+            Calculated number of zero crossings
+
+        Returns
+        -------
+        float
+            Limited number of zero crossings
+        """
         return max(cls._MIN_ZERO_CROSSINGS, num_zero_crossings)
 
     def __call__(
@@ -245,7 +272,7 @@ class Calculator(ABC):
         duration : float
             Duration of the stationary portion of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
+            intensity [sec].
         freqs : array_like
             Frequency of the Fourier amplitude spectrum (Hz).
         fourier_amps : array_like
@@ -261,19 +288,16 @@ class Calculator(ABC):
             associated peak factor.
 
         """
-        self._spectrum = SquaredSpectrum(freqs, fourier_amps)
-
-        peak_factor = self._calc_peak_factor(duration, **kwargs)
-
-        duration_rms = self._calc_duration_rms(duration, freqs=freqs, **kwargs)
+        sspectrum = SquaredSpectrum(freqs, fourier_amps)
+        peak_factor = self._calc_peak_factor(duration, sspectrum, **kwargs)
+        duration_rms = self._calc_duration_rms(duration, sspectrum, **kwargs)
         # Compute the root-mean-squared response.
-        resp_rms = np.sqrt(self._spectrum.moment(0) / duration_rms)
+        resp_rms = np.sqrt(sspectrum.moment(0) / duration_rms)
 
-        self._spectrum = None
         return peak_factor * resp_rms, peak_factor
 
     @abstractmethod
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(self, duration: float, sspectrum: SquaredSpectrum) -> float:
         """Compute the peak factor.
 
         Parameters
@@ -281,13 +305,10 @@ class Calculator(ABC):
         duration : float
             Duration of the stationary portion of the ground motion. Typically
             defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree
-             of freedom oscillator already applied if being used. Units are
-             not important.
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
 
         Returns
         -------
@@ -296,11 +317,22 @@ class Calculator(ABC):
 
         """
 
-    def _calc_duration_rms(self, duration: float, **kwargs) -> float:
-        """Modify a duration to correct for stationarity.
+    def _calc_duration_rms(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
+        """Modify root-mean-squared duration to account for nonstationarity.
 
         Default implemenation does nothing.
 
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         Returns
         -------
         duration : float
@@ -312,49 +344,54 @@ class Calculator(ABC):
 class Vanmarcke1975(Calculator):
     r"""Vanmarcke (1975) peak factor.
 
-    The Vanmarcke (1975, :cite:t:`vanmarcke75`) peak factor, which includes the effects
-    of clumping.  The peak factor equation is from Equation (2) in Der Kiureghian (1980,
-    :cite:`derkiureghian80`), which is based on Equation (29) in :cite:`vanmarcke75`.
+    The Vanmarcke (1975, Vanmarcke (1975)) peak factor, which includes the effects
+    of clumping.  The peak factor equation is from Equation (2) in
+    Der Kiureghian (1980), which is based on Equation (29) in Vanmarcke (1975).
 
     The cumulative density function (CDF) of the peak is defined as:
-
-    .. math::
+    $$
         F_x(x) = \left[1 - \exp\left(-x^2/2\right)\right]
         \exp\left[-N_z \frac{1 -
             \exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) -
             1 }\right]
-
-    where :math:`N_z` is the number of zero crossings, :math:`\delta_e` is the effective
-    bandwidth (:math:`\delta^{1.2}`).
+    $$
+    where $N_z$ is the number of zero crossings, $\delta_e$ is the effective
+    bandwidth ($\delta^{1.2}$).
 
     Typically, the expected value of the peak factor is calculated by integrating over
-    the probability density function (i.e., :math:`f_x(x) = \frac{d}{dx} F_x( x)`):
-
-    .. math::
+    the probability density function (i.e., $f_x(x) = \frac{d}{dx} F_x( x)$):
+    $$
         E[x] = \int_0^\infty x f_x(x) dx
-
-    However, because of the properties of :math:`F_x(x)`, specifically that it has
-    non-zero probabilities for only positive values, :math:`E[x]` can be computed
-    directly from :math:`F_x(x)`.
-
-    .. math::
+    $$
+    However, because of the properties of $F_x(x)$, specifically that it has
+    non-zero probabilities for only positive values, $E[x]$ can be computed
+    directly from $F_x(x)$.
+    $$
         E[x] = \int_0^\infty 1 - F_x(x) dx.
+    $$
+    This is based on the following sources [1] and [2].
 
-    This is based on the following sources [#]_ and [#]_.
-
-    .. # noqa
-    .. [#] http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
-    .. [#] http://stats.stackexchange.com/a/13377/48461
+    [1]: http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
+    [2]: http://stats.stackexchange.com/a/13377/48461
 
     Parameters
     ----------
     use_nonstationarity_factor : bool
         If the non-stationarity factor should be applied.
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
-    #:  Name of the calculator
     NAME: str = "Vanmarcke (1975)"
-    #: Abbreviation of the calculator
     ABBREV: str = "V75"
 
     def __init__(self, use_nonstationarity_factor: bool = True, **kwargs):
@@ -362,14 +399,20 @@ class Vanmarcke1975(Calculator):
         super().__init__(**kwargs)
         self._use_nonstationarity_factor = use_nonstationarity_factor
 
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         osc_freq : float
             Frequency of the oscillator (Hz).
         osc_damping : float
@@ -381,7 +424,7 @@ class Vanmarcke1975(Calculator):
             associated peak factor.
 
         """
-        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
+        m0, m1, m2 = sspectrum.moments(0, 1, 2)
 
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
         bandwidth_eff = bandwidth**1.2
@@ -432,8 +475,18 @@ class Vanmarcke1975(Calculator):
 class Davenport1964(Calculator):
     """Davenport (1964) peak factor.
 
-    RVT calculation using the asymptotic solution proposed by
-    Davenport (1964, :cite:`davenport64`).
+    RVT calculation using the asymptotic solution proposed by Davenport (1964).
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #:  Name of the calculator
@@ -445,23 +498,27 @@ class Davenport1964(Calculator):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         Returns
         -------
         peak_factor : float
             associated peak factor.
 
         """
-        m0, m2 = self._spectrum.moments(0, 2)
+        m0, m2 = sspectrum.moments(0, 2)
 
         # Compute the number of zero crossings
         num_zero_crossings = self.limited_num_zero_crossings(
@@ -494,8 +551,19 @@ class Davenport1964(Calculator):
 class DerKiureghian1985(Davenport1964):
     """Der Kiureghian (1985) peak factor.
 
-    RVT calculation using peak factor derived by :cite:t:`davenport64` with limits
+    RVT calculation using peak factor derived by Davenport (1964) with limits
     suggested by :cite:t:`igusa85`.
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #:  Name of the calculator
@@ -507,19 +575,20 @@ class DerKiureghian1985(Davenport1964):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
-             oscillator already applied if being used. Units are not important.
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
 
         Returns
         -------
@@ -527,7 +596,7 @@ class DerKiureghian1985(Davenport1964):
             associated peak factor.
 
         """
-        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
+        m0, m1, m2 = sspectrum.moments(0, 1, 2)
 
         # Compute the number of zero crossings
         num_zero_crossings = duration * np.sqrt(m2 / m0) / np.pi
@@ -550,8 +619,19 @@ class DerKiureghian1985(Davenport1964):
 class ToroMcGuire1987(Davenport1964):
     """Toro and McGuire (1987) peak factor.
 
-    Peak factor equation using asymptotic solution proposed by :cite:t:`davenport64`
-    with modifications proposed by :cite:t:`toro87`.
+    Peak factor equation using asymptotic solution proposed by Davenport (1964)
+    with modifications proposed by Toro & McGuire (1987).
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #:  Name of the calculator
@@ -563,21 +643,20 @@ class ToroMcGuire1987(Davenport1964):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
-             oscillator already applied if being used. Units are
-             not important.
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
 
         Returns
         -------
@@ -585,7 +664,7 @@ class ToroMcGuire1987(Davenport1964):
             associated peak factor.
 
         """
-        m0, m1, m2 = self._spectrum.moments(0, 1, 2)
+        m0, m1, m2 = sspectrum.moments(0, 1, 2)
 
         # Vanmarcke's (1976) bandwidth measure and central frequency
         bandwidth = np.sqrt(1 - (m1 * m1) / (m0 * m2))
@@ -612,6 +691,17 @@ class CartwrightLonguetHiggins1956(Calculator):
 
     RVT calculation based on the peak factor definition by :cite:t:`cartwright56` using
     the integral provided by :cite:t:`boore03`.
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #: Name of the calculator
@@ -623,21 +713,20 @@ class CartwrightLonguetHiggins1956(Calculator):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_peak_factor(self, duration: float, **kwargs) -> float:
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+    ) -> float:
         """Compute the peak factor.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-        freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
-        fourier_amps : array_like
-             Amplitude of the Fourier amplitude spectrum with a single degree of freedom
-             oscillator already applied if being used. Units are
-             not important.
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
 
         Returns
         -------
@@ -645,7 +734,7 @@ class CartwrightLonguetHiggins1956(Calculator):
             associated peak factor.
 
         """
-        m0, m1, m2, m4 = self._spectrum.moments(0, 1, 2, 4)
+        m0, m2, m4 = sspectrum.moments(0, 2, 4)
 
         bandwidth = np.sqrt((m2 * m2) / (m0 * m4))
         num_extrema = max(2.0, np.sqrt(m4 / m2) * duration / np.pi)
@@ -667,6 +756,17 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     along with the root-mean-squared duration correction proposed by :cite:t:`boore84`.
 
     This RVT calculation is used by SMSIM and is described in :cite:t:`boore03`.
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #:  Name of the calculator
@@ -678,32 +778,38 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_duration_rms(self, duration, **kwargs):
-        """Compute the oscillator duration.
+    def _calc_duration_rms(
+        self,
+        duration: float,
+        sspectrum: SquaredSpectrum,
+        *,
+        osc_damping: float = 0.05,
+        osc_freq: float | None = None,
+        **kwds,
+    ) -> float:
+        """Modify root-mean-squared duration to account for nonstationarity.
 
-        Oscillator duration is used in the calculation of the root-mean-squared
-        response and based on :cite:t:`boore84`.
+        Default implemenation does nothing.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
-        osc_freq : float
-            Frequency of the oscillator (Hz).
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a damping
             ratio of 5%.
-
+        osc_freq : float
+            Oscillator frequency [Hz].
         Returns
         -------
-        duration_rms : float
-            Duration of the root-mean-squared oscillator response (sec).
-
+        duration : float
+            Modified duration.
         """
-        osc_freq = kwargs.get("osc_freq", None)
-        osc_damping = kwargs.get("osc_damping", None)
-
         if osc_damping and osc_freq:
             power = 3.0
             coef = 1.0 / 3.0
@@ -733,33 +839,40 @@ class LiuPezeshk1999(BooreJoyner1984):
         """Initialize the class."""
         super().__init__(**kwargs)
 
-    def _calc_duration_rms(self, duration, **kwargs):
-        """Compute the oscillator duration.
+    def _calc_duration_rms(
+        self,
+        duration: float,
+        sspectrum: SquaredSpectrum,
+        *,
+        osc_damping: float = 0.05,
+        osc_freq: float | None = None,
+        **kwds,
+    ) -> float:
+        """Modify root-mean-squared duration to account for nonstationarity.
 
-        Oscillator duration is used in the calculation of the root-mean-squared
-        response and based on :cite:`liu99`.
+        Default implemenation does nothing.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
-        osc_freq : float
-            Frequency of the oscillator (Hz).
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a damping
             ratio of 5%.
-
+        osc_freq : float
+            Oscillator frequency [Hz].
         Returns
         -------
-        duration_rms : float
-            Duration of the root-mean-squared oscillator response (sec).
-
+        duration : float
+            Modified duration.
         """
-        osc_freq = kwargs.get("osc_freq", None)
-        osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
-            m0, m1, m2 = self._spectrum.moments(0, 1, 2)
+            m0, m1, m2 = sspectrum.moments(0, 1, 2)
 
             power = 2.0
             coef = np.sqrt(2 * np.pi * (1.0 - (m1 * m1) / (m0 * m2)))
@@ -776,7 +889,7 @@ class LiuPezeshk1999(BooreJoyner1984):
 
 
 def _make_bt_interpolator(region, ref):
-    """Load data from the :cite:t:`boore12` and :cite:t:`boore15` parameter files.
+    """Load data from the :cite:t:`boore12` and Boore & Thompson (2015) parameter files.
 
     Parameters
     ----------
@@ -841,29 +954,37 @@ class BooreThompson(Calculator):
         region = get_region(region)
         self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
 
-    def _calc_duration_rms(self, duration, **kwargs):
-        """Compute the RMS duration.
+    def _calc_duration_rms(
+        self,
+        duration: float,
+        sspectrum: SquaredSpectrum,
+        osc_damping: float = 0.05,
+        osc_freq: float | None = None,
+        **kwds,
+    ) -> float:
+        """Modify root-mean-squared duration to account for nonstationarity.
+
+        Default implemenation does nothing.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically
-            defined as the duration between the 5% and 75% normalized Arias
-            intensity (sec).
-        osc_freq : float
-            Frequency of the oscillator (Hz).
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for
-            a damping ratio of 5%.
-
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
+        osc_freq : float
+            Oscillator frequency [Hz].
         Returns
         -------
-        duration_rms : float
-            Duration of the root-mean-squared oscillator response (sec).
-
+        duration : float
+            Modified duration.
         """
-        osc_freq = kwargs.get("osc_freq", None)
-        osc_damping = kwargs.get("osc_damping", None)
         if osc_freq and osc_damping:
             c1, c2, c3, c4, c5, c6, c7 = self._COEFS
 
@@ -894,6 +1015,17 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
     dist : float
         Distance of the event in (km).
 
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
+
     """
 
     #:  Name of the calculator
@@ -910,8 +1042,8 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
 class BooreThompson2015(BooreThompson, Vanmarcke1975):
     """Boore and Thompson (2015) peak factor.
 
-    Peak calculation based on the peak factor definition by :cite:t:`vanmarcke75` along
-    with the root-mean-squared duration correction proposed by :cite:t:`boore15`.
+    Peak calculation based on the peak factor definition by Vanmarcke (1975) along
+    with the root-mean-squared duration correction proposed by Boore & Thompson (2015).
 
 
     Parameters
@@ -924,6 +1056,17 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
         Magnitude of the event.
     dist : float
         Distance of the event in (km).
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
 
     """
 
@@ -941,9 +1084,31 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
 class WangRathje2018(BooreThompson2015):
     """Wang & Rathje (2018) peak factor.
 
-    Peak calculation based on the peak factor definition by :cite:t:`vanmarcke75` along
-    with correction for oscillator duration by :cite:t:`boore15` and site amplification
-    as described in :cite:t:`rathje18`.
+    Peak calculation based on the peak factor definition by Vanmarcke (1975) along
+    with correction for oscillator duration by Boore & Thompson (2015) and site
+    amplification as described in Wang & Rathje (2018).
+
+    Parameters
+    ----------
+    region : str
+        Region for which the parameters were developed.  Valid options are: 'wna' for
+        Western North America (active tectonic), and 'cena' for Central and Eastern
+        North America ( stable tectonic).
+    mag : float
+        Magnitude of the event.
+    dist : float
+        Distance of the event in (km).
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
     """
 
     #:  Name of the calculator
@@ -965,62 +1130,95 @@ class WangRathje2018(BooreThompson2015):
         """Initialize the class."""
         BooreThompson2015.__init__(self, region, mag, dist, **kwargs)
 
-    def _calc_duration_rms(self, duration, **kwargs):
-        """Compute the RMS duration.
+    def _calc_duration_rms(
+        self,
+        duration: float,
+        sspectrum: SquaredSpectrum,
+        *,
+        osc_damping: float = 0.05,
+        osc_freq: float | None = None,
+        site_tf: npt.ArrayLike | None = None,
+        **kwds,
+    ) -> float:
+        """Modify root-mean-squared duration to account for nonstationarity.
+
+        Default implemenation does nothing.
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the ground motion. Typically defined
-            as the duration between the 5% and 75% normalized Arias intensity (sec).
-        osc_freq : float
-            Frequency of the oscillator (Hz).
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for
-            a damping ratio of 5%.
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
+        osc_freq : float
+            Oscillator frequency [Hz].
         site_tf : array_like
             Transfer function for applied to compute site effects.
-
         Returns
         -------
-        duration_rms : float
-            Duration of the root-mean-squared oscillator response (sec).
-
+        duration : float
+            Modified duration.
         """
-        duration_rms = BooreThompson2015._calc_duration_rms(self, duration, **kwargs)
-        osc_freq = kwargs.get("osc_freq", None)
-        site_tf = kwargs.get("site_tf", None)
+        duration_rms = BooreThompson2015._calc_duration_rms(
+            self, duration, sspectrum, osc_damping=osc_damping, osc_freq=osc_freq
+        )
 
-        if site_tf is not None:
+        if osc_freq and osc_damping and site_tf is not None:
             # Modify duration for site effects
 
             # Work only on the absolute value
             site_tf = np.abs(site_tf)
-
             # Peaks in the transfer function
             indices = argrelmax(site_tf)[0][:3]
 
-            freqs = kwargs["freqs"]
-            modes_f = freqs[indices]
-            modes_a = site_tf[indices]
+            # Some transfer functions might have have peaks
+            if len(indices):
+                # In some instances higher-modes are not found -- especially due to high
+                # damping values. In this case, we truncate the coefficients
+                C = self.COEFS[: len(indices)]
 
-            # Amplitude / frequency ratio of the first mode
-            af_ratio = modes_a[0] / modes_f[0]
+                # if len(indices) != 3:
+                #     indices = np.r_[
+                #         indices,
+                #         (3 - len(indices))
+                #         * [
+                #             10,
+                #         ],
+                #     ]
+                #     valid_modes = len(indices)
+                # else:
+                #     valid_modes = 3
 
-            c = self.COEFS.a * af_ratio + self.COEFS.b * af_ratio**2
-            m = self.COEFS.d * af_ratio + self.COEFS.e * af_ratio**2
-            incr_max = c * np.exp(-duration / m)
+                modes_f = sspectrum.freqs[indices]
+                modes_a = site_tf[indices]
 
-            incr = incr_max * np.exp(
-                -((np.log(osc_freq / modes_f)) ** 2) / (2 * self.COEFS.sd**2)
-            )
-            duration_rms += incr.sum()
+                # Amplitude / frequency ratio of the first mode
+                af_ratio = modes_a[0] / modes_f[0]
+
+                c = C.a * af_ratio + C.b * af_ratio**2
+                m = C.d * af_ratio + C.e * af_ratio**2
+                incr_max = c * np.exp(-duration / m)
+
+                incr = incr_max * np.exp(
+                    -((np.log(osc_freq / modes_f)) ** 2) / (2 * C.sd**2)
+                )
+                duration_rms += incr.sum()
+                # duration_rms += incr[0:valid_modes].sum()
 
         return duration_rms
 
 
 def get_peak_calculator(method, calc_kwds):
-    """Select a peak calculator based on a string.
+    """Select a peak calculator based on a XXDD string.
+
+    The format of the string is XX for author initials, and then DD for the last two
+    years of the date published.
 
     Parameters
     ----------

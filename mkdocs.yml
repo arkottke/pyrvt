@@ -67,7 +67,7 @@ plugins:
   - mkdocs-jupyter:
       ignore_h1_titles: True
       include:
-        ["examples/*.ipynb"] # Default: ["*.py", "*.ipynb"]
+        ["*.ipynb"] # Default: ["*.py", "*.ipynb"]
         # ignore: ["some-irrelevant-files/*.ipynb"]
   - bibtex:
       bib_file: "docs/refs.bib"

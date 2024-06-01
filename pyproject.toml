@@ -58,6 +58,7 @@ ignore = ["E203"]
 [tool.hatch.envs.test]
 dependencies = [
   "coverage[toml]",
+  "pandas",
   "pytest",
   "pystrata",
   "pytest-cov",
