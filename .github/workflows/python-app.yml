@@ -29,12 +29,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
-          pip install -r requirements_dev.txt
-      - name: Install package
-        run: pip install .
+          pip install wheel hatch
+      - name: Build package
+        run: hatch build
       - name: Test package
-        run: pytest --cov-config=pyproject.toml --cov-report=xml --cov=pkg --cov=tests
+        run: hatch run test:run-coverage-xml --python ${{ matrix.python-version }}
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1.3.0
         with:
