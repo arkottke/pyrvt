@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from scipy.constants import g as gravity
 from scipy.interpolate import interp1d
 from scipy.stats import linregress
 
@@ -245,15 +246,12 @@ class RvtMotion:
             Peak pseudo-spectral acceleration of the oscillator
 
         """
-        if trans_func is not None:
-            tf = np.asarray(trans_func)
-        else:
-            tf = np.ones_like(self.freqs)
+        trans_func = 1 if trans_func is None else np.asarray(trans_func)
 
         resp = np.array(
             [
                 self.calc_peak(
-                    tf * calc_sdof_tf(self.freqs, of, osc_damping),
+                    trans_func * calc_sdof_tf(self.freqs, of, osc_damping),
                     osc_freq=of,
                     osc_damping=osc_damping,
                     site_tf=trans_func,
@@ -353,6 +351,7 @@ class SourceTheoryMotion(RvtMotion):
         depth: float | None = 8,
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
+        freqs: npt.ArrayLike | None = None,
         disable_site_amp: bool = False,
     ):
         """Initialize the motion.
@@ -383,6 +382,11 @@ class SourceTheoryMotion(RvtMotion):
         calc_kwds : dict, optional
             Keywords to be passed during the creation the peak calculator.
             These keywords are only required for some peak calculators.
+        freqs : array_like
+            frequencies for which the Fourier amplitude spectrum should be computed.
+            Defaults to `np.geomspace(0.05, 200, 512)`
+        disable_site_amp: bool, optional
+            if the crustal site amplification should be disable. Defaults to *False*.
 
         """
         super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
@@ -517,6 +521,10 @@ class SourceTheoryMotion(RvtMotion):
             * (self.stress_drop / self.seismic_moment) ** (1.0 / 3.0)
         )
 
+        # Combine the three components and convert from displacement to acceleration
+        self.calc_fourier_amps(freqs)
+        self._duration = self.calc_duration()
+
     def calc_duration(self) -> float:
         """Compute the duration by combination of source and path.
 
@@ -607,9 +615,10 @@ class SourceTheoryMotion(RvtMotion):
         site_comp = 1 if self._disable_site_amp else (site_amp * site_dim)
 
         # Conversion factor to convert from dyne-cm into gravity-sec
-        conv = 1.0e-20 / 980.7
+        conv = 1.0e-20 / (100 * gravity)
         # Combine the three components and convert from displacement to
         # acceleration
+
         self._fourier_amps = (
             conv
             * (2.0 * np.pi * self._freqs) ** 2.0
@@ -789,8 +798,8 @@ class StaffordEtAl22Motion(RvtMotion):
 
         path_comp = geom_spread * anelastic_atten
 
-        # Convert to acceleration (cm/s)
-        conv = (2 * np.pi * self._freqs) ** 2
+        # Convert to acceleration (cm/s) and then into g-se
+        conv = (2 * np.pi * self._freqs) ** 2 / (gravity * 100)
 
         if disable_site_amp:
             site_tf = 1.0
@@ -852,15 +861,15 @@ class StaffordEtAl22Motion(RvtMotion):
         """
         if mechanism == "RS":
             # Reverse and reverse-oblique faulting
-            depth_tor = 2.704 - 1.226 * max(mag - 5.849, 0)
+            fact = 2.704 - 1.226 * max(mag - 5.849, 0)
         else:
             # Combined strike-slip and normal faulting
-            depth_tor = 2.673 - 1.136 * max(mag - 4.970, 0)
+            fact = 2.673 - 1.136 * max(mag - 4.970, 0)
 
-        return max(depth_tor, 0) ** 2
+        return max(fact, 0) ** 2
 
     @staticmethod
-    def calc_duration(corner_freq, dist_ps):
+    def calc_duration(corner_freq: float, dist_ps: float) -> float:
         """Boore & Thomspson (2014) duration model."""
 
         # Source component. Equation 2
