@@ -3,6 +3,10 @@
 Peak factor models.
 
 Published peak factor models, which compute the expected peak ground motion. A
+        osc_freq = kwds.get("osc_freq", None)
+        osc_damping = kwds.get("osc_damping", None)
+        if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
 specific model may include oscillator duration correction.
 """
 
@@ -18,7 +22,13 @@ from scipy.integrate import quad
 from scipy.interpolate import LinearNDInterpolator
 from scipy.signal import argrelmax
 
+try:
+    _trapz = np.trapezoid
+except AttributeError:
+    _trapz = np.trapz
 
+
+# FIXME: Is this needed?
 @numba.jit(nopython=True)
 def trapz(x: npt.ArrayLike, y: npt.ArrayLike) -> float:
     """Trapezoidal integration written in numba.
@@ -64,7 +74,7 @@ def _calc_vanmarcke1975_ccdf(n: int, a) -> float:
     a : list of floats
         Arguments specifying:
             - function value `x`
-            - number of zero crossing
+            - number of zero crossings
             - effective bandwdith
 
     Returns
@@ -74,20 +84,56 @@ def _calc_vanmarcke1975_ccdf(n: int, a) -> float:
 
     """
     args = numba.carray(a, n)
-    x = args[0]
-    num_zero_crossings = args[1]
-    bandwidth_eff = args[2]
+    x, num_z, bandwidth_eff = args
 
-    return 1 - (1 - np.exp(-(x**2) / 2)) * np.exp(
-        -1
-        * num_zero_crossings
-        * (1 - np.exp(-1 * np.sqrt(np.pi / 2) * bandwidth_eff * x))
-        / (np.exp(x**2 / 2) - 1)
+    fact = np.exp(-(x**2) / 2)
+
+    return 1 - (
+        (1 - fact)
+        * np.exp(
+            -num_z
+            * fact
+            * (1 - np.exp(-np.sqrt(np.pi / 2) * bandwidth_eff * x))
+            / (1 - fact)
+        )
     )
 
 
 # Force the argtypes to be what quad expects
 _calc_vanmarcke1975_ccdf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
+
+
+# Turn the integrand function into a ctypes function
+@numba.cfunc(c_sig)
+def _calc_log_vanmarcke1975_ccdf(n: int, a) -> float:
+    """Calculate 1 - Vanmarcke (1975) complementary CDF.
+
+    Parameters
+    ----------
+    n : int
+        Length of arguments
+    a : list of floats
+        Arguments specifying:
+            - function value `x`
+            - number of zero crossing
+            - effective bandwdith
+
+    Returns
+    -------
+    ccdf : float
+        Complementary CDF value
+
+    """
+    # Convert from log to natural
+    a[0] = np.exp(a[0])
+
+    value = _calc_vanmarcke1975_ccdf(n, a)
+    if a[0] < 1:
+        value = 1 - value
+    return value
+
+
+_calc_log_vanmarcke1975_ccdf.ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
 
 @numba.cfunc(c_sig)
@@ -144,7 +190,8 @@ def calc_moments(
 
     # Use trapzoidal integration to compute the requested moments.
     moments = [
-        2.0 * trapz(freqs, np.power(2 * np.pi * freqs, o) * squared_fa) for o in orders
+        2.0 * _trapz(np.power(2 * np.pi * freqs, o) * squared_fa, x=freqs)
+        for o in orders
     ]
 
     return moments
@@ -165,7 +212,7 @@ class SquaredSpectrum:
 
     def __init__(self, freqs: npt.ArrayLike, fourier_amps: npt.ArrayLike):
         """Initialize SquaredSpectrum."""
-        self._freqs = freqs
+        self._freqs = np.asarray(freqs)
         self._squared_fa = np.square(fourier_amps)
         self._moments = {}
 
@@ -181,11 +228,12 @@ class SquaredSpectrum:
             Computed spectral moments.
         """
         num = int(num)
+
         try:
             moment = self._moments[num]
         except KeyError:
-            moment = 2.0 * trapz(
-                self._freqs, np.power(2 * np.pi * self._freqs, num) * self._squared_fa
+            moment = 2.0 * _trapz(
+                np.power(2 * np.pi * self._freqs, num) * self._squared_fa, x=self._freqs
             )
             self._moments[num] = moment
 
@@ -263,7 +311,7 @@ class Calculator(ABC):
         duration: float,
         freqs: npt.ArrayLike,
         fourier_amps: npt.ArrayLike,
-        **kwargs,
+        **kwds,
     ) -> tuple[float]:
         """Compute the peak response.
 
@@ -289,8 +337,8 @@ class Calculator(ABC):
 
         """
         sspectrum = SquaredSpectrum(freqs, fourier_amps)
-        peak_factor = self._calc_peak_factor(duration, sspectrum, **kwargs)
-        duration_rms = self._calc_duration_rms(duration, sspectrum, **kwargs)
+        peak_factor = self._calc_peak_factor(duration, sspectrum, **kwds)
+        duration_rms = self._calc_duration_rms(duration, sspectrum, **kwds)
         # Compute the root-mean-squared response.
         resp_rms = np.sqrt(sspectrum.moment(0) / duration_rms)
 
@@ -318,7 +366,7 @@ class Calculator(ABC):
         """
 
     def _calc_duration_rms(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Modify root-mean-squared duration to account for nonstationarity.
 
@@ -394,13 +442,13 @@ class Vanmarcke1975(Calculator):
     NAME: str = "Vanmarcke (1975)"
     ABBREV: str = "V75"
 
-    def __init__(self, use_nonstationarity_factor: bool = True, **kwargs):
+    def __init__(self, use_nonstationarity_factor: bool = True, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
         self._use_nonstationarity_factor = use_nonstationarity_factor
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Compute the peak factor.
 
@@ -441,8 +489,8 @@ class Vanmarcke1975(Calculator):
             args=(num_zero_crossings, bandwidth_eff),
         )[0]
 
-        osc_freq = kwargs.get("osc_freq", None)
-        osc_damping = kwargs.get("osc_damping", None)
+        osc_freq = kwds.get("osc_freq", None)
+        osc_damping = kwds.get("osc_damping", None)
         if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
             peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
 
@@ -469,7 +517,16 @@ class Vanmarcke1975(Calculator):
             Nonstationarity factor.
 
         """
-        return np.sqrt(1 - np.exp(-4 * np.pi * osc_damping * osc_freq * duration))
+        fact = -4 * np.pi * osc_damping * osc_freq * duration
+
+        # Here for some conditions the nonstationarity factor gets very small (-700)
+        # which causes and underflow the in exponent below.
+        if fact < -10:
+            nsf = 1
+        else:
+            nsf = np.sqrt(1 - np.exp(fact))
+
+        return nsf
 
 
 class Davenport1964(Calculator):
@@ -494,12 +551,12 @@ class Davenport1964(Calculator):
     #: Abbreviation of the calculator
     ABBREV: str = "D64"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Compute the peak factor.
 
@@ -571,12 +628,12 @@ class DerKiureghian1985(Davenport1964):
     #: Abbreviation of the calculator
     ABBREV: str = "DK85"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Compute the peak factor.
 
@@ -639,12 +696,12 @@ class ToroMcGuire1987(Davenport1964):
     #: Abbreviation of the calculator
     ABBREV: str = "TM87"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Compute the peak factor.
 
@@ -676,8 +733,8 @@ class ToroMcGuire1987(Davenport1964):
 
         peak_factor = self.asymtotic_approx(num_zero_crossings)
 
-        osc_freq = kwargs.get("osc_freq", None)
-        osc_damping = kwargs.get("osc_damping", None)
+        osc_freq = kwds.get("osc_freq", None)
+        osc_damping = kwds.get("osc_damping", None)
         if osc_freq and osc_damping:
             peak_factor *= Vanmarcke1975.nonstationarity_factor(
                 osc_damping, osc_freq, duration
@@ -709,12 +766,12 @@ class CartwrightLonguetHiggins1956(Calculator):
     #: Abbreviation of the calculator
     ABBREV: str = "CLH56"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwargs
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
     ) -> float:
         """Compute the peak factor.
 
@@ -774,9 +831,9 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
     #: Abbreviation of the calculator
     ABBREV: str = "BJ84"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_duration_rms(
         self,
@@ -835,9 +892,9 @@ class LiuPezeshk1999(BooreJoyner1984):
     #: Abbreviation of the calculator
     ABBREV: str = "LP99"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
 
     def _calc_duration_rms(
         self,
@@ -948,9 +1005,9 @@ class BooreThompson(Calculator):
         Reference for coefficients, either: 'bt12' or 'bt15'
     """
 
-    def __init__(self, region, mag, dist, ref, **kwargs):
+    def __init__(self, region, mag, dist, ref, **kwds):
         """Initialize the class."""
-        super().__init__(**kwargs)
+        super().__init__(**kwds)
         region = get_region(region)
         self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
 
@@ -1033,10 +1090,10 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
     #: Abbreviation of the calculator
     ABBREV: str = "BT12"
 
-    def __init__(self, region, mag, dist, **kwargs):
+    def __init__(self, region, mag, dist, **kwds):
         """Initialize the class."""
-        BooreThompson.__init__(self, region, mag, dist, "bt12", **kwargs)
-        BooreJoyner1984.__init__(self, **kwargs)
+        BooreThompson.__init__(self, region, mag, dist, "bt12", **kwds)
+        BooreJoyner1984.__init__(self, **kwds)
 
 
 class BooreThompson2015(BooreThompson, Vanmarcke1975):
@@ -1075,10 +1132,10 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
     #: Abbreviation of the calculator
     ABBREV: str = "BT15"
 
-    def __init__(self, region, mag, dist, **kwargs):
+    def __init__(self, region, mag, dist, **kwds):
         """Initialize the class."""
-        BooreThompson.__init__(self, region, mag, dist, "bt15", **kwargs)
-        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwargs)
+        BooreThompson.__init__(self, region, mag, dist, "bt15", **kwds)
+        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwds)
 
 
 class WangRathje2018(BooreThompson2015):
@@ -1126,9 +1183,9 @@ class WangRathje2018(BooreThompson2015):
         names="mode,a,b,d,e,sd",
     )
 
-    def __init__(self, region, mag, dist, **kwargs):
+    def __init__(self, region, mag, dist, **kwds):
         """Initialize the class."""
-        BooreThompson2015.__init__(self, region, mag, dist, **kwargs)
+        BooreThompson2015.__init__(self, region, mag, dist, **kwds)
 
     def _calc_duration_rms(
         self,
@@ -1214,6 +1271,104 @@ class WangRathje2018(BooreThompson2015):
         return duration_rms
 
 
+class SeifriedEtAl2024(Calculator):
+    """Seifried et al. (2024) peak factor.
+
+
+    Attributes
+    ----------
+    NAME : str
+        Complete reference of the peak calculator
+
+    ABBREV : str
+        Abbreviation of the reference
+
+    _MIN_ZERO_CROSSINGS : float
+        Minimum number of zero crossings.
+    """
+
+    NAME: str = "Seifried et al. (2024)"
+    ABBREV: str = "Sea24"
+
+    _MIN_ZERO_CROSSINGS = 0
+
+    # Coefficients fit to NGA-W2 subset multiple dampings
+    _COEF_A = 0.525
+    _COEF_B = 1.686
+
+    def __init__(self, use_nonstationarity_factor: bool = True, **kwds):
+        """Initialize the class."""
+        super().__init__(**kwds)
+        self._use_nonstationarity_factor = use_nonstationarity_factor
+
+    def _calc_peak_factor(
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds
+    ) -> float:
+        """Compute the peak factor.
+
+        Parameters
+        ----------
+        duration : float
+            Duration of the stationary portion of the  ground motion [sec].
+            Typically defined as the duration between the 5% and 75% normalized Arias
+            intensity [sec].
+        sspectrum : SquaredSpectrum
+            Instance of `SquaredSpectrum` that defines the frequency content of the
+            motion.
+        osc_freq : float
+            Frequency of the oscillator (Hz).
+        osc_damping : float
+            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            ratio of 5%.
+        Returns
+        -------
+        peak_factor : float
+            associated peak factor.
+
+        """
+        m0, m2 = sspectrum.moments(0, 2)
+
+        tE = 4 * _trapz(np.square(sspectrum.squared_fa), x=sspectrum.freqs) / m0**2
+
+        # Central frequency
+        freq_cent = np.sqrt(m2 / m0) / (2 * np.pi)
+        # Effective bandwidth from Winterstein
+        bandwidth_eff = np.sqrt(2 / (freq_cent * tE)) / np.pi
+        # Effective damping
+        damp_eff = 1 / (2 * np.pi * freq_cent * tE)
+        # Number of zero crossings
+        num_zero_crossings = self.limited_num_zero_crossings(2 * duration * freq_cent)
+
+        # Integration done in log-space. Need to seperate the parts below
+        # and above ln(1)
+        left = quad(
+            _calc_log_vanmarcke1975_ccdf.ctypes,
+            # FIXME Better bounds?
+            -5,
+            0,
+            args=(num_zero_crossings, bandwidth_eff),
+        )[0]
+        right = quad(
+            _calc_log_vanmarcke1975_ccdf.ctypes,
+            0,
+            # FIXME Better bounds?
+            5,
+            args=(num_zero_crossings, bandwidth_eff),
+        )[0]
+        peak_factor = np.exp(-left + right)
+
+        if self._use_nonstationarity_factor:
+            peak_factor *= np.sqrt(
+                1
+                - np.exp(
+                    -1 * (4 * np.pi * damp_eff * freq_cent * duration) ** self._COEF_A
+                )
+                / self._COEF_B
+            )
+
+        return peak_factor
+
+
 def get_peak_calculator(method, calc_kwds):
     """Select a peak calculator based on a XXDD string.
 
@@ -1245,6 +1400,7 @@ def get_peak_calculator(method, calc_kwds):
         ToroMcGuire1987,
         Vanmarcke1975,
         WangRathje2018,
+        SeifriedEtAl2024,
     ]
 
     for calculator in calculators:
