@@ -1271,8 +1271,8 @@ class WangRathje2018(BooreThompson2015):
         return duration_rms
 
 
-class SeifriedEtAl2024(Calculator):
-    """Seifried et al. (2024) peak factor.
+class SeifriedEtAl2025(Calculator):
+    """Seifried et al. (2025) peak factor.
 
 
     Attributes
@@ -1287,8 +1287,8 @@ class SeifriedEtAl2024(Calculator):
         Minimum number of zero crossings.
     """
 
-    NAME: str = "Seifried et al. (2024)"
-    ABBREV: str = "Sea24"
+    NAME: str = "Seifried et al. (2025)"
+    ABBREV: str = "Sea25"
 
     _MIN_ZERO_CROSSINGS = 0
 
@@ -1400,7 +1400,7 @@ def get_peak_calculator(method, calc_kwds):
         ToroMcGuire1987,
         Vanmarcke1975,
         WangRathje2018,
-        SeifriedEtAl2024,
+        SeifriedEtAl2025,
     ]
 
     for calculator in calculators:
