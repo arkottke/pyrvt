@@ -4,7 +4,7 @@ A Python library and command-line application for using random vibration
 theory to transform between acceleration Fourier amplitude spectrum and
 acceleration response spectrum.
 
-`pyRVT` provides random vibration theory (RVT) models for use in earthquake
+_pyRVT_ provides random vibration theory (RVT) models for use in earthquake
 ground motion models. It provides multiple peak factor models in a common
 framework such that they can be compared and tested. Additionally, it provides
 an interface to define RVT based ground motion models through specification of
@@ -13,7 +13,7 @@ a seismological models.
 
 ## Installation
 
-`pyRVT` can be installed with [pip](https://pip.pypa.io):
+_pyRVT_ can be installed with [pip](https://pip.pypa.io):
 
 ```bash
 $ python -m pip install pyrvt
@@ -67,4 +67,4 @@ When citing the software reference the [DOI](https://zenodo.org/records/3630729)
 
 ## License
 
-`pyRVT` is made available under the MIT License.
+_pyRVT_ is made available under the MIT License.

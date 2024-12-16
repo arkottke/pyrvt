@@ -12,6 +12,7 @@ nav:
   - Usage:
       - Library: usage/library.md
       - CLI: usage/cli.md
+  - Example: example.ipynb
   - API Reference:
       - pyrvt: reference/
   - Development:

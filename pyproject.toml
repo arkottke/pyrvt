@@ -55,6 +55,23 @@ quote-style = "double"
 select = ["E", "F", "W", "Q", "I"]
 ignore = ["E203"]
 
+[tool.hatch.envs.style]
+detached = true
+dependencies = [
+    "black[colorama,jupyter]",
+    "ruff"
+]
+
+# Format with black first to wrap comments
+[tool.hatch.envs.style.scripts]
+fmt = [
+    'black .',
+    'ruff check --fix .'
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.10", "3.11", "3.12"]
+
 [tool.hatch.envs.test]
 dependencies = [
   "coverage[toml]",
@@ -76,8 +93,20 @@ run-coverage = "pytest --cov-config=pyproject.toml --cov=pkg --cov=tests"
 run-coverage-xml = "run-coverage --cov-report xml"
 run = "run-coverage --no-cov"
 
-[[tool.hatch.envs.test.matrix]]
-python = ["3.10", "3.11", "3.12"]
+# [tool.hatch.envs.docs]
+# detached = true
+# dependencies = [
+#   "myst-parser",
+#   "sphinx",
+#   "sphinx-autoapi",
+#   "sphinx-autobuild",
+#   "sphinxcontrib-bibtex",
+#   "pydata-sphinx-theme"
+# ]
+#
+# [tool.hatch.envs.docs.scripts]
+# build = "sphinx-build -M html docs docs/_build/html"
+# serve = "sphinx-autobuild docs docs/_build/html"
 
 [tool.hatch.envs.docs]
 detached = true
