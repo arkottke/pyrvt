@@ -388,3 +388,18 @@ def operation_fa2psa(
             "Sa (g)",
             events,
         )
+
+
+def read_at2(fname: str) -> tuple[float, np.ndarray]:
+    """Read an AT2 formatted file."""
+
+    with open(fname) as fp:
+        # Skip the first three header lines
+        for _ in range(3):
+            next(fp)
+        parts = next(fp).replace(",", "").split()
+        time_step = float(parts[3].replace("SEC", ""))
+
+        accels = np.array([float(part) for line in fp for part in line.split()])
+
+    return time_step, accels
