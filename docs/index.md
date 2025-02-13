@@ -34,6 +34,7 @@ $ pip install .
 The peak calculators and associated functions are contained within
 `pyrvt.peak_calculators`. The primary peak calculators are:
 
+- [Seifried et al. (2025)][pyrvt.peak_calculators.SeifriedEtAl2025][@seifried25]
 - [Wang and Rathje (2018)][pyrvt.peak_calculators.WangRathje2018][@wang18]
 - [Boore and BooreThompson (2015)][pyrvt.peak_calculators.BooreThompson2015][@boore15]
 - [Vanmarcke (1975)][pyrvt.peak_calculators.Vanmarcke1975][@vanmarcke75]
