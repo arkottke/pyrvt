@@ -3,17 +3,15 @@
 Peak factor models.
 
 Published peak factor models, which compute the expected peak ground motion. A
-        osc_freq = kwds.get("osc_freq", None)
-        osc_damping = kwds.get("osc_damping", None)
-        if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
-            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
-specific model may include oscillator duration correction.
+specific model may include non-stationarity adjustments such as a oscillator
+duration correction.
 """
 
 import ctypes
 import itertools
 import pathlib
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numba
 import numpy as np
@@ -945,24 +943,22 @@ class LiuPezeshk1999(BooreJoyner1984):
         return duration
 
 
-def _make_bt_interpolator(region, ref):
+def _make_bt_interpolator(region: str, ref: str) -> LinearNDInterpolator:
     """Load data from the :cite:t:`boore12` and Boore & Thompson (2015) parameter files.
 
     Parameters
     ----------
     region : str
         Region for which the parameters were developed. Valid options: 'wna' for Western
-        North America (active tectonic), or 'cena' for Eastern North America (stable
-        tectonic).
+        North America (active tectonic), or 'cena' for Central and Eastern North America
+        (stable tectonic).
     ref : str
-        Reference document. Either: bt12 or bt15 for Boore & Thompson (2012) or (2015),
-        respectively.
+        Reference document. Either: 'bt12' or 'bt15'.
 
     Returns
     -------
-    interpolator : :class:`scipy.interpolate.LinearNDInterpolator`
+    LinearNDInterpolator
         Interpolator for the data.
-
     """
     fpath = pathlib.Path(__file__).parent.joinpath(
         "data", f"{region}_{ref}_trms4osc.pars.gz"
@@ -1272,59 +1268,39 @@ class WangRathje2018(BooreThompson2015):
 
 
 class SeifriedEtAl2025(Calculator):
-    """Seifried et al. (2025) peak factor.
+    """Seifried et al. (2025) peak factor calculator."""
 
+    def __init__(self, use_nonstationarity_factor: bool = True, **kwds: Any) -> None:
+        """Initialize SeifriedEtAl2025.
 
-    Attributes
-    ----------
-    NAME : str
-        Complete reference of the peak calculator
-
-    ABBREV : str
-        Abbreviation of the reference
-
-    _MIN_ZERO_CROSSINGS : float
-        Minimum number of zero crossings.
-    """
-
-    NAME: str = "Seifried et al. (2025)"
-    ABBREV: str = "Sea25"
-
-    _MIN_ZERO_CROSSINGS = 0
-
-    # Coefficients fit to NGA-W2 subset multiple dampings
-    _COEF_A = 0.525
-    _COEF_B = 1.686
-
-    def __init__(self, use_nonstationarity_factor: bool = True, **kwds):
-        """Initialize the class."""
+        Parameters
+        ----------
+        use_nonstationarity_factor : bool, optional
+            If True, the nonstationarity adjustment is applied, by default True.
+        **kwds : Any
+            Additional keyword arguments.
+        """
         super().__init__(**kwds)
         self._use_nonstationarity_factor = use_nonstationarity_factor
 
     def _calc_peak_factor(
-        self, duration: float, sspectrum: SquaredSpectrum, **kwds
+        self, duration: float, sspectrum: SquaredSpectrum, **kwds: Any
     ) -> float:
-        """Compute the peak factor.
+        """Compute the peak factor for Seifried et al. (2025).
 
         Parameters
         ----------
         duration : float
-            Duration of the stationary portion of the  ground motion [sec].
-            Typically defined as the duration between the 5% and 75% normalized Arias
-            intensity [sec].
+            Duration of the stationary portion of the ground motion [sec].
         sspectrum : SquaredSpectrum
-            Instance of `SquaredSpectrum` that defines the frequency content of the
-            motion.
-        osc_freq : float
-            Frequency of the oscillator (Hz).
-        osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
-            ratio of 5%.
+            Instance of `SquaredSpectrum` defining frequency content.
+        **kwds : Any
+            May contain 'osc_freq' and 'osc_damping' parameters if relevant.
+
         Returns
         -------
-        peak_factor : float
-            associated peak factor.
-
+        float
+            Computed peak factor.
         """
         m0, m2 = sspectrum.moments(0, 2)
 
@@ -1369,23 +1345,28 @@ class SeifriedEtAl2025(Calculator):
         return peak_factor
 
 
-def get_peak_calculator(method, calc_kwds):
+def get_peak_calculator(method: str, calc_kwds: dict[str, Any] | None) -> Calculator:
     """Select a peak calculator based on a XXDD string.
 
     The format of the string is XX for author initials, and then DD for the last two
-    years of the date published.
+    years of the date published (e.g., 'BJ84' for Boore & Joyner 1984).
 
     Parameters
     ----------
     method : str
-        Name of the peak calculation method
-    calc_kwds : dict
-        Keywords passed to the calculator
+        Name or abbreviation of the peak calculation method.
+    calc_kwds : dict[str, Any] | None
+        Additional keywords passed to the calculator constructor.
+
     Returns
     -------
-    calc : calculator
-        :class:`.Calculator`
+    Calculator
+        A matching peak calculator instance.
 
+    Raises
+    ------
+    NotImplementedError
+        If no matching calculator is found.
     """
     calc_kwds = calc_kwds or dict()
 
@@ -1410,8 +1391,8 @@ def get_peak_calculator(method, calc_kwds):
         raise NotImplementedError("No calculator for: %s", method)
 
 
-def get_region(region):
-    """Return the region naming used in this package.
+def get_region(region: str) -> str:
+    """Return the internal region naming used in this package.
 
     Parameters
     ----------
@@ -1420,9 +1401,13 @@ def get_region(region):
 
     Returns
     -------
-    region : str
+    str
         Region either 'cena' or 'wna'.
 
+    Raises
+    ------
+    NotImplementedError
+        If the region is unknown.
     """
     region = region.lower()
     if region in ["cena", "ena", "ceus", "eus"]:

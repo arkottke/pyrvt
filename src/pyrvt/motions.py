@@ -21,7 +21,7 @@ from . import peak_calculators
 DEFAULT_CALC = "V75"
 
 
-def sort_increasing(*args):
+def sort_increasing(*args: npt.ArrayLike) -> tuple[np.ndarray, ...]:
     """Sort arrays such that they are increasing.
 
     Check if the first array is is increasing, if not reverse the order. Same
@@ -188,7 +188,7 @@ class RvtMotion:
         duration: float | None = None,
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
-    ):
+    ) -> None:
         """Initialize the class."""
         self._freqs = freqs
         self._fourier_amps = fourier_amps
@@ -359,7 +359,7 @@ class SourceTheoryMotion(RvtMotion):
         calc_kwds: dict | None = None,
         freqs: npt.ArrayLike | None = None,
         disable_site_amp: bool = False,
-    ):
+    ) -> None:
         """Initialize the motion.
 
         Parameters
@@ -655,7 +655,7 @@ class StaffordEtAl22Motion(RvtMotion):
         delta_ztor: float = 0,
         freqs: npt.ArrayLike | None = None,
         disable_site_amp: bool = False,
-    ):
+    ) -> None:
         """Point source model developed by Stafford (2021) for a Vs30 of 760 m/s.
 
         Use an RVT framework, and assume the following duration/peak factor models:
@@ -819,7 +819,7 @@ class StaffordEtAl22Motion(RvtMotion):
         self._duration = StaffordEtAl22Motion.calc_duration(corner_freq, dist_ps)
 
     @classmethod
-    def site_amp(cls, freqs, site_atten):
+    def site_amp(cls, freqs: npt.ArrayLike, site_atten: float) -> np.ndarray:
         if cls._ln_site_amp_interpolator is None:
             # Load the data
             data = np.genfromtxt(
@@ -913,7 +913,7 @@ class CompatibleRvtMotion(RvtMotion):
         window_len: int | None = None,
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
-    ):
+    ) -> None:
         """Initialize the motion.
 
         Parameters

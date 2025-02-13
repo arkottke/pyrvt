@@ -157,7 +157,7 @@ def _calc_fa(target_freqs, damping, method, event):
 
 def calc_compatible_spectra(
     method: str, periods: npt.ArrayLike, events: list[dict], damping: float = 0.05
-) -> (np.ndarray, list[dict]):
+) -> tuple[np.ndarray, list[dict]]:
     """Compute the response spectrum compatible motions.
 
     Parameters
