@@ -93,21 +93,6 @@ run-coverage = "pytest --cov-config=pyproject.toml --cov=pkg --cov=tests"
 run-coverage-xml = "run-coverage --cov-report xml"
 run = "run-coverage --no-cov"
 
-# [tool.hatch.envs.docs]
-# detached = true
-# dependencies = [
-#   "myst-parser",
-#   "sphinx",
-#   "sphinx-autoapi",
-#   "sphinx-autobuild",
-#   "sphinxcontrib-bibtex",
-#   "pydata-sphinx-theme"
-# ]
-#
-# [tool.hatch.envs.docs.scripts]
-# build = "sphinx-build -M html docs docs/_build/html"
-# serve = "sphinx-autobuild docs docs/_build/html"
-
 [tool.hatch.envs.docs]
 detached = true
 dependencies = [
