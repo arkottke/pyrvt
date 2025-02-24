@@ -1270,6 +1270,16 @@ class WangRathje2018(BooreThompson2015):
 class SeifriedEtAl2025(Calculator):
     """Seifried et al. (2025) peak factor calculator."""
 
+    #:  Name of the calculator
+
+    NAME: str = "Seifried et al. (2025)"
+    #: Abbreviation of the calculator
+    ABBREV: str = "Sea25"
+
+    # Coefficients from M. Bahrampouri (2/25/2025)
+    _COEF_A: float = 0.525
+    _COEF_B: float = 1.686
+
     def __init__(self, use_nonstationarity_factor: bool = True, **kwds: Any) -> None:
         """Initialize SeifriedEtAl2025.
 
