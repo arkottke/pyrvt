@@ -2,9 +2,10 @@ import re
 from pathlib import Path
 
 import numpy as np
-import pyrvt
 import pytest
 from numpy.testing import assert_allclose
+
+import pyrvt
 
 
 def test_calc_attenuation():
