@@ -10,6 +10,7 @@ duration correction.
 import ctypes
 import itertools
 import pathlib
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -420,11 +421,6 @@ class Vanmarcke1975(Calculator):
     [1]: http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases
     [2]: http://stats.stackexchange.com/a/13377/48461
 
-    Parameters
-    ----------
-    use_nonstationarity_factor : bool
-        If the non-stationarity factor should be applied.
-
     Attributes
     ----------
     NAME : str
@@ -440,10 +436,9 @@ class Vanmarcke1975(Calculator):
     NAME: str = "Vanmarcke (1975)"
     ABBREV: str = "V75"
 
-    def __init__(self, use_nonstationarity_factor: bool = True, **kwds):
+    def __init__(self, **kwds):
         """Initialize the class."""
         super().__init__(**kwds)
-        self._use_nonstationarity_factor = use_nonstationarity_factor
 
     def _calc_peak_factor(
         self, duration: float, sspectrum: SquaredSpectrum, **kwds
@@ -487,44 +482,7 @@ class Vanmarcke1975(Calculator):
             args=(num_zero_crossings, bandwidth_eff),
         )[0]
 
-        osc_freq = kwds.get("osc_freq", None)
-        osc_damping = kwds.get("osc_damping", None)
-        if (osc_freq and osc_damping) and self._use_nonstationarity_factor:
-            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
-
         return peak_factor
-
-    @classmethod
-    def nonstationarity_factor(
-        cls, osc_damping: float, osc_freq: float, duration: float
-    ) -> float:
-        """Compute nonstationarity factor to modify duration.
-
-        Parameters
-        ----------
-        osc_damping : float
-            Oscillator damping (decimal).
-        osc_freq : float
-            Oscillator frequency (Hz).
-        duration : float
-            Duration of the stationary portion of the ground motion
-
-        Returns
-        -------
-        float
-            Nonstationarity factor.
-
-        """
-        fact = -4 * np.pi * osc_damping * osc_freq * duration
-
-        # Here for some conditions the nonstationarity factor gets very small (-700)
-        # which causes and underflow the in exponent below.
-        if fact < -10:
-            nsf = 1
-        else:
-            nsf = np.sqrt(1 - np.exp(fact))
-
-        return nsf
 
 
 class Davenport1964(Calculator):
@@ -585,7 +543,7 @@ class Davenport1964(Calculator):
         return peak_factor
 
     @classmethod
-    def asymtotic_approx(self, zero_crossings: float) -> float:
+    def asymtotic_approx(cls, zero_crossings: float) -> float:
         """Compute the peak factor from the asymptotic approximation.
 
         Parameters
@@ -677,6 +635,11 @@ class ToroMcGuire1987(Davenport1964):
     Peak factor equation using asymptotic solution proposed by Davenport (1964)
     with modifications proposed by Toro & McGuire (1987).
 
+    Parameters
+    ----------
+    use_nonstationarity_factor : bool
+        If the non-stationarity factor should be applied.
+
     Attributes
     ----------
     NAME : str
@@ -694,9 +657,11 @@ class ToroMcGuire1987(Davenport1964):
     #: Abbreviation of the calculator
     ABBREV: str = "TM87"
 
-    def __init__(self, **kwds):
+    def __init__(self, use_nonstationarity_factor: bool = True, **kwds):
         """Initialize the class."""
         super().__init__(**kwds)
+
+        self._use_nonstationarity_factor = use_nonstationarity_factor
 
     def _calc_peak_factor(
         self, duration: float, sspectrum: SquaredSpectrum, **kwds
@@ -734,11 +699,54 @@ class ToroMcGuire1987(Davenport1964):
         osc_freq = kwds.get("osc_freq", None)
         osc_damping = kwds.get("osc_damping", None)
         if osc_freq and osc_damping:
-            peak_factor *= Vanmarcke1975.nonstationarity_factor(
-                osc_damping, osc_freq, duration
-            )
+            peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
 
         return peak_factor
+
+    @classmethod
+    def nonstationarity_factor(
+        cls, osc_damping: float, osc_freq: float, duration: float
+    ) -> float:
+        """Compute nonstationarity factor to the peak response.
+
+        Vanmarcke (1975) provides a recommendation for scaling the damping of the SDOF
+        oscillator to account for nonstationarity in Equation 8.30:
+        $$
+        \\xi_t = \\frac{\\xi}{1 - \\exp\\left(-4 \\pi \\xi f_n t\\right)}
+        $$
+        Toro and McGuire (1987) simplified this to scale the $X_{rms}$ by:
+        $$
+        n_f = \\sqrt{1 - \\exp\\left(-4 \\pi \\xi f_n T\\right)}
+        $$
+
+        The simplified model from Toro and McGuire (1987) is used here.
+
+
+        Parameters
+        ----------
+        osc_damping : float
+            Oscillator damping (decimal).
+        osc_freq : float
+            Oscillator frequency (Hz).
+        duration : float
+            Duration of the stationary portion of the ground motion
+
+        Returns
+        -------
+        float
+            Nonstationarity factor.
+
+        """
+        fact = -4 * np.pi * osc_damping * osc_freq * duration
+
+        # Here for some conditions the nonstationarity factor gets very small (-700)
+        # which causes and underflow the in exponent below.
+        if fact < -10:
+            nsf = 1
+        else:
+            nsf = np.sqrt(1 - np.exp(fact))
+
+        return nsf
 
 
 class CartwrightLonguetHiggins1956(Calculator):
@@ -1131,7 +1139,7 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
     def __init__(self, region, mag, dist, **kwds):
         """Initialize the class."""
         BooreThompson.__init__(self, region, mag, dist, "bt15", **kwds)
-        Vanmarcke1975.__init__(self, use_nonstationarity_factor=False, **kwds)
+        Vanmarcke1975.__init__(self, **kwds)
 
 
 class WangRathje2018(BooreThompson2015):
@@ -1276,11 +1284,16 @@ class SeifriedEtAl2025(Calculator):
     #: Abbreviation of the calculator
     ABBREV: str = "Sea25"
 
-    # Coefficients from M. Bahrampouri (2/25/2025)
-    _COEF_A: float = 0.525
-    _COEF_B: float = 1.686
+    # Coefficients from M. Bahrampouri (7/19/2025)
+    _COEF_A: float = 0.541
+    _COEF_B: float = 2.456
 
-    def __init__(self, use_nonstationarity_factor: bool = True, **kwds: Any) -> None:
+    def __init__(
+        self,
+        use_nonstationarity_factor: bool = True,
+        mean_calc="arithmetic",
+        **kwds: Any,
+    ) -> None:
         """Initialize SeifriedEtAl2025.
 
         Parameters
@@ -1292,6 +1305,18 @@ class SeifriedEtAl2025(Calculator):
         """
         super().__init__(**kwds)
         self._use_nonstationarity_factor = use_nonstationarity_factor
+        self._mean_calc = mean_calc
+
+        if self._mean_calc not in ["arithmetic", "geometric"]:
+            raise ValueError(
+                f"Mean calculation method '{self._mean_calc}' is not supported. "
+                "Use 'arithmetic' or 'geometric'."
+            )
+
+        if self._mean_calc == "geometric":
+            warnings.warn(
+                "Coefficients A and Be developed for airithmetic mean calculation."
+            )
 
     def _calc_peak_factor(
         self, duration: float, sspectrum: SquaredSpectrum, **kwds: Any
@@ -1327,21 +1352,35 @@ class SeifriedEtAl2025(Calculator):
 
         # Integration done in log-space. Need to seperate the parts below
         # and above ln(1)
-        left = quad(
-            _calc_log_vanmarcke1975_ccdf.ctypes,
-            # FIXME Better bounds?
-            -5,
-            0,
-            args=(num_zero_crossings, bandwidth_eff),
-        )[0]
-        right = quad(
-            _calc_log_vanmarcke1975_ccdf.ctypes,
-            0,
-            # FIXME Better bounds?
-            5,
-            args=(num_zero_crossings, bandwidth_eff),
-        )[0]
-        peak_factor = np.exp(-left + right)
+        if self._mean_calc == "geometric":
+            left = quad(
+                _calc_log_vanmarcke1975_ccdf.ctypes,
+                # FIXME Better bounds?
+                -5,
+                0,
+                args=(num_zero_crossings, bandwidth_eff),
+            )[0]
+            right = quad(
+                _calc_log_vanmarcke1975_ccdf.ctypes,
+                0,
+                # FIXME Better bounds?
+                5,
+                args=(num_zero_crossings, bandwidth_eff),
+            )[0]
+            peak_factor = np.exp(-left + right)
+        elif self._mean_calc == "arithmetic":
+            # The expected peak factor is computed as the integral of the
+            # complementary CDF (1 - CDF(x)).
+            peak_factor = quad(
+                _calc_vanmarcke1975_ccdf.ctypes,
+                0,
+                np.inf,
+                args=(num_zero_crossings, bandwidth_eff),
+            )[0]
+        else:
+            raise NotImplementedError(
+                f"Mean calculation method '{self._mean_calc}' is not implemented."
+            )
 
         if self._use_nonstationarity_factor:
             peak_factor *= np.sqrt(
