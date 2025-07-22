@@ -27,8 +27,9 @@ def sort_increasing(*args: npt.ArrayLike) -> tuple[np.ndarray, ...]:
     Check if the first array is is increasing, if not reverse the order. Same
     operation is applied to additional arrays.
 
-    Args:
-    args : array_like
+    Parameters
+    ----------
+    *args : array_like
         arrays to be re-ordered.
 
     Returns

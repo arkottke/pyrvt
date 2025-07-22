@@ -396,26 +396,29 @@ class Vanmarcke1975(Calculator):
     Der Kiureghian (1980), which is based on Equation (29) in Vanmarcke (1975).
 
     The cumulative density function (CDF) of the peak is defined as:
-    $$
+
+    .. math::
         F_x(x) = \left[1 - \exp\left(-x^2/2\right)\right]
         \exp\left[-N_z \frac{1 -
             \exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) -
             1 }\right]
-    $$
+
     where $N_z$ is the number of zero crossings, $\delta_e$ is the effective
     bandwidth ($\delta^{1.2}$).
 
     Typically, the expected value of the peak factor is calculated by integrating over
     the probability density function (i.e., $f_x(x) = \frac{d}{dx} F_x( x)$):
-    $$
+
+    .. math::
         E[x] = \int_0^\infty x f_x(x) dx
-    $$
+
     However, because of the properties of $F_x(x)$, specifically that it has
     non-zero probabilities for only positive values, $E[x]$ can be computed
     directly from $F_x(x)$.
-    $$
+
+    .. math::
         E[x] = \int_0^\infty 1 - F_x(x) dx.
-    $$
+
     This is based on the following sources [1] and [2].
 
     [1]: http://en.wikipedia.org/wiki/Expected_value#Formulas_for_special_cases

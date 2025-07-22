@@ -49,6 +49,20 @@ If you are proposing a feature:
 
 Ready to contribute? Here's how to set up `pyRVT` for local development.
 
+### Prerequisites
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install uv first:
+
+```bash
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or with pip
+pip install uv
+```
+
+### Setup
+
 1. Fork the `pyRVT` repo on GitHub.
 2. Clone your fork locally
 
@@ -62,20 +76,27 @@ $ git clone git@github.com:your_name_here/pyrvt.git
 $ git checkout -b name-of-your-bugfix-or-feature
 ```
 
+4. Install the development environment using uv:
+
+```
+$ ./scripts.sh install
+```
+
 Now you can make your changes locally.
 
-4. When you're done making changes, check that your changes pass formatting and the
+5. When you're done making changes, check that your changes pass formatting and the
    tests.
 
 ```
-$ hatch run style:check
-$ hatch run test:run
+$ ./scripts.sh format
+$ ./scripts.sh test
 ```
 
-The documentation can be built with::
+The documentation can be built and served with:
 
 ```
-$ hatch run docs:serve
+$ ./scripts.sh docs-build
+$ ./scripts.sh docs-serve
 ```
 
 6. Commit your changes and push your branch to GitHub::
@@ -100,8 +121,24 @@ Before you submit a pull request, check that it meets these guidelines:
 
 ## Tips
 
-To run tests::
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and a custom `scripts.sh` file for common development tasks.
+
+Available development commands:
 
 ```
-$ hatch run test:run
+$ ./scripts.sh install      # Install project in development mode
+$ ./scripts.sh test         # Run tests
+$ ./scripts.sh test-cov     # Run tests with coverage
+$ ./scripts.sh format       # Format code with black and ruff
+$ ./scripts.sh lint         # Check code style with ruff
+$ ./scripts.sh docs-build   # Build documentation
+$ ./scripts.sh docs-serve   # Serve documentation with auto-reload
+$ ./scripts.sh docs-clean   # Clean documentation build
+$ ./scripts.sh clean        # Clean all build artifacts
+```
+
+To run a subset of tests:
+
+```
+$ uv run pytest tests/test_specific_module.py
 ```

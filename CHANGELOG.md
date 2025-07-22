@@ -4,6 +4,7 @@
 
 - Added Stafford et al. (2022) ground motion model.
 - Changed to mkdoc and hatch
+- Fix: Moved non-stationarity correction from Vanmarck to ToroMcGuire.
 
 ## 0.7.0
 

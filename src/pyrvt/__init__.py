@@ -17,4 +17,14 @@ __author__ = "Albert Kottke"
 __copyright__ = "Copyright 2016-2025 Albert Kottke"
 __license__ = "MIT"
 __title__ = "pyRVT"
-__version__ = version("pyRVT")
+
+try:
+    from ._version import version as __version__
+except ImportError:
+    # Fallback for development installs without setuptools-scm
+    try:
+        from importlib.metadata import version
+
+        __version__ = version("pyRVT")
+    except ImportError:
+        __version__ = "unknown"
