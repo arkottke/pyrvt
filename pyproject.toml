@@ -36,6 +36,7 @@ docs = [
   "sphinx",
   "furo",
   "sphinx-copybutton",
+  "sphinx-design",
   "sphinxcontrib-bibtex",
   "sphinxext-opengraph",
   "sphinx-autobuild",

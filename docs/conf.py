@@ -32,6 +32,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinxext.opengraph",
     "sphinx_copybutton",
+    "sphinx_design",
     "myst_parser",
     "nbsphinx",
 ]

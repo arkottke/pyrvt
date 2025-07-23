@@ -1,5 +1,5 @@
-pyRVT
-=====
+pyRVT Documentation
+===================
 
 A Python library and command-line application for using random vibration
 theory to transform between acceleration Fourier amplitude spectrum and
@@ -12,93 +12,107 @@ an interface to define RVT based ground motion models through specification of
 the Fourier amplitude spectrum, acceleration response spectrum, or calculated by
 seismological models.
 
-Installation
-------------
+.. grid:: 2
 
-*pyRVT* can be installed with `pip <https://pip.pypa.io>`_:
+   .. grid-item-card:: Getting Started
+      :link: getting-started/index
+      :link-type: doc
+
+      New to pyRVT? Start here for installation and basic usage.
+
+   .. grid-item-card:: User Guide
+      :link: user-guide/index
+      :link-type: doc
+
+      Learn how to use pyRVT for your projects with tutorials and examples.
+
+   .. grid-item-card:: API Reference
+      :link: api/index
+      :link-type: doc
+
+      Complete API documentation for all modules and functions.
+
+   .. grid-item-card:: Developer Guide
+      :link: developer-guide/index
+      :link-type: doc
+
+      Contributing guidelines and development information.
+
+Quick Start
+-----------
+
+Install pyRVT with pip:
 
 .. code-block:: bash
 
    $ python -m pip install pyrvt
 
-Alternatively, you can grab the latest source code from `GitHub <https://github.com/arkottke/pyrvt>`_:
+Basic usage:
 
-.. code-block:: bash
+.. code-block:: python
 
-   $ git clone https://github.com/arkottke/pyrvt.git
-   $ cd pyrvt
-   $ pip install .
-
-Features
---------
-
-Peak factor models
-~~~~~~~~~~~~~~~~~~
-
-The peak calculators and associated functions are contained within
-:mod:`pyrvt.peak_calculators`. The primary peak calculators are:
-
-- :class:`~pyrvt.peak_calculators.SeifriedEtAl2025` :cite:t:`seifried25`
-- :class:`~pyrvt.peak_calculators.WangRathje2018` :cite:t:`wang18`
-- :class:`~pyrvt.peak_calculators.BooreThompson2015` :cite:t:`boore15`
-- :class:`~pyrvt.peak_calculators.Vanmarcke1975` :cite:t:`vanmarcke75`
-
-Additional peak calculators are also provided. See the peak calculator
-:doc:`API reference <api/pyrvt.peak_calculators>`.
-
-Ground motion models
-~~~~~~~~~~~~~~~~~~~~
-
-Motions for calculating the peak response can be specified by the following
-mechanisms. The frequency content of the motion can be specified by providing
-the Fourier amplitude spectrum and during in a
-:class:`~pyrvt.motions.RvtMotion` instance. Alternatively, a compatible
-ground motion can be computed from an acceleration response spectrum and
-duration in a :class:`~pyrvt.motions.CompatibleRvtMotion`
-instance. Seismological models based on a ω²-model based on the
-parameters selected by Campbell (2003) :cite:t:`campbell03` in a
-:class:`~pyrvt.motions.SourceTheoryMotion` instance, or by the
-optimized functional form provided by Stafford et al. (2022) :cite:t:`stafford22` in a
-:class:`~pyrvt.motions.StaffordEtAl22Motion`.
-
-Command-line interface
-~~~~~~~~~~~~~~~~~~~~~~
-
-A command-line interface is provided to convert response spectra to Fourier
-amplitude spectra, or vice versa. This interface as used by Al Atik et al.
-(2014) :cite:t:`alatik14`.
-
-Citation
---------
-
-When citing the software reference the `DOI <https://zenodo.org/records/3630729>`_.
-
-License
--------
-
-*pyRVT* is made available under the MIT License.
+   import pyrvt
+   import numpy as np
+   
+   # Define frequency and Fourier amplitude spectrum
+   freqs = np.logspace(-1, 2, 100)
+   fourier_amps = np.ones_like(freqs)
+   duration = 10.0
+   
+   # Create motion and calculate response spectrum
+   motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration)
+   osc_freqs = np.logspace(-1, 1.5, 50)
+   resp_spec = motion.calc_osc_accels(osc_freqs, damping=0.05)
 
 Table of Contents
 -----------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started
+   :hidden:
 
-   usage/library
-   usage/cli
-   example
+   getting-started/index
+   getting-started/installation
+   getting-started/quickstart
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+   :hidden:
+
+   user-guide/index
+   user-guide/tutorials
+   user-guide/examples
+   user-guide/cli
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
+   :hidden:
+
    api/index
-   changelog
-   contributing
-   authors
-   license
+   references
+   glossary
 
-References
-==========
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+   :hidden:
 
-.. bibliography::
-   :all:
+   developer-guide/index
+   developer-guide/contributing
+   developer-guide/changelog
+   developer-guide/release-notes
+
+.. toctree::
+   :maxdepth: 1
+   :caption: About
+   :hidden:
+
+   about/authors
+   about/license
+   about/citation
 
 Indices and tables
 ==================
