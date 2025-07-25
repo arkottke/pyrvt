@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 (2025-07-25)
+
+- Fixed: Issue with naming in CLI tools.
+
 ## 0.8.0 (2025-07-25)
 
 - Added Stafford et al. (2022) ground motion model.
