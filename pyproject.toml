@@ -13,7 +13,6 @@ requires-python = ">=3.10"
 dependencies = [
   "numpy",
   "numba",
-  "setuptools",
   "scipy",
   "pyexcel",
   "pyexcel-io",
@@ -23,14 +22,12 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "coverage[toml]",
-  "pandas",
   "pytest",
-  "pystrata",
   "pytest-cov",
-  "pytest-runner",
-  "matplotlib",
+  "pystrata",
   "pykooh",
-  "tomli",
+  "matplotlib",
+  "tomli ; python_version < '3.11'",
 ]
 docs = [
   "sphinx",
@@ -43,21 +40,10 @@ docs = [
   "matplotlib",
   "myst-parser",
   "nbsphinx",
-  "pandoc",
   "ipython",
   "linkify-it-py",
-  "numpy",
-  "numba",
-  "scipy",
-  "setuptools",
-  "pyexcel",
-  "pyexcel-io",
-  "pyexcel-xlsx",
 ]
-style = [
-  "black[colorama,jupyter]",
-  "ruff",
-]
+style = ["black[colorama,jupyter]", "ruff"]
 
 [project.urls]
 Homepage = "https://github.com/arkottke/pyrvt"
@@ -73,9 +59,7 @@ where = ["src"]
 write_to = "src/pyrvt/_version.py"
 
 [tool.ruff]
-exclude = [
-  "docs"
-]
+exclude = ["docs"]
 # Same as Black.
 line-length = 88
 indent-width = 4
@@ -104,8 +88,8 @@ omit = ["*/tests/*", "*/test_*"]
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
 ]
