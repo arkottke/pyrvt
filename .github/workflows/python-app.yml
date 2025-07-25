@@ -15,25 +15,16 @@ jobs:
         uses: actions/setup-python@v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Cache pip
-        uses: actions/cache@v4.2.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          # This path is specific to Ubuntu
-          path:
-            ~/.cache/pip
-            # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements_dev.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+          version: "latest"
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install wheel hatch
+        run: uv sync --extra test --extra style
       - name: Build package
-        run: hatch build
+        run: uv build
       - name: Test package
-        run: hatch run test:run-coverage-xml --python ${{ matrix.python-version }}
+        run: uv run --extra test pytest --cov=src/pyrvt --cov-report=xml
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1.3.0
         with:

@@ -45,34 +45,31 @@ clean-test:
 	rm -fr htmlcov/
 
 style-check:
-	hatch run style:check
+	uv run --extra style ruff check .
 
 style-fmt:
-	hatch run style:fmt
+	uv run --extra style ruff format .
 
 test:
-	hatch run test:run
+	uv run --extra test pytest
 
 coverage:
-	coverage run --source pyrvt setup.py tests
-	coverage report -m
-	coverage html
+	uv run --extra test pytest --cov=pyrvt --cov-report=html --cov-report=term
 	$(BROWSER) htmlcov/index.html
 
 docs-build:
-	hatch run docs:build
+	uv run --extra docs sphinx-build -b html docs docs/_build/html
 
 docs-serve:
-	hatch run docs:serve
+	uv run --extra docs sphinx-autobuild docs docs/_build/html --host 0.0.0.0 --port 8000
 
 release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+	uv build
+	uv publish
 
 dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
+	uv build
 	ls -l dist
 
 install: clean
-	python setup.py install
+	uv sync --all-extras

@@ -4,6 +4,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.ipynb_checkpoints/
 
 # C extensions
 *.so
@@ -51,11 +52,8 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-
-# Mkdocs documentation
-site/
+# Sphinx docs stuff
+docs/_build/
 
 # PyBuilder
 target/
