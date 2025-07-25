@@ -1,6 +1,5 @@
 # pyRVT
 
-[![Docs](https://readthedocs.org/projects/pyrvt/badge/?version=latest)](https://pyrvt.readthedocs.io/)
 [![PyPi Cheese
 Shop](https://img.shields.io/pypi/v/pyrvt.svg)](https://img.shields.io/pypi/v/pyrvt.svg)
 [![Documentation](https://readthedocs.org/projects/pyrvt/badge/?version=latest)](https://pyrvt.readthedocs.io/?badge=latest)
