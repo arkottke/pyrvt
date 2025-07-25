@@ -24,7 +24,7 @@ ground motion models. It provides multiple peak factor models in a common
 framework such that they can be compared and tested. Additionally, it provides
 an interface to define RVT based ground motion models through specification of
 the Fourier amplitude spectrum, acceleration response spectrum, or calculated by
-a seismological models.
+seismological models.
 
 ## Installation
 
