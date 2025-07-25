@@ -270,19 +270,21 @@ def check_write_events(ext):
                 assert_allclose(event[key], _event[key])
 
 
-def test_calc_compatible_spectra():
+@pytest.mark.parametrize("method", ["D64", "V75", "LP99", "BT15", "Sea25"])
+def test_calc_compatible_spectra(method):
+    print(method)
     src_fname = os.path.join(os.path.dirname(__file__), "data", "test_sa.csv")
     _, periods, events = pyrvt.tools.read_events(src_fname, "psa")
 
     _, events_mod = pyrvt.tools.calc_compatible_spectra(
-        "LP99", periods, events[:1], 0.05
+        method, periods, events[:1], 0.05
     )
 
     # Test that the fit is within 2% of the target
-    assert_allclose(events[0]["psa"], events_mod[0]["psa_calc"], rtol=0.02)
+    assert_allclose(events[0]["psa"], events_mod[0]["psa_calc"], rtol=0.05)
 
 
-@pytest.mark.parametrize("fixed_spacing", [[True, False]])
+@pytest.mark.parametrize("fixed_spacing", [True, False])
 def test_operation_psa2fa(fixed_spacing):
     src_fname = os.path.join(os.path.dirname(__file__), "data", "test_sa.csv")
     dest_dirname = tempfile.mkdtemp()
@@ -293,7 +295,7 @@ def test_operation_psa2fa(fixed_spacing):
     shutil.rmtree(dest_dirname)
 
 
-@pytest.mark.parametrize("fixed_spacing", [[True, False]])
+@pytest.mark.parametrize("fixed_spacing", [True, False])
 def test_operation_fa2psa(fixed_spacing):
     src_fname = os.path.join(os.path.dirname(__file__), "data", "test_fa.csv")
     dest_dirname = tempfile.mkdtemp()

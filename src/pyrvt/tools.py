@@ -14,8 +14,8 @@ from pyrvt import motions
 from pyrvt.peak_calculators import get_peak_calculator, get_region
 
 PARAMETER_NAMES = [
-    ("magnitude", "Magnitude"),
-    ("distance", "Distance (km)"),
+    ("mag", "Magnitude"),
+    ("dist", "Distance (km)"),
     ("vs30", "Vs30 (m/s)"),
     ("kappa", "Site Atten., Kappa0 (sec)"),  # Site Atten., κ₀
     ("duration", "Duration (sec)"),
@@ -107,7 +107,7 @@ def write_events(
         Label of the response type (e.g., 'Fourier Ampl. (g/sec)')
     events : List[dict]
         Events to write to file. See ``Note`` in
-        :func:`.compute_compatible_spectra` for more information.
+        :func:`.calc_compatible_spectra` for more information.
 
     Raises
     ------
@@ -141,7 +141,7 @@ def _calc_fa(target_freqs, damping, method, event):
     Note that this is intended as a helper function to be called by
     multiprocessing.Pool.
     """
-    event_keys = ["magnitude", "distance", "region"]
+    event_keys = ["mag", "dist", "region"]
     event_kwds = {key: event[key] for key in event_keys}
     crm = motions.CompatibleRvtMotion(
         target_freqs,
@@ -319,8 +319,8 @@ def _calc_psa(
             method,
             {
                 "region": event["region"],
-                "mag": event["magnitude"],
-                "dist": event["distance"],
+                "mag": event["mag"],
+                "dist": event["dist"],
             },
         ),
     )
