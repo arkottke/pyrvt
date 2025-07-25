@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.8.0 (dev)
+## 0.8.0 (2025-07-25)
 
 - Added Stafford et al. (2022) ground motion model.
-- Changed to mkdoc and hatch
+- Added Seifried et al. (2025) peak factor model.
 - Fix: Moved non-stationarity correction from Vanmarck to ToroMcGuire.
+- Changed to use uv for package versioning.
 
 ## 0.7.0
 
