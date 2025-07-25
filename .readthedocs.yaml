@@ -1,4 +1,4 @@
-# Read the Docs configuration file for MkDocs projects
+# Read the Docs configuration file for Sphinx projects
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
 # Required
@@ -10,6 +10,7 @@ build:
   tools:
     python: "3.12"
   commands:
-    - pip install hatch
-    - hatch run docs:build
-    - mv site $READTHEDOCS_OUTPUT
+    - pip install uv
+    - uv sync --extra docs
+    - uv run sphinx-build -b html docs docs/_build/html
+    - mv docs/_build/html $READTHEDOCS_OUTPUT
