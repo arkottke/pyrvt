@@ -22,6 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "coverage[toml]",
+  "pandas",
   "pytest",
   "pytest-cov",
   "pystrata",
