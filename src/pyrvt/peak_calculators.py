@@ -1389,9 +1389,9 @@ class SeifriedEtAl2025(Calculator):
             peak_factor *= np.sqrt(
                 1
                 - np.exp(
-                    -1 * (4 * np.pi * damp_eff * freq_cent * duration) ** self._COEF_A
+                    (-1 * (4 * np.pi * damp_eff * freq_cent * duration) ** self._COEF_A)
+                    / self._COEF_B
                 )
-                / self._COEF_B
             )
 
         return peak_factor
