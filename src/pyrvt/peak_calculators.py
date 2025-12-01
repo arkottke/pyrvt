@@ -1287,9 +1287,9 @@ class SeifriedEtAl2025(Calculator):
     #: Abbreviation of the calculator
     ABBREV: str = "Sea25"
 
-    # Coefficients from M. Bahrampouri (7/19/2025)
-    _COEF_A: float = 0.541
-    _COEF_B: float = 2.456
+    # Coefficients from paper (12/1/2025) based on NGA-W2 dataset
+    _COEF_A: float = 0.525
+    _COEF_B: float = 1.686
 
     def __init__(
         self,
