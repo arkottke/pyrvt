@@ -5,6 +5,7 @@ import numpy as np
 import pyrvt
 import pytest
 from numpy.testing import assert_allclose
+from scipy.constants import g as gravity
 
 
 def test_calc_attenuation():
@@ -65,8 +66,8 @@ def iter_fas_test_cases():
                 "dur_rms": tests[f"Drms_{key}"],
                 "method": method,
                 "freqs": freqs,
-                # Convert from m/s to cm/s
-                "fourier_amps": tests[n] * 100,
+                # Convert from m/s to g·s (pyrvt's standard unit system)
+                "fourier_amps": tests[n] / gravity,
             }
 
 

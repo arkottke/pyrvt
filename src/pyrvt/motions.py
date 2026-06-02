@@ -246,6 +246,7 @@ class RvtMotion:
             Peak pseudo-spectral acceleration of the oscillator
 
         """
+        has_trans_func = trans_func is not None
         trans_func = 1 if trans_func is None else np.asarray(trans_func)
 
         resp = np.array(
@@ -254,7 +255,7 @@ class RvtMotion:
                     trans_func * calc_sdof_tf(self.freqs, of, osc_damping),
                     osc_freq=of,
                     osc_damping=osc_damping,
-                    site_tf=trans_func,
+                    site_tf=trans_func if has_trans_func else None,
                 )
                 for of in osc_freqs
             ]
