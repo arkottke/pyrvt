@@ -112,3 +112,25 @@ def test_stafford_fas(stafford_fas):
         stafford_fas["desired"]["duration"],
         rtol=0.002,
     )
+
+
+def test_from_fas_matches_source_theory():
+    """``RvtMotion.from_fas`` reproduces a source-theory motion's PGA/PGV."""
+    src = pyrvt.motions.SourceTheoryMotion(magnitude=6.0, distance=20, region="wna")
+
+    class _FasShape:
+        freqs = src.freqs
+        fourier_amps = src.fourier_amps
+        duration = src.duration
+
+    rebuilt = pyrvt.motions.RvtMotion.from_fas(_FasShape)
+    assert_allclose(rebuilt.calc_pga(), src.calc_pga())
+    assert_allclose(rebuilt.calc_pgv(), src.calc_pgv())
+
+
+def test_calc_pgv_units_and_magnitude():
+    """PGV is in cm/sec and within an order-of-magnitude band for an M6 / 20 km event."""
+    src = pyrvt.motions.SourceTheoryMotion(magnitude=6.0, distance=20, region="wna")
+    pgv = src.calc_pgv()
+    # Loose physical bound: WNA M6 @ 20 km should produce PGV between ~1 and ~50 cm/s.
+    assert 1.0 < pgv < 50.0

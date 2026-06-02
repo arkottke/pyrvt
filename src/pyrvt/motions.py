@@ -212,6 +212,11 @@ class RvtMotion:
         return self._freqs
 
     @property
+    def angular_freqs(self) -> np.ndarray:
+        """Angular frequency values (rad/sec)."""
+        return 2 * np.pi * self._freqs
+
+    @property
     def fourier_amps(self) -> np.ndarray:
         """Acceleration Fourier amplitude values (g-sec)."""
         return self._fourier_amps
@@ -220,6 +225,61 @@ class RvtMotion:
     def duration(self) -> float:
         """Duration of the ground motion for RVT analysis."""
         return self._duration
+
+    @classmethod
+    def from_fas(
+        cls,
+        fas,
+        peak_calculator: "str | peak_calculators.Calculator | None" = None,
+        calc_kwds: dict | None = None,
+    ) -> "RvtMotion":
+        """Build an :class:`RvtMotion` from any object exposing a Fourier-spectrum shape.
+
+        Parameters
+        ----------
+        fas : object
+            Any object exposing ``freqs`` [Hz], ``fourier_amps`` [g-sec], and
+            ``duration`` [sec] attributes (e.g. an instance of a
+            ``pygmm.fourier_spectrum`` model, or a
+            :class:`pygmm.contracts.FourierSpectrum` dataclass).
+        peak_calculator, calc_kwds
+            Forwarded to :class:`RvtMotion`.
+        """
+        return cls(
+            freqs=np.asarray(fas.freqs),
+            fourier_amps=np.asarray(fas.fourier_amps),
+            duration=float(fas.duration),
+            peak_calculator=peak_calculator,
+            calc_kwds=calc_kwds,
+        )
+
+    def calc_pga(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Peak ground acceleration [g] via RVT.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Additional transfer function applied to the acceleration FAS prior
+            to the peak calculation.
+        """
+        return self.calc_peak(transfer_func)
+
+    def calc_pgv(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Peak ground velocity [cm/sec] via RVT.
+
+        Computed by integrating the acceleration FAS in the frequency domain
+        (multiplication by :math:`1 / (i\\omega)`) and then applying the peak
+        calculator. The result is scaled from g-sec to cm/sec.
+        """
+        omega = self.angular_freqs
+        mask = ~np.isclose(omega, 0)
+        tf_av = np.zeros_like(omega, dtype=complex)
+        tf_av[mask] = 1 / (omega[mask] * 1j)
+        if transfer_func is not None:
+            tf_av = tf_av * np.asarray(transfer_func)
+        # g-sec * (1/rad-sec) -> g-sec * sec = g; multiply by gravity (m/s^2)
+        # then by 100 to convert m/s -> cm/s.
+        return gravity * 100 * self.calc_peak(tf_av)
 
     def calc_osc_accels(
         self,
