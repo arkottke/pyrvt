@@ -7,7 +7,6 @@ calculator is one is not provided when a class is initialized.
 
 from __future__ import annotations
 
-import gzip
 from pathlib import Path
 
 import numpy as np
@@ -106,57 +105,6 @@ def calc_sdof_tf(
     return -(osc_freq**2.0) / (
         freqs**2 - osc_freq**2 - 2.0j * osc_damping * osc_freq * freqs
     )
-
-
-def calc_stress_drop(magnitude: float) -> float:
-    """Stress drop using Atkinson & Boore (2011) model.
-
-    Parameters
-    ----------
-    magnitude : float
-         Moment magnitude of the stress drop.
-
-    Returns
-    -------
-    stress_drop : float
-        Stress drop (bars).
-
-    """
-    return 10 ** (3.45 - 0.2 * max(magnitude, 5.0))
-
-
-def calc_geometric_spreading(
-    dist: float, params: list[tuple[float, float | None]]
-) -> float:
-    """Geometric spreading defined by piece-wise linear model.
-
-    Parameters
-    ----------
-    dist : float
-        Closest distance to the rupture surface (km).
-    params : List[(float,Optional[float])]
-        List of (slope, limit) tuples that define the attenuation. For an
-        infinite distance use `None`.  For example, [(1, `None`)] would provide
-        for 1/R geometric spreading to an infinite distance.
-
-    Returns
-    -------
-    coeff : float
-        Geometric spreading coefficient.
-
-    """
-    initial = 1
-    coeff = 1
-    for slope, limit in params:
-        # Compute the distance limited by the maximum distance of the slope.
-        _dist = min(dist, limit) if limit else dist
-        coeff *= (initial / _dist) ** slope
-        if _dist < dist:
-            initial = _dist
-        else:
-            break
-
-    return coeff
 
 
 class RvtMotion:
@@ -397,557 +345,6 @@ class RvtMotion:
         return atten, r_value**2, freqs, fitted
 
 
-class SourceTheoryMotion(RvtMotion):
-    """Single-corner source theory model.
-
-    The single-corner source theory model uses default parameters from Campbell (2003).
-    """
-
-    def __init__(
-        self,
-        magnitude: float,
-        distance: float,
-        region: str,
-        stress_drop: float | None = None,
-        depth: float | None = 8,
-        peak_calculator: str | peak_calculators.Calculator | None = None,
-        calc_kwds: dict | None = None,
-        freqs: npt.ArrayLike | None = None,
-        disable_site_amp: bool = False,
-    ):
-        """Initialize the motion.
-
-        Parameters
-        ----------
-        magnitude : float
-            Moment magnitude of the event.
-        distance : float
-            Epicentral distance (km).
-        region : str
-            Region for the parameters. Either 'cena' for Central and Eastern North
-            America, or 'wna' for Western North America.
-        stress_drop : float, optional
-            Stress drop of the event (bars).  If `None`, then the default value
-            is used. For `region` is 'cena', the default value is computed by
-            the  model, while for `region` is 'wna' the
-            default value is 100 bars.
-        depth : float, optional
-            Hypocenter depth (km). The `depth` is combined with the `distance`
-            to compute the hypocentral distance.
-        peak_calculator : `Calculator`, optional
-            Peak calculator to use. If `None`, then the default peak
-            calculator is used. The peak calculator may either be specified by
-            a [pyrvt.peak_calculators.Calculator][] object, or by the
-            initials of the calculator using
-            [pyrvt.peak_calculators.get_peak_calculator][].
-        calc_kwds : dict, optional
-            Keywords to be passed during the creation the peak calculator.
-            These keywords are only required for some peak calculators.
-        freqs : array_like
-            frequencies for which the Fourier amplitude spectrum should be computed.
-            Defaults to `np.geomspace(0.05, 200, 512)`
-        disable_site_amp: bool, optional
-            if the crustal site amplification should be disable. Defaults to *False*.
-
-        """
-        super().__init__(peak_calculator=peak_calculator, calc_kwds=calc_kwds)
-
-        self._disable_site_amp = disable_site_amp
-        self.magnitude = magnitude
-        self.distance = distance
-        self.region = peak_calculators.get_region(region)
-
-        if self.region == "wna":
-            # Default parameters for the WUS from Campbell (2003)
-            self.shear_velocity = 3.5
-            self.path_atten_coeff = 180.0
-            self.path_atten_power = 0.45
-            self.density = 2.8
-            self.site_atten = 0.04
-
-            self.geometric_spreading = [(1, 40), (0.5, None)]
-
-            if stress_drop:
-                self.stress_drop = stress_drop
-            else:
-                self.stress_drop = 100.0
-
-            # Crustal amplification from Campbell (2003) using the
-            # log-frequency and the amplification based on a quarter-wave
-            # length approximation
-            self.site_amp = interp1d(
-                np.log(
-                    [
-                        0.01,
-                        0.09,
-                        0.16,
-                        0.51,
-                        0.84,
-                        1.25,
-                        2.26,
-                        3.17,
-                        6.05,
-                        16.60,
-                        61.20,
-                        100.00,
-                    ]
-                ),
-                [
-                    1.00,
-                    1.10,
-                    1.18,
-                    1.42,
-                    1.58,
-                    1.74,
-                    2.06,
-                    2.25,
-                    2.58,
-                    3.13,
-                    4.00,
-                    4.40,
-                ],
-                bounds_error=False,
-            )
-        elif self.region == "cena":
-            # Default parameters for the CEUS from Campbell (2003)
-            self.shear_velocity = 3.6
-            self.density = 2.8
-            self.path_atten_coeff = 680.0
-            self.path_atten_power = 0.36
-            self.site_atten = 0.006
-
-            self.geometric_spreading = [(1, 70), (0, 130), (0.5, None)]
-
-            if stress_drop:
-                self.stress_drop = stress_drop
-            else:
-                self.stress_drop = calc_stress_drop(magnitude)
-
-            # Crustal amplification from Campbell (2003) using the
-            # log-frequency and the amplification based on a quarter-wave
-            # length approximation
-            self.site_amp = interp1d(
-                np.log(
-                    [
-                        0.01,
-                        0.10,
-                        0.20,
-                        0.30,
-                        0.50,
-                        0.90,
-                        1.25,
-                        1.80,
-                        3.00,
-                        5.30,
-                        8.00,
-                        14.00,
-                        30.00,
-                        60.00,
-                        100.00,
-                    ]
-                ),
-                [
-                    1.00,
-                    1.02,
-                    1.03,
-                    1.05,
-                    1.07,
-                    1.09,
-                    1.11,
-                    1.12,
-                    1.13,
-                    1.14,
-                    1.15,
-                    1.15,
-                    1.15,
-                    1.15,
-                    1.15,
-                ],
-                bounds_error=False,
-                fill_value=(1.0, 1.15),
-            )
-
-        else:
-            raise NotImplementedError
-
-        # Depth to rupture
-        self.depth = depth
-        self.hypo_distance = np.sqrt(self.distance**2.0 + self.depth**2.0)
-
-        # Constants
-        self.seismic_moment = 10.0 ** (1.5 * (self.magnitude + 10.7))
-        self.corner_freq = (
-            4.9e6
-            * self.shear_velocity
-            * (self.stress_drop / self.seismic_moment) ** (1.0 / 3.0)
-        )
-
-        # Combine the three components and convert from displacement to acceleration
-        self.calc_fourier_amps(freqs)
-        self._duration = self.calc_duration()
-
-    def calc_duration(self) -> float:
-        """Compute the duration by combination of source and path.
-
-        Returns
-        -------
-        duration : float
-            Computed duration
-
-        """
-        # Source component
-        duration_source = 1.0 / self.corner_freq
-
-        # Path component
-        if self.region == "wna":
-            duration_path = 0.05 * self.hypo_distance
-        elif self.region == "cena":
-            duration_path = 0.0
-            if self.hypo_distance > 10:
-                # 10 < R <= 70 km
-                duration_path += 0.16 * (min(self.hypo_distance, 70) - 10.0)
-            if self.hypo_distance > 70:
-                # 70 < R <= 130 km
-                duration_path += -0.03 * (min(self.hypo_distance, 130) - 70.0)
-            if self.hypo_distance > 130:
-                # 130 km < R
-                duration_path += 0.04 * (self.hypo_distance - 130.0)
-        else:
-            raise NotImplementedError
-
-        return duration_source + duration_path
-
-    def calc_fourier_amps(self, freqs: npt.ArrayLike | None = None) -> np.ndarray:
-        """Compute the acceleration Fourier amplitudes for a frequency range.
-
-        Parameters
-        ----------
-        freqs : array_like, optional
-            Frequency range. If no frequency range is specified then
-            :func:`log_spaced_values(0.05, 200.)` is used.
-
-        Returns
-        -------
-        fourier_amps : :class:`np.ndarray`
-            acceleration Fourier amplitudes
-
-        """
-        if freqs is None:
-            self._freqs = log_spaced_values(0.05, 200.0)
-        else:
-            (self._freqs,) = sort_increasing(np.asarray(freqs))
-
-        self._duration = self.calc_duration()
-
-        # Model component
-        const = (0.55 * 2.0) / (
-            np.sqrt(2.0) * 4.0 * np.pi * self.density * self.shear_velocity**3.0
-        )
-        source_comp = (
-            const
-            * self.seismic_moment
-            / (1.0 + (self._freqs / self.corner_freq) ** 2.0)
-        )
-
-        # Path component
-        path_atten = self.path_atten_coeff * self._freqs**self.path_atten_power
-        geo_atten = calc_geometric_spreading(
-            self.hypo_distance, self.geometric_spreading
-        )
-
-        path_comp = geo_atten * np.exp(
-            (-np.pi * self._freqs * self.hypo_distance)
-            / (path_atten * self.shear_velocity)
-        )
-
-        # Site component
-        site_dim = np.exp(-np.pi * self.site_atten * self._freqs)
-
-        ln_freqs = np.log(self._freqs)
-        site_amp = self.site_amp(ln_freqs)
-        if np.any(np.isnan(site_amp)):
-            # Need to extrapolate
-            mask = ln_freqs < self.site_amp.x[0]
-            site_amp[mask] = self.site_amp.y[0]
-
-            mask = self.site_amp.x[-1] < ln_freqs
-            site_amp[mask] = self.site_amp.y[-1]
-
-        site_comp = 1 if self._disable_site_amp else (site_amp * site_dim)
-
-        # Conversion factor to convert from dyne-cm into gravity-sec
-        conv = 1.0e-20 / (100 * gravity)
-        # Combine the three components and convert from displacement to
-        # acceleration
-
-        self._fourier_amps = (
-            conv
-            * (2.0 * np.pi * self._freqs) ** 2.0
-            * source_comp
-            * path_comp
-            * site_comp
-        )
-
-
-class StaffordEtAl22Motion(RvtMotion):
-    # Site amplification from Al Atik & Abrahamson (2021) generic rock amplification
-    # function for Vs30 of 760 m/s obtained from inversion of the Chiou & Youngs (2014)
-    # response spectral model note that the ordinate at (0.01, 1.0) has been added to
-    # the amp function that was provided. These values were taken from:
-    # https://github.com/pstafford/StochasticGroundMotionSimulation.jl/blob/master/src/fourier/PJSsite.jl
-    #
-    # In the original code, the interpolation is done on log(amplitdue) and linear
-    # frequency. I would typically do this on log frequency and linear amplitude.
-    _ln_site_amp_interpolator = None
-
-    def __init__(
-        self,
-        mag: float,
-        dist_rup: float | None = None,
-        dist_jb: float | None = None,
-        mechanism: str = "U",
-        method: str = "continuous",
-        delta_ztor: float = 0,
-        freqs: npt.ArrayLike | None = None,
-        disable_site_amp: bool = False,
-    ):
-        """Point source model developed by Stafford (2021) for a Vs30 of 760 m/s.
-
-        Use an RVT framework, and assume the following duration/peak factor models:
-            - Boore & Thompson (2014) for excitation duration
-            - Boore & Thompson (2015) for RMS duration
-            - Vanmarke (1975)/Der Kiureghian (1980) peak factor expression;
-              per Boore & Thompson (2015)
-
-        Note that other peak factors models are not permitted to be consistent with the
-        Sea22 model.
-
-        Parameters
-        ----------
-        mag : float
-            moment magnitude of the event.
-        dist_rup : float, optional
-            closest distance to the rupture (km). Either *dist_rup* or *dist_jb* must be
-            provided.
-        dist_jb : float, optional
-            Joyner-Boore distance (km). Either *dist_rup* or *dist_jb* must be
-            provided.
-        mechanism : str, optional
-            earthquake mechansim. Options are: "U", "SS", "NS", "RS".  Defaults to 'U'.
-        method: str, optional
-            geometric spreading model. Options are: "continuous" or "trilinear".
-            Defaults to "continuous".
-        delta_ztor : float, optional
-            difference in the top of the rutpure (km)
-        freqs : array_like
-            frequencies for which the Fourier amplitude spectrum should be computed.
-            Defaults to `np.geomspace(0.05, 200, 512)`
-        disable_site_amp: bool, optional
-            if the crustal site amplification should be disable. Defaults to *False*.
-        """
-
-        if dist_rup is None and dist_jb is None:
-            raise NotImplementedError
-        elif dist_rup is None:
-            # Compute rupture distance for dist_jb
-            depth_tor = StaffordEtAl22Motion.calc_depth_tor(mag, mechanism)
-            dist_rup = np.sqrt(depth_tor**2 + dist_jb**2)
-
-        super().__init__(
-            peak_calculator="BT15",
-            calc_kwds={"mag": mag, "dist": dist_rup, "region": "wus"},
-        )
-
-        if freqs is None:
-            self._freqs = np.geomspace(0.05, 200, 512)
-        else:
-            self._freqs = np.asarray(freqs)
-
-        # Constants
-        shear_vel = 3.5
-        density = 2.75
-        site_atten = 0.039
-
-        # Parameters
-        if method == "continuous":
-            # Stress parameter components
-            ln_ds0 = 4.599
-            dln_ds0 = 0.4624
-            dz_a = 0.0453
-            dz_b = 0.109
-            # Geometric spreading
-            y_1 = 1.1611
-            y_f = 0.5
-            r_t = 50
-            # Finite fault
-            h_a = -0.8712
-            h_b = 0.4451
-            h_c = 1.1513
-            h_d = 5.0948
-            h_e = 7.2725
-            # Anelastic attenuation
-            Q_0 = 205.4
-            n_a = 0.6884
-            # Magnitude scaling of eta
-            n_b = 0.1354
-            n_c = 5.1278
-        elif method == "trilinear":
-            # Stress parameter components
-            ln_ds0 = 5.07
-            dln_ds0 = 0.6451
-            dz_a = 0.4077
-            dz_b = 0.117
-            # Geometric spreading
-            y_1 = 1.1680
-            y_2 = 0.9293
-            y_f = 0.5
-            # Finite fault
-            h_a = -0.7771
-            h_b = 0.4768
-            h_c = 1.1513
-            h_d = 3.418
-            h_e = 7.088
-            # Anelastic attenuation
-            Q_0 = 183.7
-            n = 0.7077
-        else:
-            raise NotImplementedError
-
-        # Stress drop in bars
-        stress_drop = np.exp(
-            ln_ds0
-            + dln_ds0 * np.minimum(mag - 5, 0)
-            + delta_ztor * (dz_a + dz_b / np.cosh(2 * np.maximum(mag - 4.5, 0)))
-        )
-
-        # Source spectrum
-        const = (0.55 / np.sqrt(2) * 2) / (4 * np.pi * density * shear_vel**3) * 1e-20
-        seismic_moment = 10 ** (1.5 * (mag + 10.7))
-
-        corner_freq = 4.9058e6 * shear_vel * (stress_drop / seismic_moment) ** (1 / 3)
-        source_comp = (const * seismic_moment) / (1 + (self._freqs / corner_freq) ** 2)
-
-        # Path scaling
-
-        # Finite fault factor h(m)
-        fault_fact = np.exp(
-            h_a
-            + h_b * mag
-            + ((h_b - h_c) / h_d) * np.log(1 + np.exp(-h_d * (mag - h_e)))
-        )
-        dist_ps = dist_rup + fault_fact
-        # Geometric spreading term
-        if method == "continuous":
-            geom_spread = np.exp(
-                -y_1 * np.log(dist_ps)
-                + (y_1 - y_f) / 2 * np.log((dist_rup**2 + r_t**2) / (1**2 + r_t**2))
-            )
-            n = n_a + n_b * np.tanh(mag - n_c)
-            dist_ae = dist_rup
-        elif method == "trilinear":
-            geom_spread = calc_geometric_spreading(
-                dist_ps, [(y_1, 25), (y_2, 85), (y_f, None)]
-            )
-            dist_ae = dist_ps
-        else:
-            raise NotImplementedError
-
-        # Distance metric is different between the two forms
-        anelastic_atten = np.exp(
-            -(np.pi * self._freqs ** (1 - n) * dist_ae) / (Q_0 * shear_vel)
-        )
-
-        path_comp = geom_spread * anelastic_atten
-
-        # Convert to acceleration (cm/s) and then into g-se
-        conv = (2 * np.pi * self._freqs) ** 2 / (gravity * 100)
-
-        if disable_site_amp:
-            site_tf = 1.0
-        else:
-            site_tf = StaffordEtAl22Motion.site_amp(self._freqs, site_atten)
-
-        # Combine the three components and convert from displacement to acceleration
-        self._fourier_amps = conv * source_comp * path_comp * site_tf
-        self._dist_ps = dist_ps
-
-        self._duration = StaffordEtAl22Motion.calc_duration(corner_freq, dist_ps)
-
-    @classmethod
-    def site_amp(cls, freqs, site_atten):
-        if cls._ln_site_amp_interpolator is None:
-            # Load the data
-            data = np.genfromtxt(
-                gzip.open(Path(__file__).parent / "data" / "sea22-site_amp.csv.gz"),
-                delimiter=",",
-                names=True,
-                skip_header=1,
-            ).view(np.recarray)
-
-            _ln_site_amp = np.log(data["site_amp"])
-            cls._ln_site_amp_interpolator = interp1d(
-                data["freq"],
-                _ln_site_amp,
-                kind="linear",
-                bounds_error=False,
-                fill_value=(_ln_site_amp[0], _ln_site_amp[-1]),
-            )
-
-        return np.exp(cls._ln_site_amp_interpolator(freqs)) * np.exp(
-            -np.pi * site_atten * freqs
-        )
-
-    @property
-    def dist_ps(self) -> float:
-        """Equivalent point source distance (km)."""
-        return self._dist_ps
-
-    @staticmethod
-    def calc_depth_tor(mag: float, mechanism: str) -> float:
-        """Top of rupture model from Chiou and Youngs (2014)
-
-        Parameters
-        ----------
-        mag : float
-            moment magnitude of the event (:math:`M_w`)
-        mechanism : str
-            fault mechanism. Valid options: "U", "SS", "NS",
-            "RS".
-
-        Returns
-        -------
-        depth_tor : float
-            estimated depth to top of rupture (km)
-
-        """
-        if mechanism == "RS":
-            # Reverse and reverse-oblique faulting
-            fact = 2.704 - 1.226 * max(mag - 5.849, 0)
-        else:
-            # Combined strike-slip and normal faulting
-            fact = 2.673 - 1.136 * max(mag - 4.970, 0)
-
-        return max(fact, 0) ** 2
-
-    @staticmethod
-    def calc_duration(corner_freq: float, dist_ps: float) -> float:
-        """Boore & Thomspson (2014) duration model."""
-
-        # Source component. Equation 2
-        d_s = 1.0 / corner_freq
-
-        # Path component. Table 1
-        # Maximum distance set to be 10 km
-        DISTS = [0, 7, 45, 125, 175, 270]
-        D_P = [0.0, 2.4, 8.4, 10.9, 17.4, 34.2]
-
-        if dist_ps < DISTS[-1]:
-            d_p = np.interp(dist_ps, DISTS, D_P)
-        else:
-            d_p = D_P[-1] + 0.156 * (dist_ps - DISTS[-1])
-
-        return d_s + d_p
-
 
 class CompatibleRvtMotion(RvtMotion):
     """Response spectrum compatible RVT motion.
@@ -962,9 +359,8 @@ class CompatibleRvtMotion(RvtMotion):
         self,
         osc_freqs: npt.ArrayLike,
         osc_accels_target: npt.ArrayLike,
-        duration: float | None = None,
-        osc_damping: float | None = 0.05,
-        event_kwds: dict | None = None,
+        duration: float,
+        osc_damping: float = 0.05,
         window_len: int | None = None,
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
@@ -978,16 +374,11 @@ class CompatibleRvtMotion(RvtMotion):
         osc_accels_target : array_like
             Spectral acceleration of the oscillator at the specified
             frequencies (g).
-        duration : float, optional
-            Duration of the ground motion (sec). If `None`, then the duration
-            is computed using the `event_kwds`.
+        duration : float
+            Duration of the ground motion (sec).
         osc_damping : float, optional
             Fractional damping of the oscillator (dec). Default value is 0.05
             for a damping ratio of 5%.
-        event_kwds : Dict, optional
-            Keywords passed to :class:`~.motions.SourceTheoryMotion` and used
-            to compute the duration of the motion. Either `duration` or
-            `event_kwds` should be specified.
         window_len : int, optional
             Window length used for smoothing the computed Fourier amplitude
             spectrum. If `None`, then no smoothing is applied. The smoothing
@@ -1009,11 +400,7 @@ class CompatibleRvtMotion(RvtMotion):
             np.asarray(osc_freqs), np.asarray(osc_accels_target)
         )
 
-        if duration:
-            self._duration = duration
-        else:
-            stm = SourceTheoryMotion(**event_kwds)
-            self._duration = stm.calc_duration()
+        self._duration = duration
 
         fourier_amps = self._estimate_fourier_amps(
             osc_freqs, osc_accels_target, osc_damping
@@ -1116,6 +503,36 @@ class CompatibleRvtMotion(RvtMotion):
             self.rmse = np.sqrt(np.mean((osc_accels_target - osc_accels) ** 2))
 
             self.iterations += 1
+
+    @classmethod
+    def from_response_spectrum(
+        cls,
+        rs,
+        duration: float,
+        **kw,
+    ) -> "CompatibleRvtMotion":
+        """Create from any object with .periods, .spec_accels, .damping.
+
+        Duck-typed: accepts ``pygmm.contracts.ResponseSpectrum`` or any object
+        with the same attributes.
+
+        Parameters
+        ----------
+        rs :
+            Response spectrum with ``.periods`` [s], ``.spec_accels`` [g],
+            and ``.damping`` [decimal].
+        duration : float
+            Ground-motion duration [s].
+        **kw
+            Forwarded to :class:`CompatibleRvtMotion` (e.g. ``peak_calculator``).
+        """
+        return cls(
+            osc_freqs=1.0 / np.asarray(rs.periods),
+            osc_accels_target=np.asarray(rs.spec_accels),
+            duration=duration,
+            osc_damping=rs.damping,
+            **kw,
+        )
 
     def _estimate_fourier_amps(
         self, osc_freqs: npt.ArrayLike, osc_accels: npt.ArrayLike, osc_damping: float

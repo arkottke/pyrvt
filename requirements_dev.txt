@@ -9,6 +9,7 @@ pre-commit
 pydocstyle
 pyexcel
 pyexcel-xlsx
+pygmm
 pystrata
 pytest>=3.5
 pytest-cov

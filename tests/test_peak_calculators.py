@@ -77,19 +77,20 @@ def test_abbrev(bj84_pc):
     "method", ["V75", "D64", "DK85", "TM87", "BT12", "BT15", "WR18"]
 )
 def test_formulations(method):
+    """Each peak calculator produces real-valued PSA when given a pygmm FAS."""
+    pygmm = pytest.importorskip("pygmm")
+
     mag = 6.5
     dist = 20
     region = "cena"
 
-    m = pyrvt.motions.SourceTheoryMotion(
-        mag,
-        dist,
-        region,
-        peak_calculator=pyrvt.peak_calculators.get_peak_calculator(
-            method, {"mag": mag, "dist": dist, "region": region}
-        ),
+    src = pygmm.fourier_spectrum.SourceTheoryModel(
+        magnitude=mag, distance=dist, region=region
     )
-    m.calc_fourier_amps(np.logspace(-1.5, 2, 1024))
+    pc = pyrvt.peak_calculators.get_peak_calculator(
+        method, {"mag": mag, "dist": dist, "region": region}
+    )
+    m = pyrvt.motions.RvtMotion.from_fas(src, peak_calculator=pc)
 
     osc_freqs = np.logspace(-1, 2, num=50)
     osc_accels = m.calc_osc_accels(osc_freqs, 0.05)

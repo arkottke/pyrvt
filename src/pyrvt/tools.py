@@ -141,15 +141,13 @@ def _calc_fa(target_freqs, damping, method, event):
     Note that this is intended as a helper function to be called by
     multiprocessing.Pool.
     """
-    event_keys = ["magnitude", "distance", "region"]
-    event_kwds = {key: event[key] for key in event_keys}
+    calc_kwds = {key: event[key] for key in ["magnitude", "distance", "region"]}
     crm = motions.CompatibleRvtMotion(
         target_freqs,
         event["psa"],
         duration=event["duration"],
         osc_damping=damping,
-        event_kwds=event_kwds,
-        peak_calculator=get_peak_calculator(method, event_kwds),
+        peak_calculator=get_peak_calculator(method, calc_kwds),
     )
     psa_calc = crm.calc_osc_accels(target_freqs, damping)
     return crm, psa_calc
