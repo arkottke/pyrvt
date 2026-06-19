@@ -14,8 +14,7 @@ target_freqs = 1.0 / periods
 damping = 0.05
 method = "BJ84"
 
-event_keys = ["magnitude", "distance", "region"]
-event_kwds = {key: event[key] for key in event_keys}
+calc_kwds = {key: event[key] for key in ["magnitude", "distance", "region"]}
 
 for method in ["BJ84", "CLH56", "DK85", "LP99", "TM87", "V75"]:
     start = datetime.datetime.now()
@@ -24,8 +23,7 @@ for method in ["BJ84", "CLH56", "DK85", "LP99", "TM87", "V75"]:
         event["psa"],
         duration=event["duration"],
         osc_damping=damping,
-        event_kwds=event_kwds,
-        peak_calculator=pyrvt.tools.get_peak_calculator(method, event_kwds),
+        peak_calculator=pyrvt.tools.get_peak_calculator(method, calc_kwds),
     )
     psa_calc = crm.calc_osc_accels(target_freqs, damping)
     duration = datetime.datetime.now() - start
