@@ -51,8 +51,17 @@ The main motion classes are:
 
 - :class:`~pyrvt.motions.RvtMotion`: Direct specification of Fourier amplitude spectrum
 - :class:`~pyrvt.motions.CompatibleRvtMotion`: Derived from acceleration response spectrum
-- :class:`~pyrvt.motions.SourceTheoryMotion`: Seismological ω²-model based motion
-- :class:`~pyrvt.motions.StaffordEtAl22Motion`: Optimized functional form motion model
+
+To create a motion from a seismological source model (e.g. ``pygmm.fourier_spectrum.SourceTheoryModel``),
+use the :meth:`~pyrvt.motions.RvtMotion.from_fas` factory:
+
+.. code-block:: python
+
+   import pygmm.fourier_spectrum as fs
+   from pyrvt.motions import RvtMotion
+
+   fas_model = fs.SourceTheoryModel(mag=6.5, dist=20, region="wna")
+   motion = RvtMotion.from_fas(fas_model)
 
 Example Usage
 ~~~~~~~~~~~~~
@@ -82,7 +91,7 @@ Example Usage
    periods = np.logspace(-1, 1, 50) 
    damping = 0.05
    
-   resp_spec = motion.calc_response_spectrum(
+   osc_accels = motion.calc_osc_accels(
        periods=periods,
        damping=damping,
        peak_calculator=calc

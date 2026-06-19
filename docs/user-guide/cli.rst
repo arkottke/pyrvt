@@ -9,7 +9,7 @@ following output:
 
    $ pyrvt --help
    usage: pyrvt [-h] [--version] -i INPUT [-o OUTPUT] [-d DAMPING] [-f]
-                [-m {BJ84,BT12,DK85,LP99,TM87,V75,WR18}]
+                [-m {BJ84,BT12,BT15,CLH56,D64,DK85,LP99,Sea25,TM87,V75,WR18}]
                 {psa2fa,fa2psa}
 
    Compute response or Fourier amplitude spectra using RVT.
@@ -45,11 +45,18 @@ following output:
                            to 10 sec log-spaced with 100 points. Target
                            SA values will be interpolated if needed
 
-     -m {BJ84,BT12,DK85,LP99,TM87,V75,WR18},
-     --method {BJ84,BT12,DK85,LP99,TM87,V75,WR18}
+     -m {BJ84,BT12,BT15,CLH56,D64,DK85,LP99,Sea25,TM87,V75,WR18},
+     --method {BJ84,BT12,BT15,CLH56,D64,DK85,LP99,Sea25,TM87,V75,WR18}
                            Specify the peak factor calculation method.
                            Possible options are: [BJ84] Boore and Joyner
                            (1984), [BT12] Boore and Thompson (2012),
+                           [BT15] Boore and Thompson (2015),
+                           [CLH56] Cartwright and Longuet-Higgins (1956),
+                           [D64] Davenport (1964), [DK85] Der Kiureghian
+                           (1985), [LP99] Liu and Pezeshk (1999),
+                           [Sea25] Seifried et al. (2025),
+                           [TM87] Toro and McGuire (1987), [V75] Vanmarcke
+                           (1975), [WR18] Wang and Rathje (2018).
 
 Usage Examples
 --------------

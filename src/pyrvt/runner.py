@@ -57,13 +57,15 @@ parser.add_argument(
     "-m",
     "--method",
     default=DEFAULT_CALC,
-    choices=["BJ84", "BT12", "DK85", "LP99", "TM87", "V75", "WR18"],
+    choices=["BJ84", "BT12", "BT15", "CLH56", "D64", "DK85", "LP99", "Sea25", "TM87", "V75", "WR18"],
     help="""Specify the peak factor calculation method. Possible options are: [BJ84]
-    Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [DK85] Der Kiureghian
-    (1985), [LP99] Liu and Pezeshk (1999), [TM87] Toro and McGuire (1987), [V75]
-    Vanmarcke (1975), and [WR18] Wang and Rathje (2018). If the BT12 method is used,
-    then the magnitude, distance and region must be provided by the input files. If no
-    value is provided, then "%(default)s" is used as the default.""",
+    Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [BT15] Boore and Thompson
+    (2015), [CLH56] Cartwright and Longuet-Higgins (1956), [D64] Davenport (1964),
+    [DK85] Der Kiureghian (1985), [LP99] Liu and Pezeshk (1999), [Sea25] Seifried et al.
+    (2025), [TM87] Toro and McGuire (1987), [V75] Vanmarcke (1975), and [WR18] Wang and
+    Rathje (2018). If the BT12 or BT15 method is used, then the magnitude, distance and
+    region must be provided by the input files. If no value is provided, then
+    "%(default)s" is used as the default.""",
 )
 
 
