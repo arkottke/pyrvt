@@ -142,6 +142,11 @@ class RvtMotion:
         self._fourier_amps = fourier_amps
         self._duration = duration
 
+        self._pga = None
+        self._pgv = None
+        self._arias_intensity = None
+        self._cav = None
+
         if self._freqs is not None:
             self._freqs, self._fourier_amps = sort_increasing(
                 self._freqs, self._fourier_amps
@@ -173,6 +178,34 @@ class RvtMotion:
     def duration(self) -> float:
         """Duration of the ground motion for RVT analysis."""
         return self._duration
+
+    @property
+    def pga(self) -> float:
+        """Peak ground acceleration (g)."""
+        if self._pga is None:
+            self._pga = self.calc_pga()
+        return self._pga
+
+    @property
+    def pgv(self) -> float:
+        """Peak ground velocity (cm/sec)."""
+        if self._pgv is None:
+            self._pgv = self.calc_pgv()
+        return self._pgv
+
+    @property
+    def arias_intensity(self) -> float:
+        """Arias intensity (m/s)."""
+        if self._arias_intensity is None:
+            self._arias_intensity = self.calc_arias_intensity()
+        return self._arias_intensity
+
+    @property
+    def cav(self) -> float:
+        """Cumulative absolute velocity (m/s)."""
+        if self._cav is None:
+            self._cav = self.calc_cav()
+        return self._cav
 
     @classmethod
     def from_fas(
@@ -228,6 +261,52 @@ class RvtMotion:
         # g-sec * (1/rad-sec) -> g-sec * sec = g; multiply by gravity (m/s^2)
         # then by 100 to convert m/s -> cm/s.
         return gravity * 100 * self.calc_peak(tf_av)
+
+    def calc_arias_intensity(
+        self, transfer_func: npt.ArrayLike | None = None
+    ) -> float:
+        """Compute the Arias intensity.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Transfer function to apply to the motion. If ``None``, no
+            transfer function is applied.
+
+        Returns
+        -------
+        arias_intensity : float
+            Arias intensity (m/s).
+
+        """
+        tf = 1 if transfer_func is None else np.abs(np.asarray(transfer_func))
+        fa = tf * self._fourier_amps
+        m0 = np.trapezoid(fa**2, self._freqs)
+        return np.pi * gravity / 2 * m0
+
+    def calc_cav(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Compute the cumulative absolute velocity (CAV).
+
+        Uses an empirical regression on Arias intensity and duration based on
+        observed ground motions.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Transfer function to apply to the motion. If ``None``, no
+            transfer function is applied.
+
+        Returns
+        -------
+        cav : float
+            Cumulative absolute velocity (m/s).
+
+        """
+        return np.exp(
+            1.553
+            + 0.496 * np.log(self.calc_arias_intensity(transfer_func))
+            + 0.356 * np.log(self.duration)
+        )
 
     def calc_osc_accels(
         self,
