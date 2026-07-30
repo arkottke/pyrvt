@@ -4,7 +4,7 @@ Release Notes
 This page summarises the high-level changes in each major release.
 For the complete, granular changelog see :doc:`changelog`.
 
-Version 2.0.0 (unreleased)
+Version 0.9.0 (unreleased)
 ---------------------------
 
 **Breaking changes**
@@ -18,7 +18,7 @@ Version 2.0.0 (unreleased)
   Use the new :meth:`~pyrvt.motions.CompatibleRvtMotion.from_response_spectrum`
   factory instead.
 
-**New in 2.0.0**
+**New in 0.9.0**
 
 - :meth:`~pyrvt.motions.RvtMotion.from_fas` — create a motion from any object
   with ``.freqs``, ``.fourier_amps``, ``.duration`` attributes.
@@ -46,18 +46,18 @@ Version 0.7.x
 Migration Guide
 ---------------
 
-Upgrading from 1.x / 0.8.x to 2.0.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Upgrading from 0.8.x to 0.9.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Replace removed motion classes:
 
 .. code-block:: python
 
-   # Before (1.x)
+   # Before (0.8.x)
    from pyrvt.motions import SourceTheoryMotion
    motion = SourceTheoryMotion(mag=6.5, dist=20, region="wna")
 
-   # After (2.0)
+   # After (0.9)
    import pygmm.fourier_spectrum as fs
    from pyrvt.motions import RvtMotion
    fas = fs.SourceTheoryModel(mag=6.5, dist=20, region="wna")
@@ -67,9 +67,9 @@ Replace ``CompatibleRvtMotion`` construction:
 
 .. code-block:: python
 
-   # Before (1.x)
+   # Before (0.8.x)
    from pyrvt.motions import CompatibleRvtMotion
    motion = CompatibleRvtMotion(freqs, spec_accels, event_kwds={...})
 
-   # After (2.0)
+   # After (0.9)
    motion = CompatibleRvtMotion.from_response_spectrum(rs_object, duration=20.0)
