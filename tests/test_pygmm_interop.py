@@ -4,10 +4,10 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+
+from pyrvt.motions import CompatibleRvtMotion
 
 pygmm = pytest.importorskip("pygmm")
-from pyrvt.motions import CompatibleRvtMotion
 
 
 @pytest.fixture

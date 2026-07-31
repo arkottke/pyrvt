@@ -7,7 +7,6 @@ Canonical definitions live in ``pygmm.contracts``; this file is a private
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -35,4 +34,4 @@ class ResponseSpectrum:
     periods: npt.NDArray[np.floating]
     spec_accels: npt.NDArray[np.floating]
     damping: float
-    duration: Optional[float] = None
+    duration: float | None = None

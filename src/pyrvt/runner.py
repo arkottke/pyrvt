@@ -57,7 +57,19 @@ parser.add_argument(
     "-m",
     "--method",
     default=DEFAULT_CALC,
-    choices=["BJ84", "BT12", "BT15", "CLH56", "D64", "DK85", "LP99", "Sea25", "TM87", "V75", "WR18"],
+    choices=[
+        "BJ84",
+        "BT12",
+        "BT15",
+        "CLH56",
+        "D64",
+        "DK85",
+        "LP99",
+        "Sea25",
+        "TM87",
+        "V75",
+        "WR18",
+    ],
     help="""Specify the peak factor calculation method. Possible options are: [BJ84]
     Boore and Joyner (1984), [BT12] Boore and Thompson (2012), [BT15] Boore and Thompson
     (2015), [CLH56] Cartwright and Longuet-Higgins (1956), [D64] Davenport (1964),

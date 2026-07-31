@@ -44,7 +44,7 @@ docs = [
   "ipython",
   "linkify-it-py",
 ]
-style = ["black[colorama,jupyter]", "ruff"]
+style = ["ruff"]
 
 [project.urls]
 Homepage = "https://github.com/arkottke/pyrvt"
@@ -61,7 +61,6 @@ write_to = "src/pyrvt/_version.py"
 
 [tool.ruff]
 exclude = ["docs"]
-# Same as Black.
 line-length = 88
 indent-width = 4
 
@@ -73,7 +72,7 @@ extend-include = ["*.ipynb"]
 quote-style = "double"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "Q", "I"]
+select = ["E", "F", "W", "Q", "I", "UP"]
 ignore = ["E203"]
 
 # Test configuration

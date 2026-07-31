@@ -7,12 +7,9 @@ calculator is one is not provided when a class is initialized.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import numpy.typing as npt
 from scipy.constants import g as gravity
-from scipy.interpolate import make_interp_spline
 from scipy.stats import linregress
 
 from . import peak_calculators
@@ -148,7 +145,6 @@ class RvtMotion:
         self._arias_intensity = None
         self._cav = None
 
-
         if self._freqs is not None:
             self._freqs, self._fourier_amps = sort_increasing(
                 self._freqs, self._fourier_amps
@@ -213,10 +209,11 @@ class RvtMotion:
     def from_fas(
         cls,
         fas,
-        peak_calculator: "str | peak_calculators.Calculator | None" = None,
+        peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
-    ) -> "RvtMotion":
-        """Build an :class:`RvtMotion` from any object exposing a Fourier-spectrum shape.
+    ) -> RvtMotion:
+        """Build an :class:`RvtMotion` from any object exposing a
+        Fourier-spectrum shape.
 
         Parameters
         ----------
@@ -264,9 +261,7 @@ class RvtMotion:
         # then by 100 to convert m/s -> cm/s.
         return gravity * 100 * self.calc_peak(tf_av)
 
-    def calc_arias_intensity(
-        self, transfer_func: npt.ArrayLike | None = None
-    ) -> float:
+    def calc_arias_intensity(self, transfer_func: npt.ArrayLike | None = None) -> float:
         """Compute the Arias intensity.
 
         Parameters
@@ -550,7 +545,6 @@ class RvtMotion:
         return atten, r_value**2, freqs, fitted
 
 
-
 class CompatibleRvtMotion(RvtMotion):
     """Response spectrum compatible RVT motion.
 
@@ -715,7 +709,7 @@ class CompatibleRvtMotion(RvtMotion):
         rs,
         duration: float,
         **kw,
-    ) -> "CompatibleRvtMotion":
+    ) -> CompatibleRvtMotion:
         """Create from any object with .periods, .spec_accels, .damping.
 
         Duck-typed: accepts ``pygmm.contracts.ResponseSpectrum`` or any object
