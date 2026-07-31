@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.0.0 (unreleased)
+
+**Breaking changes**:
+
+- Removed `SourceTheoryMotion` and `StaffordEtAl22Motion` — use
+  `pygmm.fourier_spectrum.SourceTheoryModel` / `StaffordEtAl2022` instead.
+  Pipe the result through `RvtMotion.from_fas(model)` to reproduce previous behaviour.
+- Removed `calc_stress_drop` and `calc_geometric_spreading` module-level helpers.
+- Removed `event_kwds` parameter from `CompatibleRvtMotion.__init__`; `duration` is
+  now required. Use `CompatibleRvtMotion.from_response_spectrum(rs, duration)` or pass
+  `duration` explicitly.
+
+Added:
+
+- `RvtMotion.from_fas(fas, peak_calculator=None)` — create a motion from any object
+  with `.freqs`, `.fourier_amps`, `.duration` attributes.
+- `CompatibleRvtMotion.from_response_spectrum(rs, duration, **kw)` — create a
+  compatible motion from any object with `.periods`, `.spec_accels`, `.damping`.
+- `RvtMotion.calc_pga()` and `.calc_pgv()`.
+
 ## 0.8.1 (2025-07-25)
 
 - Fixed: Issue with naming in CLI tools.

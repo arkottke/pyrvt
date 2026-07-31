@@ -7,7 +7,6 @@ calculator is one is not provided when a class is initialized.
 
 from __future__ import annotations
 
-import gzip
 from pathlib import Path
 
 import numpy as np
@@ -109,71 +108,6 @@ def calc_sdof_tf(
     )
 
 
-def calc_stress_drop(magnitude: float, method: str = "Atkinson&Boore2011") -> float:
-    """Calculating Stress drops.
-
-    Parameters
-    ----------
-    magnitude : float
-        Moment magnitude of the stress drop.
-
-    Method: String
-        Atkinson&Boore2011: Atkinson & Boore (2011) model
-        Stafford2022: Stafford et al. (2022) model
-
-    Returns
-    -------
-    stress_drop : float
-        Stress drop (bars).
-
-    """
-
-    if method == "Atkinson&Boore2011":
-        return 10 ** (3.45 - 0.2 * max(magnitude, 5.0))
-    elif method == "Stafford2022":
-        return np.exp(2.296 + 0.4624 * np.min([magnitude - 5.0, 0.0])) * 10
-    elif method is None:
-        return 10 ** (3.45 - 0.2 * max(magnitude, 5.0))
-    else:
-        raise NotImplementedError(
-            f"Method {method} not implemented for stress drop calculation."
-        )
-
-
-def calc_geometric_spreading(
-    dist: float, params: list[tuple[float, float | None]]
-) -> float:
-    """Geometric spreading defined by piece-wise linear model.
-
-    Parameters
-    ----------
-    dist : float
-        Closest distance to the rupture surface (km).
-    params : List[(float,Optional[float])]
-        List of (slope, limit) tuples that define the attenuation. For an
-        infinite distance use `None`.  For example, [(1, `None`)] would provide
-        for 1/R geometric spreading to an infinite distance.
-
-    Returns
-    -------
-    coeff : float
-        Geometric spreading coefficient.
-
-    """
-    initial = 1
-    coeff = 1
-    for slope, limit in params:
-        # Compute the distance limited by the maximum distance of the slope.
-        _dist = min(dist, limit) if limit else dist
-        coeff *= (initial / _dist) ** slope
-        if _dist < dist:
-            initial = _dist
-        else:
-            break
-
-    return coeff
-
-
 class RvtMotion:
     """Random vibration theory motion.
 
@@ -214,6 +148,7 @@ class RvtMotion:
         self._arias_intensity = None
         self._cav = None
 
+
         if self._freqs is not None:
             self._freqs, self._fourier_amps = sort_increasing(
                 self._freqs, self._fourier_amps
@@ -232,6 +167,11 @@ class RvtMotion:
         return self._freqs
 
     @property
+    def angular_freqs(self) -> np.ndarray:
+        """Angular frequency values (rad/sec)."""
+        return 2 * np.pi * self._freqs
+
+    @property
     def fourier_amps(self) -> np.ndarray:
         """Acceleration Fourier amplitude values (g-sec)."""
         return self._fourier_amps
@@ -240,6 +180,135 @@ class RvtMotion:
     def duration(self) -> float:
         """Duration of the ground motion for RVT analysis."""
         return self._duration
+
+    @property
+    def pga(self) -> float:
+        """Peak ground acceleration (g)."""
+        if self._pga is None:
+            self._pga = self.calc_pga()
+        return self._pga
+
+    @property
+    def pgv(self) -> float:
+        """Peak ground velocity (cm/sec)."""
+        if self._pgv is None:
+            self._pgv = self.calc_pgv()
+        return self._pgv
+
+    @property
+    def arias_intensity(self) -> float:
+        """Arias intensity (m/s)."""
+        if self._arias_intensity is None:
+            self._arias_intensity = self.calc_arias_intensity()
+        return self._arias_intensity
+
+    @property
+    def cav(self) -> float:
+        """Cumulative absolute velocity (m/s)."""
+        if self._cav is None:
+            self._cav = self.calc_cav()
+        return self._cav
+
+    @classmethod
+    def from_fas(
+        cls,
+        fas,
+        peak_calculator: "str | peak_calculators.Calculator | None" = None,
+        calc_kwds: dict | None = None,
+    ) -> "RvtMotion":
+        """Build an :class:`RvtMotion` from any object exposing a Fourier-spectrum shape.
+
+        Parameters
+        ----------
+        fas : object
+            Any object exposing ``freqs`` [Hz], ``fourier_amps`` [g-sec], and
+            ``duration`` [sec] attributes (e.g. an instance of a
+            ``pygmm.fourier_spectrum`` model, or a
+            :class:`pygmm.contracts.FourierSpectrum` dataclass).
+        peak_calculator, calc_kwds
+            Forwarded to :class:`RvtMotion`.
+        """
+        return cls(
+            freqs=np.asarray(fas.freqs),
+            fourier_amps=np.asarray(fas.fourier_amps),
+            duration=float(fas.duration),
+            peak_calculator=peak_calculator,
+            calc_kwds=calc_kwds,
+        )
+
+    def calc_pga(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Peak ground acceleration [g] via RVT.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Additional transfer function applied to the acceleration FAS prior
+            to the peak calculation.
+        """
+        return self.calc_peak(transfer_func)
+
+    def calc_pgv(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Peak ground velocity [cm/sec] via RVT.
+
+        Computed by integrating the acceleration FAS in the frequency domain
+        (multiplication by :math:`1 / (i\\omega)`) and then applying the peak
+        calculator. The result is scaled from g-sec to cm/sec.
+        """
+        omega = self.angular_freqs
+        mask = ~np.isclose(omega, 0)
+        tf_av = np.zeros_like(omega, dtype=complex)
+        tf_av[mask] = 1 / (omega[mask] * 1j)
+        if transfer_func is not None:
+            tf_av = tf_av * np.asarray(transfer_func)
+        # g-sec * (1/rad-sec) -> g-sec * sec = g; multiply by gravity (m/s^2)
+        # then by 100 to convert m/s -> cm/s.
+        return gravity * 100 * self.calc_peak(tf_av)
+
+    def calc_arias_intensity(
+        self, transfer_func: npt.ArrayLike | None = None
+    ) -> float:
+        """Compute the Arias intensity.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Transfer function to apply to the motion. If ``None``, no
+            transfer function is applied.
+
+        Returns
+        -------
+        arias_intensity : float
+            Arias intensity (m/s).
+
+        """
+        tf = 1 if transfer_func is None else np.abs(np.asarray(transfer_func))
+        fa = tf * self._fourier_amps
+        m0 = np.trapezoid(fa**2, self._freqs)
+        return np.pi * gravity / 2 * m0
+
+    def calc_cav(self, transfer_func: npt.ArrayLike | None = None) -> float:
+        """Compute the cumulative absolute velocity (CAV).
+
+        Uses an empirical regression on Arias intensity and duration based on
+        observed ground motions.
+
+        Parameters
+        ----------
+        transfer_func : array_like, optional
+            Transfer function to apply to the motion. If ``None``, no
+            transfer function is applied.
+
+        Returns
+        -------
+        cav : float
+            Cumulative absolute velocity (m/s).
+
+        """
+        return np.exp(
+            1.553
+            + 0.496 * np.log(self.calc_arias_intensity(transfer_func))
+            + 0.356 * np.log(self.duration)
+        )
 
     def calc_osc_accels(
         self,
@@ -267,7 +336,7 @@ class RvtMotion:
 
         """
 
-        # Need to perserve the site_tf for Wang and Rathje. It expects None
+        # Need to preserve the site_tf for Wang and Rathje. It expects None
         if trans_func is None:
             trans_func = 1
             site_tf = None
@@ -1080,9 +1149,8 @@ class CompatibleRvtMotion(RvtMotion):
         self,
         osc_freqs: npt.ArrayLike,
         osc_accels_target: npt.ArrayLike,
-        duration: float | None = None,
-        osc_damping: float | None = 0.05,
-        event_kwds: dict | None = None,
+        duration: float,
+        osc_damping: float = 0.05,
         window_len: int | None = None,
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
@@ -1096,16 +1164,11 @@ class CompatibleRvtMotion(RvtMotion):
         osc_accels_target : array_like
             Spectral acceleration of the oscillator at the specified
             frequencies (g).
-        duration : float, optional
-            Duration of the ground motion (sec). If `None`, then the duration
-            is computed using the `event_kwds`.
+        duration : float
+            Duration of the ground motion (sec).
         osc_damping : float, optional
             Fractional damping of the oscillator (dec). Default value is 0.05
             for a damping ratio of 5%.
-        event_kwds : Dict, optional
-            Keywords passed to :class:`~.motions.SourceTheoryMotion` and used
-            to compute the duration of the motion. Either `duration` or
-            `event_kwds` should be specified.
         window_len : int, optional
             Window length used for smoothing the computed Fourier amplitude
             spectrum. If `None`, then no smoothing is applied. The smoothing
@@ -1127,11 +1190,7 @@ class CompatibleRvtMotion(RvtMotion):
             np.asarray(osc_freqs), np.asarray(osc_accels_target)
         )
 
-        if duration:
-            self._duration = duration
-        else:
-            stm = SourceTheoryMotion(**event_kwds)
-            self._duration = stm.calc_duration()
+        self._duration = duration
 
         fourier_amps = self._estimate_fourier_amps(
             osc_freqs, osc_accels_target, osc_damping
@@ -1234,6 +1293,36 @@ class CompatibleRvtMotion(RvtMotion):
             self.rmse = np.sqrt(np.mean((osc_accels_target - osc_accels) ** 2))
 
             self.iterations += 1
+
+    @classmethod
+    def from_response_spectrum(
+        cls,
+        rs,
+        duration: float,
+        **kw,
+    ) -> "CompatibleRvtMotion":
+        """Create from any object with .periods, .spec_accels, .damping.
+
+        Duck-typed: accepts ``pygmm.contracts.ResponseSpectrum`` or any object
+        with the same attributes.
+
+        Parameters
+        ----------
+        rs :
+            Response spectrum with ``.periods`` [s], ``.spec_accels`` [g],
+            and ``.damping`` [decimal].
+        duration : float
+            Ground-motion duration [s].
+        **kw
+            Forwarded to :class:`CompatibleRvtMotion` (e.g. ``peak_calculator``).
+        """
+        return cls(
+            osc_freqs=1.0 / np.asarray(rs.periods),
+            osc_accels_target=np.asarray(rs.spec_accels),
+            duration=duration,
+            osc_damping=rs.damping,
+            **kw,
+        )
 
     def _estimate_fourier_amps(
         self, osc_freqs: npt.ArrayLike, osc_accels: npt.ArrayLike, osc_damping: float
