@@ -5,6 +5,63 @@ from numpy.testing import assert_allclose
 import pyrvt
 
 
+@pytest.fixture
+def motion():
+    """Synthetic single-corner motion in g-sec units."""
+    freqs = pyrvt.motions.log_spaced_values(0.05, 100.0, per_decade=64)
+    fourier_amps = (
+        0.05
+        * (freqs**2 / (1 + (freqs / 0.5) ** 2))
+        * np.exp(-np.pi * 0.035 * freqs)
+        / freqs**2
+    )
+    return pyrvt.motions.RvtMotion(
+        freqs=freqs, fourier_amps=fourier_amps, duration=8.0, peak_calculator="V75"
+    )
+
+
+def test_peak_params_invariants(motion):
+    """Properties, caching, transfer-function plumbing, and scaling."""
+    assert_allclose(motion.angular_freqs, 2 * np.pi * motion.freqs, rtol=0)
+
+    # Each cached property agrees with the method that fills it
+    assert motion.pga == motion.calc_pga()
+    assert motion.pgv == motion.calc_pgv()
+    assert motion.arias_intensity == motion.calc_arias_intensity()
+    assert motion.cav == motion.calc_cav()
+
+    # `tf` is the public keyword; this pins the signature
+    ones = np.ones_like(motion.freqs)
+    assert motion.calc_pga(tf=ones) == motion.pga
+    assert motion.calc_pgv(tf=ones) == motion.pgv
+    assert motion.calc_arias_intensity(tf=ones) == motion.arias_intensity
+
+    # The peak scales linearly with the transfer function, Arias quadratically
+    assert motion.calc_pga(2 * ones) == pytest.approx(2 * motion.pga, rel=1e-12)
+    assert motion.calc_pgv(2 * ones) == pytest.approx(2 * motion.pgv, rel=1e-12)
+    assert motion.calc_arias_intensity(2 * ones) == pytest.approx(
+        4 * motion.arias_intensity, rel=1e-12
+    )
+
+    # CAV is an empirical function of Arias intensity and duration
+    assert motion.cav == pytest.approx(
+        np.exp(
+            1.553
+            + 0.496 * np.log(motion.arias_intensity)
+            + 0.356 * np.log(motion.duration)
+        ),
+        rel=1e-12,
+    )
+
+
+def test_peak_params_regression(motion):
+    """Locked values, guarding against silent numerical drift."""
+    assert motion.pga == pytest.approx(0.031619466772979048, rel=1e-10)
+    assert motion.pgv == pytest.approx(27.562834894066476, rel=1e-10)
+    assert motion.arias_intensity == pytest.approx(0.01224368602622045, rel=1e-10)
+    assert motion.cav == pytest.approx(1.1157420706895542, rel=1e-10)
+
+
 def test_compatible_rvt_motion():
     """CompatibleRvtMotion recovers its target spectrum within tolerance."""
     pygmm = pytest.importorskip("pygmm")
