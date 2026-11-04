@@ -35,6 +35,7 @@ extensions = [
     "sphinx_design",
     "myst_parser",
     "nbsphinx",
+    "nbsphinx_link",
 ]
 
 templates_path = ["_templates"]
@@ -118,7 +119,6 @@ autodoc_default_options = {
     "special-members": "__init__",
     "undoc-members": True,
     "exclude-members": "__weakref__",
-    "no-index": False,
 }
 
 # Notebook execution configuration

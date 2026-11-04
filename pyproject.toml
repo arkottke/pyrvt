@@ -41,6 +41,12 @@ test = [
   "pytest",
   "pytest-cov",
   "pystrata",
+  "pygmm",
+  "pandas",
+  "matplotlib",
+  "nbformat",
+  "nbclient",
+  "ipykernel",
 ]
 docs = [
   "sphinx",
@@ -53,6 +59,7 @@ docs = [
   "matplotlib",
   "myst-parser",
   "nbsphinx",
+  "nbsphinx-link",
   "ipython",
   "linkify-it-py",
 ]

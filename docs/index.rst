@@ -24,7 +24,7 @@ seismological models.
       :link: user-guide/index
       :link-type: doc
 
-      Learn how to use pyRVT for your projects with tutorials and examples.
+      How the motions, peak calculators and tools fit together, and the examples.
 
    .. grid-item-card:: API Reference
       :link: api/index
@@ -62,7 +62,7 @@ Basic usage:
    # Create motion and calculate response spectrum
    motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration)
    osc_freqs = np.logspace(-1, 1.5, 50)
-   resp_spec = motion.calc_osc_accels(osc_freqs, damping=0.05)
+   resp_spec = motion.calc_osc_accels(osc_freqs, osc_damping=0.05)
 
 Table of Contents
 -----------------
@@ -82,9 +82,7 @@ Table of Contents
    :hidden:
 
    user-guide/index
-   user-guide/tutorials
-   user-guide/examples
-   user-guide/cli
+   examples/index
 
 .. toctree::
    :maxdepth: 2
