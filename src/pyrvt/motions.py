@@ -297,8 +297,9 @@ class RvtMotion:
         """
         scale = 1 if tf is None else np.abs(np.asarray(tf))
         fa = scale * self._fourier_amps
-        m0 = np.trapezoid(fa**2, self._freqs)
-        return np.pi * gravity / 2 * m0
+        # By Parseval's theorem the energy of the two-sided spectrum is twice
+        # the integral of the one-sided spectrum
+        return np.pi * gravity * np.trapezoid(fa**2, self._freqs)
 
     def calc_cav(self, tf: npt.ArrayLike | None = None) -> float:
         """Compute the cumulative absolute velocity (CAV).

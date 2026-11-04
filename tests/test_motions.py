@@ -58,8 +58,8 @@ def test_peak_params_regression(motion):
     """Locked values, guarding against silent numerical drift."""
     assert motion.pga == pytest.approx(0.031619466772979048, rel=1e-10)
     assert motion.pgv == pytest.approx(27.562834894066476, rel=1e-10)
-    assert motion.arias_intensity == pytest.approx(0.01224368602622045, rel=1e-10)
-    assert motion.cav == pytest.approx(1.1157420706895542, rel=1e-10)
+    assert motion.arias_intensity == pytest.approx(0.0244873720524409, rel=1e-10)
+    assert motion.cav == pytest.approx(1.5735287667201079, rel=1e-10)
 
 
 def test_compatible_rvt_motion():
@@ -88,3 +88,19 @@ def test_compatible_rvt_motion():
 
     # Might be off by a few percent because of difficulties with the inversion.
     assert_allclose(osc_accels_target, osc_accels_compat, rtol=0.03, atol=0.05)
+
+
+def test_arias_intensity_matches_time_domain():
+    """Arias intensity from the one-sided FAS equals the time-domain integral."""
+    rng = np.random.default_rng(0)
+    time_step, count = 0.01, 8192
+    times = time_step * np.arange(count)
+    accels = 0.1 * rng.standard_normal(count) * np.exp(-(((times - 30) / 10) ** 2))
+
+    freqs = np.fft.rfftfreq(count, time_step)[1:]
+    fourier_amps = np.abs(np.fft.rfft(accels))[1:] * time_step
+    motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration=60.0)
+
+    gravity = 9.80665
+    expected = np.pi / (2 * gravity) * np.sum((gravity * accels) ** 2) * time_step
+    assert motion.calc_arias_intensity() == pytest.approx(expected, rel=1e-3)
