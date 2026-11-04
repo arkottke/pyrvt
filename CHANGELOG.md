@@ -16,9 +16,9 @@
 - Fixed: `read_at2` reads both NGA-West1 and NGA-West2 headers.
 - Changed: adopted [SPEC 0](https://scientific-python.org/specs/spec-0000/) for
   version support -- Python minors from the last 36 months, core dependencies
-  from the last 24 months. **Minimum Python is now 3.12** (was 3.10), and
-  dependency lower bounds are declared explicitly: `numpy>=2.1`,
-  `numba>=0.61`, `scipy>=1.15`. CI now runs 3.12, 3.13 and 3.14. The dated
+  from the last 24 months. **Minimum Python is now 3.13** (was 3.10), and
+  dependency lower bounds are declared explicitly: `numpy>=2.2`,
+  `numba>=0.61`, `scipy>=1.15`. CI now runs 3.13 and 3.14. The dated
   drop schedule is in `pyproject.toml`.
 
   The old `>=3.10` floor was already unmet in practice: numpy, scipy, pandas,
