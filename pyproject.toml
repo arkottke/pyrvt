@@ -9,15 +9,31 @@ authors = [{ name = "Albert Kottke", email = "albert.kottke@gmail.com" }]
 description = "Random vibration theory for earthquake ground motions."
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.12"
+# Lower bounds follow SPEC 0: the oldest minor released within the last
+# 24 months. See the SPEC 0 note below for the review schedule.
 dependencies = [
-  "numpy>=2.0",
-  "numba>=0.60",
-  "scipy>=1.14",
+  "numpy>=2.1",
+  "numba>=0.61",
+  "scipy>=1.15",
   "pyexcel",
   "pyexcel-io",
   "pyexcel-xlsx",
 ]
+
+# ---------------------------------------------------------------------------
+# SPEC 0 -- Minimum Supported Dependencies
+# https://scientific-python.org/specs/spec-0000/
+#
+# Python:        support minors released in the last 36 months.
+# Core packages: support minors released in the last 24 months.
+#
+# Reviewed 2026-08-03. Next scheduled changes:
+#   2026-08-18  numpy >=2.2       (2.1 released 2024-08-18)
+#   2026-10-01  drop Python 3.12  -> requires-python >=3.13
+#   2027-01-03  scipy >=1.16      (1.15 released 2025-01-03)
+#   2027-01-20  numba >=0.62      (0.61 released 2025-01-20)
+# ---------------------------------------------------------------------------
 
 [project.optional-dependencies]
 test = [
@@ -28,7 +44,6 @@ test = [
   "pystrata",
   "pykooh",
   "matplotlib",
-  "tomli ; python_version < '3.11'",
 ]
 docs = [
   "sphinx",
@@ -64,7 +79,7 @@ exclude = ["docs"]
 line-length = 88
 indent-width = 4
 
-target-version = "py310"
+target-version = "py312"
 
 extend-include = ["*.ipynb"]
 

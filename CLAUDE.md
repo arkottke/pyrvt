@@ -63,3 +63,18 @@ pyRVT converts between acceleration Fourier amplitude spectra (FAS) and pseudo-s
 - `calc_sdof_tf(freqs, osc_freq, osc_damping)` returns the SDOF transfer function that converts acceleration FAS → PSA when `|H| * FAS` is integrated.
 - `sort_increasing(*arrays)` reorders arrays to be monotonically increasing; raises `NotImplementedError` if non-monotonic.
 - `log_spaced_values(lower, upper, per_decade=512)` generates log-spaced frequency grids.
+
+## Version support policy
+
+This repo follows [SPEC 0](https://scientific-python.org/specs/spec-0000/):
+
+- **Python** — support the minors released in the last **36 months**.
+- **Core dependencies** — support the minors released in the last **24 months**.
+
+Floor as of 2026-08-03: **Python 3.12**; CI runs 3.12, 3.13, 3.14.
+
+The dated drop schedule lives in `pyproject.toml` next to `[project.urls]`.
+When advancing a floor, update all four in step: `requires-python`, the
+dependency lower bounds, `[tool.ruff] target-version`, and the CI matrix.
+Then `rm uv.lock && uv lock` — a stale lock is what left this repo pinned to a
+scipy without wheels for the newest Python.
