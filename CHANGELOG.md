@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.9.0 (unreleased)
+
 - Changed: `pyexcel`, `pyexcel-io` and `pyexcel-xlsx` are no longer required
   dependencies. They are only used to read and write spreadsheets and are in
   the new `cli` extra (`pip install pyRVT[cli]`); reading or writing a
@@ -24,8 +25,8 @@
   matplotlib and pint all require >=3.11, so a 3.10 install silently resolved
   to a much older stack (pandas 2.3 rather than 3.0, numpy 2.2 rather than
   2.5). That forced the lockfile to fork on `python_full_version < '3.11'` into 11 duplicated packages.
-- Changed: dropped the `tomli ; python_version < '3.11'` test marker, now dead.
 
+- Changed: dropped the `tomli ; python_version < '3.11'` test marker, now dead.
 
 **Breaking changes**:
 

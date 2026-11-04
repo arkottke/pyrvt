@@ -5,6 +5,7 @@ This guide provides a step-by-step process for migrating Python projects from Ha
 ## Overview
 
 This migration covers:
+
 - **Build system**: Hatch → uv + setuptools + setuptools-scm
 - **Documentation**: MkDocs → Sphinx + Furo theme
 - **Development workflow**: Hatch environments → scripts.sh + uv
@@ -13,6 +14,7 @@ This migration covers:
 ## Prerequisites
 
 Before starting, ensure you have:
+
 - Python 3.10+ installed
 - Git repository with existing project
 - Backup of your current configuration
@@ -32,6 +34,7 @@ pip install uv
 Replace your existing `pyproject.toml` with the new structure:
 
 ### 2.1 Build System Section
+
 ```toml
 [build-system]
 requires = ["setuptools>=64", "setuptools-scm>=8"]
@@ -39,6 +42,7 @@ build-backend = "setuptools.build_meta"
 ```
 
 ### 2.2 Project Section
+
 ```toml
 [project]
 name = "your-package-name"
@@ -98,6 +102,7 @@ write_to = "src/your_package/_version.py"
 ```
 
 ### 2.3 Tool Configuration
+
 ```toml
 [tool.ruff]
 exclude = ["docs"]
@@ -135,6 +140,7 @@ exclude_lines = [
 ## Step 3: Update Package Structure
 
 ### 3.1 Version Handling
+
 Update `src/your_package/__init__.py`:
 
 ```python
@@ -150,6 +156,7 @@ __all__ = ["__version__"]
 ```
 
 ### 3.2 Create Development Scripts
+
 Create `scripts.sh` in project root:
 
 ```bash
@@ -168,7 +175,7 @@ case "$1" in
     echo ""
     echo "Option 2 - Add to your shell config permanently:"
     SCRIPT_PATH="$(realpath "$0")"
-    
+
     if [ -n "$ZSH_VERSION" ]; then
       echo "  For zsh, add to ~/.zshrc:"
       echo "  compctl -k \"(install test test-cov format lint docs-build docs-serve docs-clean clean completion)\" $SCRIPT_PATH"
@@ -242,11 +249,13 @@ esac
 ```
 
 Make it executable:
+
 ```bash
 chmod +x scripts.sh
 ```
 
 ### 3.3 Create Tab Completion File
+
 Create `.scripts-completion.sh`:
 
 ```bash
@@ -258,9 +267,9 @@ _scripts_completion() {
     local cur prev opts
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    
+
     opts="install test test-cov format lint docs-build docs-serve docs-clean clean completion"
-    
+
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
@@ -271,7 +280,7 @@ if [ -n "$BASH_VERSION" ]; then
     complete -F _scripts_completion scripts.sh
 fi
 
-# For zsh 
+# For zsh
 if [ -n "$ZSH_VERSION" ]; then
     compctl -k "(install test test-cov format lint docs-build docs-serve docs-clean clean completion)" ./scripts.sh
     compctl -k "(install test test-cov format lint docs-build docs-serve docs-clean clean completion)" scripts.sh
@@ -281,11 +290,13 @@ fi
 ## Step 4: Set Up Sphinx Documentation
 
 ### 4.1 Create Documentation Directory Structure
+
 ```bash
 mkdir -p docs/{getting-started,user-guide,developer-guide,about,api,_static}
 ```
 
 ### 4.2 Sphinx Configuration
+
 Create `docs/conf.py`:
 
 ```python
@@ -408,6 +419,7 @@ nbsphinx_allow_errors = True
 ## Step 5: Create Documentation Content
 
 ### 5.1 Main Index File
+
 Create `docs/index.rst`:
 
 ```rst
@@ -456,7 +468,7 @@ Basic usage:
 .. code-block:: python
 
    import your_package
-   
+
    # Your quick example here
 
 Table of Contents
@@ -518,6 +530,7 @@ Indices and tables
 ```
 
 ### 5.2 Bibliography File
+
 Create `docs/refs.bib`:
 
 ```bibtex
@@ -536,18 +549,23 @@ Create `docs/refs.bib`:
 I'll create template files for each section that you can customize for any project.
 
 ### Getting Started Section
+
 Create `docs/getting-started/index.rst`, `installation.rst`, `quickstart.rst`
 
-### User Guide Section  
+### User Guide Section
+
 Create `docs/user-guide/index.rst`, `tutorials.rst`, `examples.rst`, `cli.rst`
 
 ### Developer Guide Section
+
 Create `docs/developer-guide/index.rst`, `contributing.rst`, `changelog.rst`
 
 ### About Section
+
 Create `docs/about/authors.rst`, `license.rst`, `citation.rst`
 
 ### Additional Files
+
 Create `docs/references.rst`, `docs/glossary.rst`, `docs/api/index.rst`
 
 ## Step 7: Migration Checklist
@@ -555,7 +573,7 @@ Create `docs/references.rst`, `docs/glossary.rst`, `docs/api/index.rst`
 - [ ] Update pyproject.toml with new build system
 - [ ] Create scripts.sh and make executable
 - [ ] Set up tab completion file
-- [ ] Update package __init__.py for version handling
+- [ ] Update package **init**.py for version handling
 - [ ] Create docs directory structure
 - [ ] Configure Sphinx with conf.py
 - [ ] Create main documentation pages

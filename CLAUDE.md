@@ -34,11 +34,13 @@ pyRVT converts between acceleration Fourier amplitude spectra (FAS) and pseudo-s
 ### Core modules (`src/pyrvt/`)
 
 **`motions.py`** — RVT motion classes:
+
 - `RvtMotion` — base class. Holds `freqs` [Hz], `fourier_amps` [g·sec], and `duration` [sec]. Key methods: `calc_peak(transfer_func)`, `calc_osc_accels(osc_freqs, osc_damping)`, `calc_pga()`, `calc_pgv()`, `calc_attenuation(min_freq)`. Frequencies must be monotonically increasing (enforced in `__init__`).
 - `CompatibleRvtMotion(RvtMotion)` — iteratively fits a FAS to match a target PSA. The `from_response_spectrum(rs, duration)` classmethod accepts any duck-typed object with `.periods`, `.spec_accels`, `.damping`.
 - `RvtMotion.from_fas(fas)` — builds from any object exposing `.freqs`, `.fourier_amps`, `.duration` (e.g. a `pygmm` FAS model).
 
 **`peak_calculators.py`** — Peak factor models:
+
 - Abstract base `Calculator`; `__call__(duration, freqs, fourier_amps)` returns a tuple where `[0]` is the peak.
 - Implemented calculators (referenced by `ABBREV`): `V75`, `D64`, `DK85`, `TM87`, `CLH56`, `BJ84`, `LP99`, `BT12`, `BT15`, `WR18`.
 - `BT12`, `BT15`, `WR18` require `region`, `mag`, `dist` keyword arguments — passed via `calc_kwds`.
@@ -48,6 +50,7 @@ pyRVT converts between acceleration Fourier amplitude spectra (FAS) and pseudo-s
 - Performance-critical integrands are compiled with `numba.cfunc` + `scipy.integrate.quad`.
 
 **`tools.py`** — Batch file operations:
+
 - `read_events(fpath, response_type)` / `write_events(...)` — read/write Excel or CSV spreadsheets with a fixed row layout: 6 parameter rows (magnitude, distance, Vs30, kappa, duration, region), then one header row, then the spectral data.
 - `calc_compatible_spectra(method, periods, events, damping)` — parallelizes PSA→FAS via `multiprocessing.Pool`.
 - `operation_psa2fa` / `operation_fa2psa` — top-level functions called by the CLI.
