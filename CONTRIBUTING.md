@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/arkottke/pyrvt/issues.
+Report bugs at <https://github.com/arkottke/pyrvt/issues>.
 
 If you are reporting a bug, please include:
 
@@ -36,7 +36,7 @@ articles, and such. Docstrings should be formatted using the
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/arkottke/pyrvt/issues.
+The best way to send feedback is to file an issue at <https://github.com/arkottke/pyrvt/issues>.
 
 If you are proposing a feature:
 
@@ -53,7 +53,7 @@ Ready to contribute? Here's how to set up `pyRVT` for local development.
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install uv first:
 
-```bash
+``` bash
 # On macOS and Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -63,69 +63,70 @@ pip install uv
 
 ### Setup
 
-1. Fork the `pyRVT` repo on GitHub.
-2. Clone your fork locally
+1.  Fork the `pyRVT` repo on GitHub.
 
-```
-$ git clone git@github.com:your_name_here/pyrvt.git
-```
+2.  Clone your fork locally:
 
-3. Create a branch for local development::
+    ``` bash
+    $ git clone git@github.com:your_name_here/pyrvt.git
+    ```
 
-```
-$ git checkout -b name-of-your-bugfix-or-feature
-```
+3.  Create a branch for local development:
 
-4. Install the development environment using uv:
+    ``` bash
+    $ git checkout -b name-of-your-bugfix-or-feature
+    ```
 
-```
-$ ./scripts.sh install
-```
+4.  Install the development environment using uv:
 
-Now you can make your changes locally.
+    ``` bash
+    $ ./scripts.sh install
+    ```
 
-5. When you're done making changes, check that your changes pass formatting and the
-   tests.
+    Now you can make your changes locally.
 
-```
-$ ./scripts.sh format
-$ ./scripts.sh test
-```
+5.  When you're done making changes, check that your changes pass formatting and the
+    tests:
 
-The documentation can be built and served with:
+    ``` bash
+    $ ./scripts.sh format
+    $ ./scripts.sh test
+    ```
 
-```
-$ ./scripts.sh docs-build
-$ ./scripts.sh docs-serve
-```
+    The documentation can be built and served with:
 
-6. Commit your changes and push your branch to GitHub::
+    ``` bash
+    $ ./scripts.sh docs-build
+    $ ./scripts.sh docs-serve
+    ```
 
-```
-$ git add .
-$ git commit -m "Your detailed description of your changes."
-$ git push origin name-of-your-bugfix-or-feature
-```
+6.  Commit your changes and push your branch to GitHub:
 
-7. Submit a pull request through the GitHub website.
+    ``` bash
+    $ git add .
+    $ git commit -m "Your detailed description of your changes."
+    $ git push origin name-of-your-bugfix-or-feature
+    ```
+
+7.  Submit a pull request through the GitHub website.
 
 ## Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.md.
-3. The pull request should work for Python 3.13 and later.
+1.  The pull request should include tests.
+2.  If the pull request adds functionality, the docs should be updated. Put
+    your new functionality into a function with a docstring, and add the
+    feature to the list in README.md.
+3.  The pull request should work for Python 3.13 and later.
 
-## Tips
+## Development Commands
 
-This project uses [uv](https://docs.astral.sh/uv/) for dependency management and a custom `scripts.sh` file for common development tasks.
+This project uses \[uv\](<https://docs.astral.sh/uv/>) for dependency management and a custom `scripts.sh` file for common development tasks.
 
 Available development commands:
 
-```
+``` bash
 $ ./scripts.sh install      # Install project in development mode
 $ ./scripts.sh test         # Run tests
 $ ./scripts.sh test-cov     # Run tests with coverage
@@ -139,6 +140,47 @@ $ ./scripts.sh clean        # Clean all build artifacts
 
 To run a subset of tests:
 
-```
+``` bash
 $ uv run pytest tests/test_specific_module.py
 ```
+
+## Code Style and Quality
+
+**Formatting**: Code is automatically formatted using Black and Ruff.
+
+**Type Hints**: Use type hints for public APIs and complex functions.
+
+**Documentation**: All public functions and classes should have NumPy-style docstrings.
+
+**Testing**: Write tests for new functionality. Aim for high test coverage.
+
+**Performance**: Profile code before optimizing. Use NumPy vectorization and consider Numba for hot loops.
+
+## Release Process
+
+Releases are handled by the maintainers. The process includes:
+
+1.  Update version numbers
+2.  Update changelog
+3.  Create GitHub release
+4.  Publish to PyPI
+5.  Update documentation
+
+## Community Guidelines
+
+- Be respectful and inclusive
+- Follow the code of conduct
+- Help newcomers get started
+- Provide constructive feedback
+- Celebrate contributions from all skill levels
+
+## Getting Help
+
+If you need help with development:
+
+1.  Check the existing documentation
+2.  Search GitHub issues for similar problems
+3.  Ask questions in GitHub Discussions
+4.  Contact the maintainers
+
+Thank you for contributing to pyRVT!

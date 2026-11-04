@@ -1,4 +1,4 @@
-# Credits
+# Authors
 
 ## Development Lead
 
