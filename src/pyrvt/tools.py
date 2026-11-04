@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import multiprocessing
+import re
 from pathlib import Path
 
 import numpy as np
@@ -395,8 +396,13 @@ def read_at2(fname: str) -> tuple[float, np.ndarray]:
         # Skip the first three header lines
         for _ in range(3):
             next(fp)
-        parts = next(fp).replace(",", "").split()
-        time_step = float(parts[3].replace("SEC", ""))
+        header = next(fp)
+        # NGA-West2: "NPTS= 6000, DT= .0100 SEC"; NGA-West1: "6000 0.0100 NPTS, DT"
+        match = re.search(r"DT\s*=\s*([0-9.eE+-]+)", header, re.IGNORECASE)
+        if match:
+            time_step = float(match.group(1))
+        else:
+            time_step = float(header.replace(",", " ").split()[1])
 
         accels = np.array([float(part) for line in fp for part in line.split()])
 

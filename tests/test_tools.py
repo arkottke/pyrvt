@@ -304,3 +304,23 @@ def test_operation_fa2psa(fixed_spacing):
     # test_calc_compatible_spectra
     pyrvt.tools.operation_fa2psa(src_fname, dest_dirname, 0.05, "LP99", fixed_spacing)
     shutil.rmtree(dest_dirname)
+
+
+@pytest.mark.parametrize(
+    "header,time_step",
+    [
+        ("NPTS=  6000, DT= .0100 SEC", 0.01),
+        ("NPTS=  16396, DT= 0.005 SEC", 0.005),
+        ("NPTS=6000, DT=0.0100 SEC", 0.01),
+        ("   4096   0.0100   NPTS, DT", 0.01),
+    ],
+)
+def test_read_at2_header_formats(tmp_path, header, time_step):
+    fpath = tmp_path / "test.AT2"
+    fpath.write_text(
+        "PEER NGA\nEVENT\nACCELERATION TIME SERIES IN UNITS OF G\n"
+        f"{header}\n 0.1 0.2 0.3\n"
+    )
+    actual_step, accels = pyrvt.tools.read_at2(fpath)
+    assert actual_step == pytest.approx(time_step)
+    assert accels == pytest.approx([0.1, 0.2, 0.3])
