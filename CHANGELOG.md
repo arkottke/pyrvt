@@ -2,6 +2,11 @@
 
 ## 0.9.0 (unreleased)
 
+- Changed: the documentation is reorganized around a user guide that describes how
+  motions, peak calculators and tools fit together; the tutorials and quickstart
+  code, which used keywords that do not exist, is corrected. The example notebooks,
+  which used the removed `SourceTheoryMotion`, are replaced by two that are executed
+  by the tests.
 - Changed: `pyexcel`, `pyexcel-io` and `pyexcel-xlsx` are no longer required
   dependencies. They are only used to read and write spreadsheets and are in
   the new `cli` extra (`pip install pyRVT[cli]`); reading or writing a
