@@ -348,6 +348,7 @@ class Calculator(ABC):
         sspectrum : SquaredSpectrum
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
+
         Returns
         -------
         duration : float
@@ -371,18 +372,18 @@ class Vanmarcke1975(Calculator):
             \exp\left(-\sqrt{\pi/2} \delta_e x\right)}{\exp(x^2 / 2) -
             1 }\right]
 
-    where $N_z$ is the number of zero crossings, $\delta_e$ is the effective
-    bandwidth ($\delta^{1.2}$).
+    where :math:`N_z` is the number of zero crossings, :math:`\delta_e` is the
+    effective bandwidth (:math:`\delta^{1.2}`).
 
     Typically, the expected value of the peak factor is calculated by integrating over
-    the probability density function (i.e., $f_x(x) = \frac{d}{dx} F_x( x)$):
+    the probability density function (i.e., :math:`f_x(x) = \frac{d}{dx} F_x( x)`):
 
     .. math::
         E[x] = \int_0^\infty x f_x(x) dx
 
-    However, because of the properties of $F_x(x)$, specifically that it has
-    non-zero probabilities for only positive values, $E[x]$ can be computed
-    directly from $F_x(x)$.
+    However, because of the properties of :math:`F_x(x)`, specifically that it has
+    non-zero probabilities for only positive values, :math:`E[x]` can be computed
+    directly from :math:`F_x(x)`.
 
     .. math::
         E[x] = \int_0^\infty 1 - F_x(x) dx.
@@ -430,6 +431,7 @@ class Vanmarcke1975(Calculator):
         osc_damping : float
             Fractional damping of the oscillator (dec). For example, 0.05 for a damping
             ratio of 5%.
+
         Returns
         -------
         peak_factor : float
@@ -496,6 +498,7 @@ class Davenport1964(Calculator):
         sspectrum : SquaredSpectrum
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
+
         Returns
         -------
         peak_factor : float
@@ -678,17 +681,18 @@ class ToroMcGuire1987(Davenport1964):
     def nonstationarity_factor(
         cls, osc_damping: float, osc_freq: float, duration: float
     ) -> float:
-        """Compute nonstationarity factor to the peak response.
+        r"""Compute nonstationarity factor to the peak response.
 
-        Vanmarcke (1975) provides a recommendation for scaling the damping of the SDOF
-        oscillator to account for nonstationarity in Equation 8.30:
-        $$
-        \\xi_t = \\frac{\\xi}{1 - \\exp\\left(-4 \\pi \\xi f_n t\\right)}
-        $$
-        Toro and McGuire (1987) simplified this to scale the $X_{rms}$ by:
-        $$
-        n_f = \\sqrt{1 - \\exp\\left(-4 \\pi \\xi f_n T\\right)}
-        $$
+        Vanmarcke (1975) provides a recommendation for scaling the damping of the
+        SDOF oscillator to account for nonstationarity in Equation 8.30:
+
+        .. math::
+            \xi_t = \frac{\xi}{1 - \exp\left(-4 \pi \xi f_n t\right)}
+
+        Toro and McGuire (1987) simplified this to scale the :math:`X_{rms}` by:
+
+        .. math::
+            n_f = \sqrt{1 - \exp\left(-4 \pi \xi f_n T\right)}
 
         The simplified model from Toro and McGuire (1987) is used here.
 
@@ -839,6 +843,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
+
         Returns
         -------
         duration : float
@@ -900,6 +905,7 @@ class LiuPezeshk1999(BooreJoyner1984):
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
+
         Returns
         -------
         duration : float
@@ -1018,6 +1024,7 @@ class BooreThompson(Calculator):
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
+
         Returns
         -------
         duration : float
@@ -1198,6 +1205,7 @@ class WangRathje2018(BooreThompson2015):
             Oscillator frequency [Hz].
         site_tf : array_like
             Transfer function for applied to compute site effects.
+
         Returns
         -------
         duration : float

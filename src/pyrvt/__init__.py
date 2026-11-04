@@ -1,6 +1,8 @@
 #!/usr/bin/python
-"""pyRVT module. Provides random vibration theory models for earthquake ground motion
-calculations.
+"""Random vibration theory (RVT) models for earthquake ground motions.
+
+Provides motions defined by a Fourier amplitude spectrum and the peak factor
+calculators that convert them to response spectra and peak ground motions.
 """
 
 from importlib.metadata import version

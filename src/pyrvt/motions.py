@@ -1,6 +1,5 @@
 """Random vibration theory (RVT) based motions.
 
-
 The module attribute `DEFAULT_CALC` is used to control the default peak factor
 calculator is one is not provided when a class is initialized.
 """
@@ -216,8 +215,7 @@ class RvtMotion:
         peak_calculator: str | peak_calculators.Calculator | None = None,
         calc_kwds: dict | None = None,
     ) -> RvtMotion:
-        """Build an :class:`RvtMotion` from any object exposing a
-        Fourier-spectrum shape.
+        """Build an :class:`RvtMotion` from any Fourier-spectrum-like object.
 
         Parameters
         ----------
@@ -256,10 +254,10 @@ class RvtMotion:
         return self.calc_peak(tf)
 
     def calc_pgv(self, tf: npt.ArrayLike | None = None) -> float:
-        """Peak ground velocity [cm/sec] via RVT.
+        r"""Peak ground velocity [cm/sec] via RVT.
 
         Computed by integrating the acceleration FAS in the frequency domain
-        (multiplication by :math:`1 / (i\\omega)`) and then applying the peak
+        (multiplication by :math:`1 / (i\omega)`) and then applying the peak
         calculator. The result is scaled from g-sec to cm/sec.
 
         Parameters
@@ -354,7 +352,6 @@ class RvtMotion:
             Peak pseudo-spectral acceleration of the oscillator
 
         """
-
         # Need to preserve the site_tf for Wang and Rathje. It expects None
         if trans_func is None:
             trans_func = 1
@@ -454,12 +451,11 @@ class RvtMotion:
 
         Notes
         -----
-        This function computes the site attenuation defined by Anderson & Hough (1984)
-        [@anderson84] as:
+        This function computes the site attenuation defined by Anderson & Hough
+        (1984) :cite:p:`anderson84` as:
 
-        $$
-        a(f) = A_0 \exp(-\pi \kappa f) \text( for ) f > f_E
-        $$
+        .. math::
+            a(f) = A_0 \exp(-\pi \kappa f) \quad \text{for} \quad f > f_E
 
         for a single Fourier amplitude spectrum
 

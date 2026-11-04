@@ -402,7 +402,6 @@ def operation_fa2psa(
 
 def read_at2(fname: str) -> tuple[float, np.ndarray]:
     """Read an AT2 formatted file."""
-
     with open(fname) as fp:
         # Skip the first three header lines
         for _ in range(3):
