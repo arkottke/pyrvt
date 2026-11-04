@@ -26,9 +26,10 @@ def scenario():
 def test_from_response_spectrum_pygmm(scenario):
     """CompatibleRvtMotion.from_response_spectrum works with a real pygmm RS."""
     rs = pygmm.AbrahamsonSilvaKamai2014(scenario).response_spectrum()
-    # AfshariStewart2016.duration returns a structured array; use the D5-95 field
+    # AfshariStewart2016.duration returns a structured array; RVT uses the
+    # duration of the stationary portion, the D5-75 field
     dur_rec = pygmm.AfshariStewart2016(scenario).duration
-    duration = float(dur_rec["D_5t95"])
+    duration = float(dur_rec["D_5t75"])
 
     motion = CompatibleRvtMotion.from_response_spectrum(rs, duration)
 
@@ -46,7 +47,7 @@ def test_from_response_spectrum_regression(scenario):
     """PGA from RS→RVT path is stable across code changes (regression anchor)."""
     rs = pygmm.AbrahamsonSilvaKamai2014(scenario).response_spectrum()
     dur_rec = pygmm.AfshariStewart2016(scenario).duration
-    duration = float(dur_rec["D_5t95"])
+    duration = float(dur_rec["D_5t75"])
     motion = CompatibleRvtMotion.from_response_spectrum(rs, duration)
     pga = motion.calc_peak()
     # Sanity bounds — real numerical regression added when first value is locked in CI
