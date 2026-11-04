@@ -142,7 +142,7 @@ def calc_moments(
     Parameters
     ----------
     freqs : array_like
-        Frequency of the Fourier amplitude spectrum (Hz)
+        Frequency of the Fourier amplitude spectrum [Hz]
     fourier_amps : array_like
         Amplitude of the Fourier amplitude spectrum.
     orders : list
@@ -172,7 +172,7 @@ class SquaredSpectrum:
     Parameters
     ----------
     freqs : array_like
-        Frequency of the Fourier amplitude spectrum (Hz)
+        Frequency of the Fourier amplitude spectrum [Hz]
     fourier_amps : array_like
         Amplitude of the Fourier amplitude spectrum.
     """
@@ -289,7 +289,7 @@ class Calculator(ABC):
             defined as the duration between the 5% and 75% normalized Arias
             intensity [sec].
         freqs : array_like
-            Frequency of the Fourier amplitude spectrum (Hz).
+            Frequency of the Fourier amplitude spectrum [Hz].
         fourier_amps : array_like
              Amplitude of the Fourier amplitude spectrum with a single degree
              of freedom oscillator already applied if being used. Units are
@@ -427,9 +427,9 @@ class Vanmarcke1975(Calculator):
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
         osc_freq : float
-            Frequency of the oscillator (Hz).
+            Frequency of the oscillator [Hz].
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a damping
             ratio of 5%.
 
         Returns
@@ -700,9 +700,9 @@ class ToroMcGuire1987(Davenport1964):
         Parameters
         ----------
         osc_damping : float
-            Oscillator damping (decimal).
+            Oscillator damping [decimal].
         osc_freq : float
-            Oscillator frequency (Hz).
+            Oscillator frequency [Hz].
         duration : float
             Duration of the stationary portion of the ground motion
 
@@ -839,7 +839,7 @@ class BooreJoyner1984(CartwrightLonguetHiggins1956):
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a damping
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
@@ -901,7 +901,7 @@ class LiuPezeshk1999(BooreJoyner1984):
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a damping
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
@@ -981,7 +981,7 @@ class BooreThompson(Calculator):
     mag : float
         Magnitude of the event.
     dist : float
-        Distance of the event in (km).
+        Distance of the event in [km].
     ref : str
         Reference for coefficients, either: 'bt12' or 'bt15'
     """
@@ -1020,7 +1020,7 @@ class BooreThompson(Calculator):
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a damping
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].
@@ -1058,7 +1058,7 @@ class BooreThompson2012(BooreThompson, BooreJoyner1984):
     mag : float
         Magnitude of the event.
     dist : float
-        Distance of the event in (km).
+        Distance of the event in [km].
 
     Attributes
     ----------
@@ -1100,7 +1100,7 @@ class BooreThompson2015(BooreThompson, Vanmarcke1975):
     mag : float
         Magnitude of the event.
     dist : float
-        Distance of the event in (km).
+        Distance of the event in [km].
 
     Attributes
     ----------
@@ -1142,7 +1142,7 @@ class WangRathje2018(BooreThompson2015):
     mag : float
         Magnitude of the event.
     dist : float
-        Distance of the event in (km).
+        Distance of the event in [km].
 
     Attributes
     ----------
@@ -1199,7 +1199,7 @@ class WangRathje2018(BooreThompson2015):
             Instance of `SquaredSpectrum` that defines the frequency content of the
             motion.
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a damping
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a damping
             ratio of 5%.
         osc_freq : float
             Oscillator frequency [Hz].

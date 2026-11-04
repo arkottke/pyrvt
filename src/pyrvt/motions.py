@@ -88,11 +88,11 @@ def calc_sdof_tf(
     Parameters
     ----------
     freqs : array_like
-        Frequencies at which the transfer function should be calculated  (Hz).
+        Frequencies at which the transfer function should be calculated  [Hz].
     osc_freq : float
-        Frequency of the oscillator (Hz).
+        Frequency of the oscillator [Hz].
     osc_damping : float
-        Fractional damping of the oscillator (decimal).
+        Fractional damping of the oscillator [decimal].
 
     Returns
     -------
@@ -112,11 +112,11 @@ class RvtMotion:
     Parameters
     ----------
     freqs : array_like, optional
-        Frequency array (Hz).
+        Frequency array [Hz].
     fourier_amps : array_like, optional
         Absolute value of acceleration Fourier amplitudes.
     duration : float, optional
-        Ground motion duration (sec).
+        Ground motion duration [sec].
     peak_calculator : `Calculator`, optional
         Peak calculator to use. If `None`, then the default peak
         calculator is used.  The peak calculator may either be specified
@@ -162,7 +162,7 @@ class RvtMotion:
 
     @property
     def freqs(self) -> np.ndarray:
-        """Frequency values (Hz)."""
+        """Frequency values [Hz]."""
         return self._freqs
 
     @property
@@ -172,7 +172,7 @@ class RvtMotion:
 
     @property
     def fourier_amps(self) -> np.ndarray:
-        """Acceleration Fourier amplitude values (g-sec)."""
+        """Acceleration Fourier amplitude values [g-sec]."""
         return self._fourier_amps
 
     @property
@@ -182,28 +182,28 @@ class RvtMotion:
 
     @property
     def pga(self) -> float:
-        """Peak ground acceleration (g)."""
+        """Peak ground acceleration [g]."""
         if self._pga is None:
             self._pga = self.calc_pga()
         return self._pga
 
     @property
     def pgv(self) -> float:
-        """Peak ground velocity (cm/sec)."""
+        """Peak ground velocity [cm/sec]."""
         if self._pgv is None:
             self._pgv = self.calc_pgv()
         return self._pgv
 
     @property
     def arias_intensity(self) -> float:
-        """Arias intensity (m/s)."""
+        """Arias intensity [m/s]."""
         if self._arias_intensity is None:
             self._arias_intensity = self.calc_arias_intensity()
         return self._arias_intensity
 
     @property
     def cav(self) -> float:
-        """Cumulative absolute velocity (m/s)."""
+        """Cumulative absolute velocity [m/s]."""
         if self._cav is None:
             self._cav = self.calc_cav()
         return self._cav
@@ -248,7 +248,7 @@ class RvtMotion:
         Returns
         -------
         pga : float
-            Peak ground acceleration (g).
+            Peak ground acceleration [g].
 
         """
         return self.calc_peak(tf)
@@ -269,7 +269,7 @@ class RvtMotion:
         Returns
         -------
         pgv : float
-            Peak ground velocity (cm/sec).
+            Peak ground velocity [cm/sec].
 
         """
         omega = self.angular_freqs
@@ -294,7 +294,7 @@ class RvtMotion:
         Returns
         -------
         arias_intensity : float
-            Arias intensity (m/s).
+            Arias intensity [m/s].
 
         """
         scale = 1 if tf is None else np.abs(np.asarray(tf))
@@ -318,7 +318,7 @@ class RvtMotion:
         Returns
         -------
         cav : float
-            Cumulative absolute velocity (m/s).
+            Cumulative absolute velocity [m/s].
 
         """
         return np.exp(
@@ -338,9 +338,9 @@ class RvtMotion:
         Parameters
         ----------
         osc_freqs : float
-            Frequency of the oscillator (Hz).
+            Frequency of the oscillator [Hz].
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a
             damping ratio of 5%.
         trans_func : array_like, optional
             Transfer function to be applied to motion prior calculation of the
@@ -432,7 +432,7 @@ class RvtMotion:
         Parameters
         ----------
         min_freq : float
-            minimum frequency of the fit (Hz).
+            minimum frequency of the fit [Hz].
         max_freq : float, optional
             maximum frequency of the fit. If `None`, then the maximum frequency range is
             used.
@@ -497,14 +497,14 @@ class CompatibleRvtMotion(RvtMotion):
         Parameters
         ----------
         osc_freqs : array_like
-            Frequencies of the oscillator response (Hz).
+            Frequencies of the oscillator response [Hz].
         osc_accels_target : array_like
             Spectral acceleration of the oscillator at the specified
-            frequencies (g).
+            frequencies [g].
         duration : float
-            Duration of the ground motion (sec).
+            Duration of the ground motion [sec].
         osc_damping : float, optional
-            Fractional damping of the oscillator (dec). Default value is 0.05
+            Fractional damping of the oscillator [dec]. Default value is 0.05
             for a damping ratio of 5%.
         window_len : int, optional
             Window length used for smoothing the computed Fourier amplitude
@@ -673,11 +673,11 @@ class CompatibleRvtMotion(RvtMotion):
         Parameters
         ----------
         osc_freqs : array_like
-            Oscillator frequencies in increasing order (Hz).
+            Oscillator frequencies in increasing order [Hz].
         osc_accels : array_like
-            Psuedo-spectral accelerations of the oscillator (g).
+            Psuedo-spectral accelerations of the oscillator [g].
         osc_damping : float
-            Fractional damping of the oscillator (dec). For example, 0.05 for a
+            Fractional damping of the oscillator [dec]. For example, 0.05 for a
             damping ratio of 5%.
 
         Returns

@@ -58,8 +58,8 @@ def read_events(
     ext : str
         Extension of input file
     reference : :class:`numpy.ndarray`
-        Reference of the response. This is either period (sec) for
-        response_type 'psa' or frequency (Hz) for response_type 'fa'
+        Reference of the response. This is either period [sec] for
+        response_type 'psa' or frequency [Hz] for response_type 'fa'
     events : List[dict]
         List of events read from the file. See ``Note`` in
         :func:`.calc_compatible_spectra` for more information on structure of
@@ -111,7 +111,7 @@ def write_events(
     reference : array_like
         Periods of the oscillator response shared across all events.
     reference_label : str
-        Label of the reference (e.g., 'Frequency (Hz)').
+        Label of the reference (e.g., 'Frequency [Hz]').
     response_type : str
         Type of response. Valid options: `psa` for pseudo-spectral
         accleration, or `fa` for Fourier amplitude.
@@ -180,7 +180,7 @@ def calc_compatible_spectra(
     events : List[dict]
         All events to consider. See ``Note``.
     damping : float, optional
-        Fractional damping of the oscillator (decimal). Default value of 0.05
+        Fractional damping of the oscillator [decimal]. Default value of 0.05
         for a damping ratio of 5%.
 
     Returns
@@ -199,7 +199,7 @@ def calc_compatible_spectra(
       is the target for the :class:`~.motions.CompatibleRvtMotion`.
     - **duration** : float -- duration of the ground motion [s]
     - **magnitude** : float, optional -- earthquake magnitude
-    - **distance** : float, optional -- earthquake distance (km)
+    - **distance** : float, optional -- earthquake distance [km]
     - **region** : str, optional -- earthquake source region, see
       :func:`~.peak_calculators.get_region`. The magnitude, distance and
       region are only required by the Boore and Thompson peak calculators.
@@ -356,7 +356,7 @@ def operation_fa2psa(
         Destination directory for the output PSA. The directory is created if
         it does not exist.
     damping : float
-        Fractional damping of the oscillator (decimal).
+        Fractional damping of the oscillator [decimal].
     method : str
         RVT peak factor method, see
         :func:`~.peak_calculators.get_peak_calculator`.
