@@ -14,8 +14,8 @@ sys.path.insert(0, os.path.abspath("../src"))
 import pyrvt
 
 project = "pyRVT"
-copyright = f"2015-{date.today().year}, Albert R. Kottke"
-author = "Albert R. Kottke"
+copyright = f"2015-{date.today().year}, Albert Kottke"
+author = "Albert Kottke"
 release = pyrvt.__version__
 
 # -- General configuration ---------------------------------------------------
@@ -66,6 +66,10 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "pygmm": ("https://pygmm.readthedocs.io/en/latest/", None),
+    "pyrotd": ("https://pyrotd.readthedocs.io/en/latest/", None),
+    "pystrata": ("https://pystrata.readthedocs.io/en/latest/", None),
 }
 
 # MyST configuration
@@ -105,6 +109,8 @@ html_theme_options = {
 
 # Show typehints as content of the function or method
 autodoc_typehints = "description"
+# Show the __init__ docstring (where parameters are often documented) with the class
+autoclass_content = "both"
 autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
