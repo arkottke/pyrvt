@@ -185,18 +185,18 @@ def calc_compatible_spectra(
 
     - **psa** : :class:`numpy.ndarray` -- pseudo-spectral accelerations. This
       is the target for the :class:`~.motions.CompatibleRvtMotion`.
-    - **duration** : float, optional -- duration of the ground motion
+    - **duration** : float -- duration of the ground motion [s]
     - **magnitude** : float, optional -- earthquake magnitude
     - **distance** : float, optional -- earthquake distance (km)
     - **region** : str, optional -- earthquake source region, see
-      :func:`~.peak_calculators.get_region` If no duration is provided one
-      is estimated from the magnitude, distance, and region.
+      :func:`~.peak_calculators.get_region`. The magnitude, distance and
+      region are only required by the Boore and Thompson peak calculators.
 
     The `events` dictionary is modified by this function and adds the
     following keys:
 
-    - **duration** : float -- duration of the ground motion if one was not
-      specified
+    - **duration** : float -- duration of the ground motion [s] used for the
+      calculation
     - **fa** : :class:`numpy.ndarray` -- Fourier amplitude spectra in units of
       g*sec
     - **psa_calc** : :class:`numpy.ndarray` -- Pseudo-spectral acceleration

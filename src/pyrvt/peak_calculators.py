@@ -669,7 +669,7 @@ class ToroMcGuire1987(Davenport1964):
 
         osc_freq = kwds.get("osc_freq", None)
         osc_damping = kwds.get("osc_damping", None)
-        if osc_freq and osc_damping:
+        if self._use_nonstationarity_factor and osc_freq and osc_damping:
             peak_factor *= self.nonstationarity_factor(osc_damping, osc_freq, duration)
 
         return peak_factor
@@ -985,6 +985,12 @@ class BooreThompson(Calculator):
         super().__init__(**kwds)
         region = get_region(region)
         self._COEFS = _BT_INTERPS[(region, ref)](mag, np.log(dist))
+        if not np.all(np.isfinite(self._COEFS)):
+            raise ValueError(
+                f"The magnitude ({mag}) and distance ({dist} km) are outside of "
+                f"the range of the {ref.upper()} coefficients for region "
+                f"'{region}'."
+            )
 
     def _calc_duration_rms(
         self,

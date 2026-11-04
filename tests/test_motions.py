@@ -104,3 +104,24 @@ def test_arias_intensity_matches_time_domain():
     gravity = 9.80665
     expected = np.pi / (2 * gravity) * np.sum((gravity * accels) ** 2) * time_step
     assert motion.calc_arias_intensity() == pytest.approx(expected, rel=1e-3)
+
+
+def test_lists_are_accepted():
+    freqs = np.logspace(-1, 2, 200)
+    amps = 0.01 * freqs / (1 + (freqs / 5) ** 2)
+    as_lists = pyrvt.motions.RvtMotion(list(freqs), list(amps), duration=10.0)
+    as_arrays = pyrvt.motions.RvtMotion(freqs, amps, duration=10.0)
+    assert_allclose(as_lists.calc_osc_accels([1.0]), as_arrays.calc_osc_accels([1.0]))
+
+
+def test_coarse_frequency_grid_warns(motion):
+    coarse = pyrvt.motions.log_spaced_values(0.05, 100.0, per_decade=10)
+    amps = np.interp(coarse, motion.freqs, motion._fourier_amps)
+    rvt = pyrvt.motions.RvtMotion(coarse, amps, duration=8.0)
+    with pytest.warns(UserWarning, match="too coarse"):
+        rvt.calc_osc_accels([1.0], 0.05)
+
+
+def test_fine_frequency_grid_does_not_warn(motion, recwarn):
+    motion.calc_osc_accels([1.0], 0.05)
+    assert not [w for w in recwarn if "too coarse" in str(w.message)]

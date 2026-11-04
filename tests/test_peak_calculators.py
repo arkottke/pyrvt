@@ -126,10 +126,15 @@ def read_wang_rathje_18_data(motion_id):
     return motion, expected
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("motion_id", [0, 1, 2])
 @pytest.mark.parametrize("location", ["rock", "surface"])
-def test_wang_rathje(motion_id, location):
+def test_wang_rathje(request, motion_id, location):
+    if (motion_id, location) == (0, "surface"):
+        request.applymarker(
+            pytest.mark.xfail(
+                strict=True, reason="Surface spectrum of motion 0 does not match."
+            )
+        )
     motion, expected = read_wang_rathje_18_data(motion_id)
 
     if location == "rock":
@@ -164,3 +169,27 @@ def test_wang_rathje(motion_id, location):
         raise NotImplementedError
 
     assert_allclose(actual, expected[location].spec_acc, rtol=0.025)
+
+
+@pytest.mark.parametrize("method", ["BT12", "BT15"])
+def test_boore_thompson_outside_table_raises(method):
+    with pytest.raises(ValueError, match="outside of the range"):
+        pyrvt.peak_calculators.get_peak_calculator(
+            method, dict(region="wna", mag=8.5, dist=1500.0)
+        )
+
+
+def test_toro_mcguire_nonstationarity_flag():
+    freqs = np.logspace(-1, 2, 200)
+    amps = 0.01 * freqs / (1 + (freqs / 5) ** 2)
+    kwds = dict(freqs=freqs, fourier_amps=amps, duration=10.0)
+
+    on = pyrvt.motions.RvtMotion(**kwds, peak_calculator="TM87")
+    off = pyrvt.motions.RvtMotion(
+        **kwds,
+        peak_calculator="TM87",
+        calc_kwds=dict(use_nonstationarity_factor=False),
+    )
+    psa_on = on.calc_osc_accels([1.0], 0.05)
+    psa_off = off.calc_osc_accels([1.0], 0.05)
+    assert psa_on[0] < psa_off[0]

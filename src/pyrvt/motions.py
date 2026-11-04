@@ -7,6 +7,8 @@ calculator is one is not provided when a class is initialized.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import numpy.typing as npt
 from scipy.constants import g as gravity
@@ -136,8 +138,10 @@ class RvtMotion:
         calc_kwds: dict | None = None,
     ) -> None:
         """Initialize the class."""
-        self._freqs = freqs
-        self._fourier_amps = fourier_amps
+        self._freqs = None if freqs is None else np.asarray(freqs, dtype=float)
+        self._fourier_amps = (
+            None if fourier_amps is None else np.asarray(fourier_amps, dtype=float)
+        )
         self._duration = duration
 
         self._pgv = None
@@ -358,6 +362,9 @@ class RvtMotion:
         else:
             site_tf = trans_func = np.asarray(trans_func)
 
+        osc_freqs = np.atleast_1d(osc_freqs)
+        self._check_freq_resolution(osc_freqs, osc_damping)
+
         resp = np.array(
             [
                 self.calc_peak(
@@ -371,6 +378,30 @@ class RvtMotion:
         )
 
         return resp
+
+    def _check_freq_resolution(self, osc_freqs: np.ndarray, osc_damping: float) -> None:
+        """Warn if the frequency grid is too coarse to resolve the oscillator.
+
+        The oscillator response is integrated over the Fourier amplitude
+        spectrum, so the grid must resolve the oscillator bandwidth. With a
+        spacing ratio above ``1 + 2 * osc_damping`` near the oscillator
+        frequency the computed response is biased low.
+        """
+        if self._freqs is None or len(self._freqs) < 2:
+            return
+        ratios = self._freqs[1:] / self._freqs[:-1]
+        mids = np.sqrt(self._freqs[1:] * self._freqs[:-1])
+        for of in osc_freqs:
+            near = (mids > of / 2) & (mids < 2 * of)
+            if near.any() and ratios[near].max() - 1 > 2 * osc_damping:
+                warnings.warn(
+                    "The frequency grid is too coarse to resolve an oscillator "
+                    f"with a damping of {osc_damping:.3f}: the spacing ratio "
+                    f"near {of:.3g} Hz is {ratios[near].max():.3f}. The "
+                    "response will be underestimated.",
+                    stacklevel=3,
+                )
+                break
 
     def calc_peak(self, transfer_func: npt.ArrayLike | None = None, **kwds) -> float:
         """Compute the peak response.
