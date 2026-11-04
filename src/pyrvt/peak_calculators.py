@@ -218,10 +218,12 @@ class SquaredSpectrum:
 
     @property
     def freqs(self) -> np.ndarray:
+        """Frequencies [Hz] of the spectrum."""
         return self._freqs
 
     @property
     def squared_fa(self) -> np.ndarray:
+        """Squared Fourier amplitudes of the spectrum."""
         return self._squared_fa
 
 
