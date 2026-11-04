@@ -43,7 +43,7 @@ Fixed
 ~~~~~
 - Edge case handling in peak factor calculations
 
-[0.7.1] - 2024-XX-XX  
+[0.7.1] - 2024-XX-XX
 ---------------------
 
 Changed

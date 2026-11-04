@@ -53,12 +53,12 @@ Basic usage:
 
    import pyrvt
    import numpy as np
-   
+
    # Define frequency and Fourier amplitude spectrum
    freqs = np.logspace(-1, 2, 100)
    fourier_amps = np.ones_like(freqs)
    duration = 10.0
-   
+
    # Create motion and calculate response spectrum
    motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration)
    osc_freqs = np.logspace(-1, 1.5, 50)

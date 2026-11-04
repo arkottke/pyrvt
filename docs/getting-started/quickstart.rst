@@ -16,42 +16,42 @@ Creating a Motion from Fourier Amplitude Spectrum
    import pyrvt
    import numpy as np
    import matplotlib.pyplot as plt
-   
+
    # Define frequency array (Hz)
    freqs = np.logspace(-1, 2, 100)  # 0.1 to 100 Hz
-   
+
    # Define Fourier amplitude spectrum (g-s)
    # This example uses a simple flat spectrum
    fourier_amps = np.ones_like(freqs) * 0.1
-   
+
    # Define motion duration (s)
    duration = 10.0
-   
+
    # Create RVT motion
    motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration)
-   
+
    # Calculate response spectrum
    osc_freqs = np.logspace(-1, 1.5, 50)  # Oscillator frequencies
    damping = 0.05  # 5% damping
    resp_spec = motion.calc_osc_accels(osc_freqs, damping)
-   
+
    # Plot results
    plt.figure(figsize=(10, 4))
-   
+
    plt.subplot(1, 2, 1)
    plt.loglog(freqs, fourier_amps)
    plt.xlabel('Frequency (Hz)')
    plt.ylabel('Fourier Amplitude (g-s)')
    plt.title('Input FAS')
    plt.grid(True)
-   
+
    plt.subplot(1, 2, 2)
    plt.loglog(1/osc_freqs, resp_spec)
    plt.xlabel('Period (s)')
    plt.ylabel('Response Acceleration (g)')
    plt.title('Calculated Response Spectrum')
    plt.grid(True)
-   
+
    plt.tight_layout()
    plt.show()
 
@@ -62,14 +62,14 @@ Converting Response Spectrum to Fourier Amplitude Spectrum
 
    import pyrvt
    import numpy as np
-   
+
    # Define response spectrum
    periods = np.logspace(-1, 1, 50)  # 0.1 to 10 seconds
    resp_spec = 0.1 * np.ones_like(periods)  # Flat response spectrum at 0.1g
-   
+
    # Define motion duration
    duration = 15.0
-   
+
    # Create compatible motion
    motion = pyrvt.motions.CompatibleRvtMotion(
        osc_freqs=1/periods,
@@ -77,11 +77,11 @@ Converting Response Spectrum to Fourier Amplitude Spectrum
        osc_damping=0.05,
        duration=duration
    )
-   
+
    # Get the compatible Fourier amplitude spectrum
    freqs = motion.freqs
    fourier_amps = motion.fourier_amps
-   
+
    print(f"Generated FAS with {len(freqs)} frequency points")
    print(f"Frequency range: {freqs[0]:.3f} to {freqs[-1]:.1f} Hz")
 
@@ -94,29 +94,29 @@ pyRVT includes several peak factor models. Here's how to use different ones:
 
    import pyrvt
    import numpy as np
-   
+
    # Create test motion
    freqs = np.logspace(-1, 2, 100)
    fourier_amps = np.ones_like(freqs) * 0.1
    duration = 10.0
-   
+
    # Compare different peak factor models
    peak_models = [
        pyrvt.peak_calculators.Vanmarcke1975(),
        pyrvt.peak_calculators.BooreThompson2015(),
        pyrvt.peak_calculators.WangRathje2018(),
    ]
-   
+
    osc_freqs = np.logspace(0, 1, 20)  # 1 to 10 Hz
    damping = 0.05
-   
+
    results = {}
    for peak_calc in peak_models:
-       motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration, 
+       motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration,
                                        peak_calculator=peak_calc)
        resp_spec = motion.calc_osc_accels(osc_freqs, damping)
        results[peak_calc.__class__.__name__] = resp_spec
-   
+
    # Compare results
    for name, resp_spec in results.items():
        print(f"{name}: Max response = {np.max(resp_spec):.3f} g")

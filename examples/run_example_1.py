@@ -1,4 +1,4 @@
-"""Simple example of calculating a Fourier amplitude spectrum"""
+"""Simple example of calculating a Fourier amplitude spectrum."""
 
 import datetime
 import os

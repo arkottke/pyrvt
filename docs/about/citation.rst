@@ -8,7 +8,7 @@ Software Citation
 
 For general use of the pyRVT software, please cite:
 
-**Kottke, Albert R.** (*Year*). pyRVT: A Python library for random vibration theory calculations. 
+**Kottke, Albert R.** (*Year*). pyRVT: A Python library for random vibration theory calculations.
 *Version X.X.X*. DOI: `10.5281/zenodo.3630729 <https://zenodo.org/records/3630729>`_
 
 BibTeX entry:
@@ -30,19 +30,19 @@ Peak Factor Models
 When using specific peak factor models implemented in pyRVT, please also cite the original research:
 
 **Vanmarcke (1975)**
-   Vanmarcke, E. H. (1975). On the distribution of the first-passage time for normal stationary random processes. 
+   Vanmarcke, E. H. (1975). On the distribution of the first-passage time for normal stationary random processes.
    *Journal of Applied Mechanics*, 42(1), 215-220.
 
 **Boore and Thompson (2015)**
-   Boore, D. M., & Thompson, E. M. (2015). Revisions to some parameters used in stochastic-method simulations of ground motion. 
+   Boore, D. M., & Thompson, E. M. (2015). Revisions to some parameters used in stochastic-method simulations of ground motion.
    *Bulletin of the Seismological Society of America*, 105(2A), 1029-1041.
 
 **Wang and Rathje (2018)**
-   Wang, S., & Rathje, E. M. (2018). Evaluation of the single-degree-of-freedom approximation in the peak factor method for random vibration theory based seismic hazard analysis. 
+   Wang, S., & Rathje, E. M. (2018). Evaluation of the single-degree-of-freedom approximation in the peak factor method for random vibration theory based seismic hazard analysis.
    *Earthquake Engineering & Structural Dynamics*, 47(14), 2755-2771.
 
 **Seifried et al. (2025)**
-   Seifried, A., Coppersmith, K. J., & Kottke, A. R. (2025). An updated peak factor model for random vibration theory based seismic hazard analysis. 
+   Seifried, A., Coppersmith, K. J., & Kottke, A. R. (2025). An updated peak factor model for random vibration theory based seismic hazard analysis.
    *Earthquake Spectra* (in press).
 
 Related Publications

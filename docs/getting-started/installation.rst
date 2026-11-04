@@ -61,12 +61,12 @@ To verify that pyRVT is installed correctly, you can run a simple test:
 
    import pyrvt
    import numpy as np
-   
+
    # Create a simple motion
    freqs = np.logspace(-1, 2, 100)
    fourier_amps = np.ones_like(freqs)
    duration = 10.0
-   
+
    motion = pyrvt.motions.RvtMotion(freqs, fourier_amps, duration)
    print("pyRVT installed successfully!")
    print(f"Version: {pyrvt.__version__}")
@@ -80,7 +80,7 @@ pyRVT requires the following packages:
 
 **Core dependencies:**
    - numpy
-   - numba  
+   - numba
    - scipy
    - pyexcel, pyexcel-io, pyexcel-xlsx (for Excel file support)
 
@@ -113,5 +113,5 @@ Getting Help
 If you encounter issues:
 
 1. Check the :doc:`../user-guide/index` for common usage patterns
-2. Look at the :doc:`../api/index` for detailed function documentation  
+2. Look at the :doc:`../api/index` for detailed function documentation
 3. Search or create an issue on `GitHub <https://github.com/arkottke/pyrvt/issues>`_

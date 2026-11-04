@@ -33,7 +33,7 @@ Available Peak Calculators
 The following peak calculators are available in pyRVT:
 
 - :class:`~pyrvt.peak_calculators.SeifriedEtAl2025`: Seifried et al. (2025) model
-- :class:`~pyrvt.peak_calculators.WangRathje2018`: Wang and Rathje (2018) model  
+- :class:`~pyrvt.peak_calculators.WangRathje2018`: Wang and Rathje (2018) model
 - :class:`~pyrvt.peak_calculators.BooreThompson2015`: Boore and Thompson (2015) model
 - :class:`~pyrvt.peak_calculators.Vanmarcke1975`: Vanmarcke (1975) model
 - :class:`~pyrvt.peak_calculators.Davenport1964`: Davenport (1964) model
@@ -70,27 +70,27 @@ Example Usage
 
    import numpy as np
    from pyrvt import motions, peak_calculators
-   
+
    # Create frequency array
    freqs = np.logspace(-1, 2, 100)
-   
+
    # Define Fourier amplitude spectrum
    fourier_amps = np.exp(-freqs/10) * 100
-   
+
    # Create RVT motion
    motion = motions.RvtMotion(
        freqs=freqs,
        fourier_amps=fourier_amps,
        duration=20.0
    )
-   
+
    # Get peak calculator
    calc = peak_calculators.get_peak_calculator("V75")
-   
+
    # Calculate response spectrum
-   periods = np.logspace(-1, 1, 50) 
+   periods = np.logspace(-1, 1, 50)
    damping = 0.05
-   
+
    osc_accels = motion.calc_osc_accels(
        periods=periods,
        damping=damping,

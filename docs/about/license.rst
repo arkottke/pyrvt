@@ -32,7 +32,7 @@ pyRVT depends on several open-source libraries:
 **NumPy** - BSD License
    Used for numerical computations and array operations.
 
-**SciPy** - BSD License  
+**SciPy** - BSD License
    Used for scientific computing and statistical functions.
 
 **Numba** - BSD License

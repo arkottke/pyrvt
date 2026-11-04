@@ -122,7 +122,7 @@ Contributing Workflow
 We welcome contributions! Please see the :doc:`contributing` guide for detailed information about:
 
 - How to report bugs and request features
-- Code style and testing requirements  
+- Code style and testing requirements
 - Pull request process
 - Documentation requirements
 
@@ -167,7 +167,7 @@ Release Process
 pyRVT follows semantic versioning (MAJOR.MINOR.PATCH):
 
 - **MAJOR**: Incompatible API changes
-- **MINOR**: New functionality in a backward-compatible manner  
+- **MINOR**: New functionality in a backward-compatible manner
 - **PATCH**: Backward-compatible bug fixes
 
 See :doc:`release-notes` for the detailed release history.
