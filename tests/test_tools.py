@@ -324,3 +324,12 @@ def test_read_at2_header_formats(tmp_path, header, time_step):
     actual_step, accels = pyrvt.tools.read_at2(fpath)
     assert actual_step == pytest.approx(time_step)
     assert accels == pytest.approx([0.1, 0.2, 0.3])
+
+
+def test_spreadsheets_need_pyexcel(monkeypatch, tmp_path):
+    """Without pyexcel the error says how to install it."""
+    import sys
+
+    monkeypatch.setitem(sys.modules, "pyexcel", None)
+    with pytest.raises(ImportError, match=r"pyRVT\[cli\]"):
+        pyrvt.tools.read_events(tmp_path / "events.csv", "psa")

@@ -1,6 +1,18 @@
 # Changelog
 
 ## 0.9.0 (unreleased)
+- Changed: `pyexcel`, `pyexcel-io` and `pyexcel-xlsx` are no longer required
+  dependencies. They are only used to read and write spreadsheets and are in
+  the new `cli` extra (`pip install pyRVT[cli]`); reading or writing a
+  spreadsheet without them raises an `ImportError` that says so.
+- Fixed: `RvtMotion.calc_arias_intensity` was half the correct value, and
+  `calc_cav`, which is computed from it, was low by a factor of `2**0.496`.
+- Fixed: the Boore and Thompson calculators raise `ValueError` outside the
+  magnitude and distance of their coefficient tables instead of returning NaN,
+  and `TM87` honours `use_nonstationarity_factor`.
+- Added: `calc_osc_accels` warns when the frequency grid is too coarse to
+  resolve the oscillator.
+- Fixed: `read_at2` reads both NGA-West1 and NGA-West2 headers.
 - Changed: adopted [SPEC 0](https://scientific-python.org/specs/spec-0000/) for
   version support -- Python minors from the last 36 months, core dependencies
   from the last 24 months. **Minimum Python is now 3.12** (was 3.10), and

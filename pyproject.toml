@@ -16,9 +16,6 @@ dependencies = [
   "numpy>=2.1",
   "numba>=0.61",
   "scipy>=1.15",
-  "pyexcel",
-  "pyexcel-io",
-  "pyexcel-xlsx",
 ]
 
 # ---------------------------------------------------------------------------
@@ -36,14 +33,14 @@ dependencies = [
 # ---------------------------------------------------------------------------
 
 [project.optional-dependencies]
+# Spreadsheet input and output, used by the `pyrvt` command line tool
+cli = ["pyexcel", "pyexcel-io", "pyexcel-xlsx"]
 test = [
+  "pyRVT[cli]",
   "coverage[toml]",
-  "pandas",
   "pytest",
   "pytest-cov",
   "pystrata",
-  "pykooh",
-  "matplotlib",
 ]
 docs = [
   "sphinx",

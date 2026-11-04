@@ -9,7 +9,6 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
-import pyexcel
 
 from pyrvt import motions
 from pyrvt.peak_calculators import get_peak_calculator, get_region
@@ -27,6 +26,18 @@ PARAMETER_NAMES = [
 def get_fpaths(pat: str) -> list[Path]:
     """Iterate over file paths."""
     return Path(".").glob(pat) if "*" in pat else [Path(pat)]
+
+
+def _import_pyexcel():
+    """Import pyexcel, which is only needed to read and write spreadsheets."""
+    try:
+        import pyexcel
+    except ImportError as err:
+        raise ImportError(
+            "Reading and writing spreadsheets requires pyexcel. "
+            "Install it with `pip install pyRVT[cli]`."
+        ) from err
+    return pyexcel
 
 
 def read_events(
@@ -58,7 +69,7 @@ def read_events(
     assert response_type in ["psa", "fa"]
     fpath = Path(fpath)
 
-    data = pyexcel.get_array(file_name=str(fpath))
+    data = _import_pyexcel().get_array(file_name=str(fpath))
     ext = fpath.suffix
 
     parameters = {key: data[i][1:] for i, (key, label) in enumerate(PARAMETER_NAMES)}
@@ -133,7 +144,7 @@ def write_events(
     fpath.parent.mkdir(parents=True, exist_ok=True)
 
     # Write the file
-    pyexcel.save_as(array=rows, dest_file_name=str(fpath))
+    _import_pyexcel().save_as(array=rows, dest_file_name=str(fpath))
 
 
 def _calc_fa(target_freqs, damping, method, event):
