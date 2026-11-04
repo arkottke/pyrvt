@@ -2,7 +2,6 @@ import pathlib
 
 import numpy as np
 import pyexcel
-import pystrata
 import pytest
 from numpy.testing import assert_allclose
 
@@ -99,6 +98,8 @@ def test_formulations(method):
 
 
 def read_wang_rathje_18_data(motion_id):
+    import pystrata
+
     mag = {0: 5, 1: 6.5, 2: 8}[motion_id]
 
     wb = pyexcel.get_book(file_name=str(fpath_data / "wang_rathje_2018.xlsx"))
@@ -129,6 +130,8 @@ def read_wang_rathje_18_data(motion_id):
 @pytest.mark.parametrize("motion_id", [0, 1, 2])
 @pytest.mark.parametrize("location", ["rock", "surface"])
 def test_wang_rathje(request, motion_id, location):
+    # pystrata depends on pyrvt, so it is only available in a combined environment
+    pystrata = pytest.importorskip("pystrata")
     if (motion_id, location) == (0, "surface"):
         request.applymarker(
             pytest.mark.xfail(

@@ -12,10 +12,7 @@ pygmm_contracts = pytest.importorskip("pygmm.contracts")
 def _describe(cls):
     return {
         "frozen": cls.__dataclass_params__.frozen,
-        "fields": [
-            (f.name, str(f.type), f.default)
-            for f in dataclasses.fields(cls)
-        ],
+        "fields": [(f.name, str(f.type), f.default) for f in dataclasses.fields(cls)],
     }
 
 
