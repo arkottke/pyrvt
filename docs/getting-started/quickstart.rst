@@ -147,26 +147,18 @@ pyRVT includes seismological models for generating Fourier amplitude spectra:
 
 .. code-block:: python
 
+   import numpy as np
    import pyrvt
-   
-   # Define earthquake parameters
-   magnitude = 6.5
-   distance = 20.0  # km
-   duration = 10.0
-   
-   # Create motion using source theory
-   freqs = np.logspace(-1, 2, 100)
-   motion = pyrvt.motions.SourceTheoryMotion(
-       mag=magnitude,
-       dist=distance,
-       duration=duration,
-       freqs=freqs
-   )
-   
+   from pygmm.fourier_spectrum import SourceTheoryModel
+
+   # Create a motion from a seismological source model
+   fas = SourceTheoryModel(magnitude=6.5, distance=20.0, region="wna")
+   motion = pyrvt.motions.RvtMotion.from_fas(fas)
+
    # Calculate response spectrum
    osc_freqs = np.logspace(-1, 1, 30)
-   resp_spec = motion.calc_osc_accels(osc_freqs, damping=0.05)
-   
+   resp_spec = motion.calc_osc_accels(osc_freqs, osc_damping=0.05)
+
    print(f"Peak response: {np.max(resp_spec):.3f} g")
 
 Next Steps

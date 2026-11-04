@@ -60,7 +60,7 @@ Replace removed motion classes:
    # After (0.9)
    import pygmm.fourier_spectrum as fs
    from pyrvt.motions import RvtMotion
-   fas = fs.SourceTheoryModel(mag=6.5, dist=20, region="wna")
+   fas = fs.SourceTheoryModel(magnitude=6.5, distance=20, region="wna")
    motion = RvtMotion.from_fas(fas)
 
 Replace ``CompatibleRvtMotion`` construction:

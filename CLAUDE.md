@@ -6,27 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Run all tests
-hatch run test:run
+uv run --extra test pytest
 
 # Run a single test file or test
-hatch run test:run -- tests/test_motions.py
-hatch run test:run -- tests/test_motions.py::test_name
+uv run --extra test pytest tests/test_motions.py
+uv run --extra test pytest tests/test_motions.py::test_name
 
 # Lint and format (ruff)
-ruff check src/ tests/
-ruff format src/ tests/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 
 # Build docs locally
-hatch run docs:build
-hatch run docs:serve
-
-# Install in dev mode (alternative to hatch envs)
-pip install -e .
+uv run --extra docs sphinx-build -b html docs docs/_build/html
+uv run --extra docs sphinx-autobuild docs docs/_build/html
 ```
 
-Pre-commit hooks run ruff, ruff-format, pyupgrade, and prettier on commit.
+Pre-commit hooks run ruff and prettier on commit.
 
-**Note**: `tests/test_peak_calculators.py` currently fails to collect because the pinned `pystrata` version references `pyrvt.motions.SourceTheoryMotion`, which was removed. Other test files run cleanly.
+**Note**: the interop tests (`test_pygmm_interop.py`, `test_contracts.py` and the
+Wang and Rathje cases of `test_peak_calculators.py`) are skipped unless pygmm and
+pystrata are installed, as they depend on this package.
 
 ## Architecture
 

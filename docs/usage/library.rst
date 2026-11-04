@@ -51,8 +51,10 @@ The main motion classes are:
 
 - :class:`~pyrvt.motions.RvtMotion`: Direct specification of Fourier amplitude spectrum
 - :class:`~pyrvt.motions.CompatibleRvtMotion`: Derived from acceleration response spectrum
-- :class:`~pyrvt.motions.SourceTheoryMotion`: Seismological ω²-model based motion
-- :class:`~pyrvt.motions.StaffordEtAl22Motion`: Optimized functional form motion model
+
+A Fourier amplitude spectrum from a model such as the seismological
+:math:`\omega^2`-model (``pygmm.fourier_spectrum.SourceTheoryModel``) is
+turned into a motion with :meth:`~pyrvt.motions.RvtMotion.from_fas`.
 
 Example Usage
 ~~~~~~~~~~~~~

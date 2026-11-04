@@ -60,7 +60,7 @@ use the :meth:`~pyrvt.motions.RvtMotion.from_fas` factory:
    import pygmm.fourier_spectrum as fs
    from pyrvt.motions import RvtMotion
 
-   fas_model = fs.SourceTheoryModel(mag=6.5, dist=20, region="wna")
+   fas_model = fs.SourceTheoryModel(magnitude=6.5, distance=20, region="wna")
    motion = RvtMotion.from_fas(fas_model)
 
 Example Usage
