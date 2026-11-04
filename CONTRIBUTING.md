@@ -53,7 +53,7 @@ Ready to contribute? Here's how to set up `pyRVT` for local development.
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install uv first:
 
-``` bash
+```bash
 # On macOS and Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -67,19 +67,19 @@ pip install uv
 
 2.  Clone your fork locally:
 
-    ``` bash
+    ```bash
     $ git clone git@github.com:your_name_here/pyrvt.git
     ```
 
 3.  Create a branch for local development:
 
-    ``` bash
+    ```bash
     $ git checkout -b name-of-your-bugfix-or-feature
     ```
 
 4.  Install the development environment using uv:
 
-    ``` bash
+    ```bash
     $ ./scripts.sh install
     ```
 
@@ -88,21 +88,21 @@ pip install uv
 5.  When you're done making changes, check that your changes pass formatting and the
     tests:
 
-    ``` bash
+    ```bash
     $ ./scripts.sh format
     $ ./scripts.sh test
     ```
 
     The documentation can be built and served with:
 
-    ``` bash
+    ```bash
     $ ./scripts.sh docs-build
     $ ./scripts.sh docs-serve
     ```
 
 6.  Commit your changes and push your branch to GitHub:
 
-    ``` bash
+    ```bash
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
@@ -126,7 +126,7 @@ This project uses \[uv\](<https://docs.astral.sh/uv/>) for dependency management
 
 Available development commands:
 
-``` bash
+```bash
 $ ./scripts.sh install      # Install project in development mode
 $ ./scripts.sh test         # Run tests
 $ ./scripts.sh test-cov     # Run tests with coverage
@@ -140,7 +140,7 @@ $ ./scripts.sh clean        # Clean all build artifacts
 
 To run a subset of tests:
 
-``` bash
+```bash
 $ uv run pytest tests/test_specific_module.py
 ```
 
