@@ -1,6 +1,6 @@
 """The command line interface for calling pyRVT.
 
-See the :doc:`../usage/cli` documentation for more details.
+See the :doc:`../user-guide/cli` documentation for more details.
 """
 
 import argparse

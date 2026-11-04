@@ -8,4 +8,4 @@ between the frequency and time domains.
 .. toctree::
    :maxdepth: 1
 
-   examples.ipynb
+   examples-notebook
