@@ -70,7 +70,7 @@ This repo follows [SPEC 0](https://scientific-python.org/specs/spec-0000/):
 - **Python** — support the minors released in the last **36 months**.
 - **Core dependencies** — support the minors released in the last **24 months**.
 
-Floor as of 2026-08-03: **Python 3.12**; CI runs 3.12, 3.13, 3.14.
+Floor as of 2026-11-03: **Python 3.13**; CI runs 3.13, 3.14.
 
 The dated drop schedule lives in `pyproject.toml` next to `[project.urls]`.
 When advancing a floor, update all four in step: `requires-python`, the

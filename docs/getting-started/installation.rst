@@ -1,7 +1,7 @@
 Installation
 ============
 
-pyRVT supports Python 3.10 and later versions.
+pyRVT supports Python 3.13 and later versions.
 
 Quick Installation
 ------------------
