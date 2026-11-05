@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 (unreleased)
+## 0.9.0 (2026-11-05)
 
 - Changed: the documentation is reorganized around a user guide that describes how
   motions, peak calculators and tools fit together; the tutorials and quickstart
