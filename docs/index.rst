@@ -64,9 +64,6 @@ Basic usage:
    osc_freqs = np.logspace(-1, 1.5, 50)
    resp_spec = motion.calc_osc_accels(osc_freqs, osc_damping=0.05)
 
-Table of Contents
------------------
-
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
